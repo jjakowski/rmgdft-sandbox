@@ -1,0 +1,1063 @@
+% ============================================================================
+% Real-Time TDDFT in RMG-DFT: Theory, Algorithm, and Implementation
+% ============================================================================
+% Compile: pdflatex rmg_tddft_theory && bibtex rmg_tddft_theory &&
+%          pdflatex rmg_tddft_theory && pdflatex rmg_tddft_theory
+% ============================================================================
+\documentclass[12pt,letterpaper]{article}
+
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{hyperref}
+\usepackage{booktabs}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{geometry}
+\usepackage{graphicx}
+\usepackage{enumitem}
+\usepackage{tcolorbox}
+\usepackage{bm}
+
+\geometry{margin=1in}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=blue!70!black,
+  citecolor=green!50!black,
+  urlcolor=blue!70!black
+}
+
+% ---------- C++ listing style ----------
+\lstdefinestyle{cppstyle}{
+  language=C++,
+  basicstyle=\small\ttfamily,
+  keywordstyle=\color{blue!80!black}\bfseries,
+  commentstyle=\color{green!50!black}\itshape,
+  stringstyle=\color{orange!80!black},
+  numbers=left,
+  numberstyle=\tiny\color{gray},
+  stepnumber=1,
+  numbersep=8pt,
+  frame=single,
+  framerule=0.4pt,
+  rulecolor=\color{gray!50},
+  backgroundcolor=\color{gray!5},
+  breaklines=true,
+  showstringspaces=false,
+  tabsize=4
+}
+
+% ---------- Gap box for theory/code gaps ----------
+\tcbuselibrary{skins,breakable}
+\newtcolorbox{gapbox}[2][]{
+  title={#2},
+  colback=red!5!white,
+  colframe=red!50!black,
+  fonttitle=\bfseries\small,
+  breakable,
+  #1
+}
+\newtcolorbox{gapboxmod}[2][]{
+  title={#2},
+  colback=orange!8!white,
+  colframe=orange!70!black,
+  fonttitle=\bfseries\small,
+  breakable,
+  #1
+}
+\newtcolorbox{gapboxmin}[2][]{
+  title={#2},
+  colback=yellow!8!white,
+  colframe=yellow!70!black,
+  fonttitle=\bfseries\small,
+  breakable,
+  #1
+}
+
+% ---------- Macros ----------
+\newcommand{\bra}[1]{\langle #1 \rvert}
+\newcommand{\ket}[1]{\lvert #1 \rangle}
+\newcommand{\braket}[2]{\langle #1 \vert #2 \rangle}
+\newcommand{\mel}[3]{\langle #1 \vert #2 \vert #3 \rangle}
+\newcommand{\comm}[2]{\left[ #1,\, #2 \right]}
+\newcommand{\dd}{\mathrm{d}}
+\newcommand{\ii}{\mathrm{i}}
+\newcommand{\vel}{\Delta V_{\rm cell}}       % real-space weight
+\newcommand{\Hks}{H_{\rm KS}}
+\newcommand{\VNL}{V_{\rm NL}}
+\newcommand{\Vloc}{V_{\rm loc}}
+\newcommand{\psiPS}{\varphi^{\rm PS}}
+\newcommand{\psiAE}{\varphi^{\rm AE}}
+
+% ============================================================================
+\begin{document}
+
+\title{\Large\bfseries Real-Time TDDFT in RMG-DFT:\\
+Theory, Algorithm, and Implementation\\[6pt]
+\normalsize\textit{Finite vs.\ Periodic Systems, Velocity Gauge,
+Pseudopotential Corrections,\\and Gaps between Theory and Code}}
+
+\author{Jacek Jakowski \and \textit{(draft)}}
+\date{\today}
+\maketitle
+\tableofcontents
+\newpage
+
+% ============================================================================
+\begin{abstract}
+This document provides a self-contained reference for the real-time
+time-dependent density functional theory (RT-TDDFT) implementation in
+RMG-DFT\@.  It covers the theoretical foundations at graduate-student
+level---with special attention to readers from the quantum-chemistry
+community (Gaussian basis sets, effective core potentials)---the numerical
+propagation algorithm, and the actual C++ implementation.  A recurring theme
+is the \emph{extension from finite to periodic systems}: the position operator
+$\hat{r}$ is ill-defined under periodic boundary conditions, forcing use of
+the \emph{velocity gauge} and the vector potential $\bm{A}(t)$ for crystalline
+solids.  Norm-conserving pseudopotentials (NCPP) modify the velocity operator
+via the commutator $\ii[\VNL,\hat{r}]$; we derive this correction in full
+detail.  The document concludes with a critical analysis of eight known gaps
+between the theoretical formalism and the current RMG code, together with
+directions for future development (Ehrenfest dynamics, non-collinear spin
+RT-TDDFT).
+\end{abstract}
+
+% ============================================================================
+\section{Introduction}
+\label{sec:intro}
+% ============================================================================
+
+Real-time TDDFT propagates the time-dependent Kohn-Sham (TDKS) equations
+directly in the time domain, giving access to electronic spectra, non-linear
+optical responses, ultrafast electron dynamics driven by intense laser fields,
+and (with the addition of nuclear forces) non-adiabatic dynamics.  The
+method was formulated for molecular systems in Gaussian-basis codes
+(NWChem, Gaussian) and extended to periodic solids via real-space and
+plane-wave implementations (Octopus \cite{Castro2004}, Yabana-Bertsch
+\cite{Yabana1996}).
+
+RMG-DFT is a production-grade DFT code that solves the Kohn-Sham equations on
+a real-space grid using multigrid acceleration, supporting CPU and GPU (CUDA,
+HIP, SYCL) execution \cite{Briggs1995,Bernholc2008}.  This document focuses
+on the RT-TDDFT extension resident in \texttt{TDDFT/RMG\_TDDFT/} and
+\texttt{TDDFT/ELDYN/}.
+
+The structure of this document is:
+\begin{itemize}
+  \item Sec.~\ref{sec:theory}: theoretical foundations---TDKS, density matrix,
+    gauge choices, current density, Bloch k-point corrections.
+  \item Sec.~\ref{sec:pp}: pseudopotential (PP) theory in depth---from the
+    chemistry perspective, the Kleinman-Bylander separable form, and the
+    full derivation of how PP modifies the current operator.
+  \item Sec.~\ref{sec:algorithm}: the predictor-corrector Magnus propagation
+    algorithm.
+  \item Sec.~\ref{sec:implementation}: RMG-specific implementation details---
+    buffer layout, distributed matrix parallelism, observable computation.
+  \item Sec.~\ref{sec:comparison}: comparative table, finite vs.\ periodic.
+  \item Sec.~\ref{sec:gaps}: eight identified gaps between theory and code.
+  \item Sec.~\ref{sec:future}: future directions.
+\end{itemize}
+
+% ============================================================================
+\section{Theoretical Foundations}
+\label{sec:theory}
+% ============================================================================
+
+\subsection{Time-Dependent Kohn-Sham Equations}
+\label{sec:tdks}
+
+The time-dependent Kohn-Sham (TDKS) equations read (atomic units throughout,
+$\hbar = m_e = e = 1$):
+\begin{equation}
+  \ii\,\frac{\partial \psi_n(\bm{r},t)}{\partial t}
+  = \Hks[\rho(t)]\,\psi_n(\bm{r},t),
+  \label{eq:tdks}
+\end{equation}
+where the KS Hamiltonian $\Hks$ depends on the instantaneous electron density
+\begin{equation}
+  \rho(\bm{r},t) = \sum_{n=1}^{N_{\rm occ}} f_n \left|\psi_n(\bm{r},t)\right|^2,
+  \label{eq:density}
+\end{equation}
+with $f_n \in [0,2]$ the orbital occupation numbers.  The KS potential
+\begin{equation}
+  V_{\rm KS}[\rho] = V_{\rm ext} + V_{\rm H}[\rho] + V_{\rm xc}[\rho]
+\end{equation}
+is updated at each timestep through the \emph{adiabatic approximation}: the
+exchange-correlation (XC) kernel is taken as the ground-state functional
+evaluated at the instantaneous density, ignoring memory effects in $V_{\rm xc}$.
+
+\subsection{Density Matrix Formulation}
+\label{sec:densmat}
+
+Rather than propagating $N_{\rm occ}$ individual orbitals, RMG-TDDFT works in
+the basis of the fixed ground-state KS orbitals $\{\varphi_j\}$, expanding the
+time-dependent orbitals as
+\begin{equation}
+  \psi_n(\bm{r},t) = \sum_j C_{jn}(t)\,\varphi_j(\bm{r}).
+  \label{eq:expand}
+\end{equation}
+The one-body \emph{density matrix} in this basis is
+\begin{equation}
+  P_{ij}(t) = \sum_n f_n\,C_{in}(t)\,C_{jn}^*(t).
+  \label{eq:densmat}
+\end{equation}
+
+\paragraph{Chemistry analogy.}
+This is exactly the \emph{MO-basis density matrix} familiar from Gaussian-basis
+RT-TDDFT (NWChem, Gaussian).  In AO codes one propagates
+$\ii\,S\,\dot{P} = [H,P]$ with overlap matrix $S$.  Here the basis is
+\emph{orthonormal} ($\braket{\varphi_i}{\varphi_j}=\delta_{ij}$), so $S=\mathbb{1}$
+and the \emph{von Neumann equation} simplifies to
+\begin{equation}
+  \ii\,\frac{\dd P}{\dd t} = \comm{H(t)}{P(t)}.
+  \label{eq:vonneumann}
+\end{equation}
+
+The electron density is reconstructed as
+\begin{equation}
+  \rho(\bm{r},t) = \rho_{\rm gnd}(\bm{r})
+  + \sum_{ij} \Delta P_{ij}(t)\,\varphi_i(\bm{r})\varphi_j^*(\bm{r}),
+  \label{eq:rho_reconstruct}
+\end{equation}
+where $\Delta P_{ij} = P_{ij}(t) - f_i\delta_{ij}$ is the change from the
+ground-state diagonal.
+
+\subsection{External Field Coupling: Two Gauges}
+\label{sec:gauges}
+
+The choice of gauge determines how the external electromagnetic field enters
+$\Hks$.
+
+\subsubsection{Length Gauge (Finite Systems)}
+
+For an isolated molecule, the electric field $\bm{E}(t)$ couples via the
+scalar potential (dipole approximation):
+\begin{equation}
+  V_{\rm ext}(\bm{r},t) = -e\,\bm{E}(t)\cdot\bm{r}
+  = -\bigl(E_x(t)\,x + E_y(t)\,y + E_z(t)\,z\bigr).
+  \label{eq:length_gauge}
+\end{equation}
+The position operator $\hat{\bm{r}}$ is well-defined for a localized wavefunction.
+In RMG (\texttt{EFIELD} mode) this potential is tabulated on the grid with a
+sawtooth correction for periodic images (\texttt{US\_PP/init\_efield.cpp}).
+
+\subsubsection{Velocity Gauge (Periodic Systems)}
+
+For a crystal with periodic boundary conditions (PBC), the position operator
+$\hat{\bm{r}}$ is \emph{not Hermitian}: a Bloch state $e^{\ii\bm{k}\cdot\bm{r}}$
+is not normalizable on $\mathbb{R}^3$, and $\mel{\psi_{n\bm{k}}}{r_\alpha}{\psi_{m\bm{k}}}$
+is not gauge-invariant.  The length-gauge coupling $\bm{E}\cdot\bm{r}$ therefore
+cannot be used for an extended solid.
+
+Instead, the external field is represented through the vector potential $\bm{A}(t)$
+in the \emph{minimal-coupling Hamiltonian}:
+\begin{equation}
+  H(t) = \frac{[\hat{\bm{p}} + \bm{A}(t)]^2}{2} + V_{\rm KS}
+  = H_{\rm KS} + \bm{A}(t)\cdot\hat{\bm{p}}
+  + \frac{A^2(t)}{2}.
+  \label{eq:minimal_coupling}
+\end{equation}
+In the weak-field (linear-response) limit the $A^2/2$ term is dropped:
+\begin{equation}
+  \boxed{H(t) \approx \Hks + \bm{A}(t)\cdot\hat{\bm{p}}}.
+  \label{eq:vg_linear}
+\end{equation}
+This is the velocity gauge used in RMG (\texttt{VECTOR\_POT} mode).  The
+neglected $A^2$ term is discussed in Gap~\ref{gap:A2}.
+
+\paragraph{Field forms.}
+For a monochromatic field:
+\begin{equation}
+  \bm{A}(t) = A_0\hat{\bm{\varepsilon}}\cos(\omega t),
+  \qquad
+  \bm{E}(t) = -\frac{\partial\bm{A}}{\partial t} = A_0\omega\hat{\bm{\varepsilon}}\sin(\omega t).
+\end{equation}
+For an instantaneous broadband (delta) kick, used for linear-response optical
+spectra:
+\begin{equation}
+  \bm{A}(t) = A_0\hat{\bm{\varepsilon}}\,\delta(t).
+  \label{eq:delta_kick}
+\end{equation}
+The current RT-TDDFT implementation supports \emph{only} the delta-kick
+(Gap~\ref{gap:cw}).
+
+\subsection{Current Density}
+\label{sec:current}
+
+The macroscopic current density is the key observable in the velocity gauge.
+It is split into paramagnetic and diamagnetic parts:
+\begin{align}
+  \bm{J}_{\rm para}(\bm{r},t) &= -\ii\sum_n f_n
+    \bigl[\psi_n^*\nabla\psi_n - \psi_n\nabla\psi_n^*\bigr], \label{eq:jpara}\\
+  \bm{J}_{\rm dia}(\bm{r},t) &= -\rho(\bm{r},t)\,\bm{A}(t), \label{eq:jdia}\\
+  \bm{J}(\bm{r},t) &= \bm{J}_{\rm para} + \bm{J}_{\rm dia}. \label{eq:jtot}
+\end{align}
+In the matrix element formulation used in RMG, the spatially averaged (cell)
+current along direction $\alpha$ is:
+\begin{equation}
+  J_\alpha(t) = \operatorname{Re}\!\left[\operatorname{Tr}\bigl(P(t)\cdot P^\alpha\bigr)\right],
+  \label{eq:current_trace}
+\end{equation}
+where $P^\alpha$ is the momentum matrix defined in Sec.~\ref{sec:momentum}.
+The optical conductivity is extracted via Fourier transform:
+\begin{equation}
+  \sigma(\omega) = \frac{J(\omega)}{E(\omega)}.
+\end{equation}
+
+\subsection{Momentum Matrix Elements for Bloch States}
+\label{sec:momentum}
+
+\subsubsection{Finite System (Gamma Point, Real Orbitals)}
+
+The kinetic contribution to the current matrix element in direction $\alpha$ is:
+\begin{equation}
+  P^\alpha_{ij} = \ii\cdot v_{\rm cell}\cdot\mel{\varphi_i}{\frac{\partial}{\partial r_\alpha}}{\varphi_j},
+  \label{eq:Palpha_gamma}
+\end{equation}
+where $v_{\rm cell} = \Omega_{\rm cell}/N_{\rm grid}$ is the real-space integration
+weight (unit-cell volume divided by number of grid points).
+
+\subsubsection{Bloch States: k-Vector Correction}
+
+For a Bloch orbital $\psi_{n\bm{k}}(\bm{r}) = e^{\ii\bm{k}\cdot\bm{r}}u_{n\bm{k}}(\bm{r})$,
+the chain rule gives:
+\begin{equation}
+  \nabla\psi_{n\bm{k}} = e^{\ii\bm{k}\cdot\bm{r}}\bigl(\nabla u_{n\bm{k}} + \ii\bm{k}\,u_{n\bm{k}}\bigr).
+\end{equation}
+Therefore the full momentum matrix element is:
+\begin{equation}
+  \mel{\psi_{m\bm{k}}}{\hat{p}_\alpha}{\psi_{n\bm{k}}}
+  = \mel{u_{m\bm{k}}}{-\ii\partial_\alpha + k_\alpha}{u_{n\bm{k}}},
+\end{equation}
+and the total momentum matrix with the $\ii$ prefactor is:
+\begin{equation}
+  \boxed{P^\alpha_{ij} = \ii\cdot v_{\rm cell}
+    \cdot\mel{\varphi_i}{\frac{\partial}{\partial r_\alpha} + \ii k_\alpha}{\varphi_j}}.
+  \label{eq:Palpha_bloch}
+\end{equation}
+The gradient term $\nabla u$ is computed by \texttt{ApplyGradient} (finite-difference
+stencil).  The k-correction $+\ii k_\alpha \psi_{n\bm{k}}$ is added explicitly in
+\texttt{VecPmatrix.cpp} (lines 215--217):
+\begin{lstlisting}[style=cppstyle, caption={k-correction in VecPmatrix.cpp}]
+psi_xC[i] += I_t * kptr->kp.kvec[0] * psi_C[i];  // I_t = i
+psi_yC[i] += I_t * kptr->kp.kvec[1] * psi_C[i];
+psi_zC[i] += I_t * kptr->kp.kvec[2] * psi_C[i];
+\end{lstlisting}
+
+\subsubsection{Total Momentum Matrix: Kinetic + Nonlocal PP}
+\label{sec:Ptotal}
+
+Because the Hamiltonian contains a nonlocal pseudopotential $\VNL$, the velocity
+operator is \emph{not} simply $\hat{p}$.  The full derivation is given in
+Sec.~\ref{sec:pp:current}.  The result is:
+\begin{equation}
+  P^\alpha_{ij}(\text{total}) = P^\alpha_{ij}(\text{KE}) + P^\alpha_{ij}(\VNL),
+  \label{eq:Ptotal}
+\end{equation}
+where $P^\alpha(\text{KE})$ is computed by \texttt{VecPHmatrix} and
+$P^\alpha(\VNL)$ is added by \texttt{CurrentNlpp}.
+
+% ============================================================================
+\section{Pseudopotentials: Theory and Contribution to the Current Operator}
+\label{sec:pp}
+% ============================================================================
+
+This section provides a graduate-level introduction to norm-conserving
+pseudopotentials (NCPP) with emphasis on concepts familiar to quantum chemists,
+and derives in full detail why and how the nonlocal PP modifies the current
+operator.
+
+\subsection{Motivation and Chemistry Analogy}
+\label{sec:pp:motivation}
+
+\paragraph{Why pseudopotentials?}
+Core electrons (e.g., the 1s$^2$ of carbon) are chemically inert---they do
+not participate in bonding---but they are tightly bound to the nucleus, produce
+rapidly oscillating wavefunctions that require very fine grids, and are
+expensive to represent.  A pseudopotential (PP) replaces the nucleus +
+core-electron system by a smooth effective potential that acts only on the
+\emph{valence} electrons.
+
+\paragraph{Analogy with Effective Core Potentials (ECPs).}
+Quantum chemists are familiar with ECPs (Stuttgart, LANL2DZ).  The conceptual
+idea is identical: replace the core with an effective operator.  The key
+differences are:
+\begin{enumerate}[label=(\roman*)]
+  \item \textbf{Fitting target.}  ECPs in Gaussian codes are fitted to
+    reproduce valence \emph{energy levels and atomic spectra}.  PPs in
+    real-space/plane-wave codes additionally require the pseudo-wavefunction
+    $\psiPS_{nl}(r)$ to match the all-electron (AE) wavefunction
+    $\psiAE_{nl}(r)$ for $r > r_c$ (the \emph{core radius}).
+  \item \textbf{Norm-conservation constraint} (see below).
+  \item \textbf{Form.}  ECPs are usually fitted as Gaussian expansions times
+    angular projectors.  PPs in grid codes are most naturally expressed on a
+    radial grid.
+\end{enumerate}
+
+\subsection{Norm-Conserving Pseudopotentials (NCPP)}
+\label{sec:pp:ncpp}
+
+An NCPP~\cite{Hamann1979,Troullier1991} is constructed to satisfy four
+conditions for each angular-momentum channel $(n,l)$:
+\begin{enumerate}[label=(\arabic*)]
+  \item Same valence eigenvalues:
+    $\epsilon^{\rm PS}_{nl} = \epsilon^{\rm AE}_{nl}$.
+  \item Agreement outside core radius:
+    $\psiPS_{nl}(r) = \psiAE_{nl}(r)$ for $r > r_c$.
+  \item Norm conservation inside core:
+    \begin{equation}
+      \int_0^{r_c}\!\!\left|\psiPS_{nl}(r)\right|^2 r^2\,\dd r
+      = \int_0^{r_c}\!\!\left|\psiAE_{nl}(r)\right|^2 r^2\,\dd r.
+      \label{eq:norm_conservation}
+    \end{equation}
+  \item Logarithmic derivative continuity at $r_c$ (energy transferability).
+\end{enumerate}
+Condition~(3)---norm conservation---guarantees that the pseudo-charge density
+equals the AE charge density everywhere, which ensures the correct linear
+response and scattering properties~\cite{Hamann1979}.
+
+\paragraph{Comparison with USPP.}
+Ultrasoft pseudopotentials (USPP)~\cite{Vanderbilt1990} relax condition~(3),
+allowing $\psiPS$ to be much smoother (hence ``ultrasoft'') at the cost of
+introducing augmentation charges $Q_{ij}$ to restore charge conservation.
+This modifies the overlap operator to $S = \mathbb{1} + \sum_{ij} Q_{ij}\ket{\beta_i}\bra{\beta_j}$
+and the von Neumann equation becomes $\ii S\dot{P} = [H,P]$---analogous to
+the AO-basis Liouville equation with a non-unit overlap.  The current operator
+also acquires additional augmentation terms (see Sec.~\ref{sec:pp:uspp}).
+\textbf{RMG uses NCPP only}; all expressions below are exact for NCPP.
+
+\subsection{Semilocal Form and the Kleinman-Bylander Transformation}
+\label{sec:pp:KB}
+
+The raw PP, as constructed, is \emph{semilocal}: it has a different radial
+dependence for each angular momentum $l$, but is local within each $l$ channel:
+\begin{equation}
+  V_{\rm PP}(\bm{r},\bm{r}') = V_{\rm local}(r)\,\delta(\bm{r}-\bm{r}')
+  + \sum_l \hat{P}_l\,\delta V_l(r)\,\delta(\bm{r}-\bm{r}'),
+  \label{eq:semilocal}
+\end{equation}
+where $\hat{P}_l = \sum_m \ket{Y_{lm}}\bra{Y_{lm}}$ is the projector onto
+angular momentum $l$ and $\delta V_l = V_l - V_{\rm local}$.
+
+\paragraph{Cost problem.}
+Computing $\mel{\varphi_i}{V_{\rm PP}}{\varphi_j}$ for all $(i,j)$ pairs from the
+semilocal form requires $O(N_{\rm states}^2 \times N_{\rm grid})$ operations---
+prohibitively expensive.
+
+\paragraph{Kleinman-Bylander (KB) transformation.}
+Kleinman and Bylander~\cite{Kleinman1982} showed that the semilocal operator
+can be rewritten as a \emph{fully nonlocal separable} (rank-1 per channel) form:
+\begin{equation}
+  \boxed{\VNL = \sum_I \sum_{lm} D^I_{lm}\,
+    \ket{\beta^I_{lm}}\bra{\beta^I_{lm}}},
+  \label{eq:KB}
+\end{equation}
+where the index $I$ runs over atoms, $(l,m)$ over angular-momentum channels,
+and the KB projectors and coefficients are:
+\begin{align}
+  \ket{\beta^I_{lm}} &= \delta V^I_l(r)\,\varphi^{{\rm PS},I}_{nl}(\bm{r}-\bm{R}_I)\,Y_{lm}(\hat{r}_I),
+  \label{eq:KB_proj}\\
+  D^I_{lm} &= \frac{1}{\mel{\varphi^{{\rm PS},I}_{nl}}{\delta V^I_l}{\varphi^{{\rm PS},I}_{nl}}}.
+  \label{eq:KB_coeff}
+\end{align}
+The cost drops to $O(N_{\rm states} \times N_{\rm proj} \times N_{\rm grid})$:
+compute $\braket{\beta_{lm}}{\varphi_j}$ once per projector per orbital, then
+assemble.
+
+\paragraph{RMG storage.}
+RMG stores the projected overlaps $\braket{\beta_{lm}}{\varphi_j}$ in
+\texttt{kptr->newsint\_local} and applies them via
+\texttt{AppNls} / \texttt{AppNls\_0xyz}.
+
+\subsection{Full Hamiltonian with NCPP}
+\label{sec:pp:hamiltonian}
+
+The complete KS Hamiltonian in the NCPP/KB approximation is:
+\begin{equation}
+  H = \underbrace{-\tfrac{1}{2}\nabla^2}_{T}
+    + \underbrace{V_{\rm local}(r) + V_{\rm H}[\rho] + V_{\rm xc}[\rho]}_{\Vloc\text{ (scalar, on grid)}}
+    + \underbrace{\sum_{I,lm} D^I_{lm}\ket{\beta^I_{lm}}\bra{\beta^I_{lm}}}_{\VNL}.
+  \label{eq:full_H}
+\end{equation}
+The matrix element in the KS basis is:
+\begin{equation}
+  H_{ij} = T_{ij} + \mel{\varphi_i}{\Vloc}{\varphi_j}
+  + \underbrace{\sum_{I,lm} D^I_{lm}\braket{\varphi_i}{\beta^I_{lm}}\braket{\beta^I_{lm}}{\varphi_j}}_{\text{computed by \texttt{AppNls}}}.
+  \label{eq:H_matrix}
+\end{equation}
+\paragraph{Chemistry parallel.}
+This is the real-space analogue of $\mel{\chi_i}{\rm ECP}{\chi_j}$ in a Gaussian
+basis, but evaluated by numerical quadrature on the real-space grid rather than
+analytically.
+
+\subsection{Why \texorpdfstring{$\VNL$}{V\_NL} Modifies the Current Operator}
+\label{sec:pp:current}
+
+\subsubsection{Heisenberg Equation of Motion}
+
+The physical current density operator is the \emph{velocity} operator, defined
+through the Heisenberg equation of motion for the position operator:
+\begin{equation}
+  \hat{v}_\alpha = \frac{\dd \hat{r}_\alpha}{\dd t}
+  = \ii\comm{H}{\hat{r}_\alpha}, \qquad \alpha \in \{x,y,z\}.
+  \label{eq:heisenberg}
+\end{equation}
+Splitting $H = H_{\rm local} + \VNL$:
+
+\paragraph{Local part.}
+Since $\Vloc$ is a multiplicative operator, it commutes with $\hat{r}_\alpha$:
+$\comm{\Vloc}{\hat{r}_\alpha} = 0$.
+The kinetic term gives the familiar result:
+\begin{equation}
+  \ii\comm{T}{\hat{r}_\alpha} = -\ii\partial_\alpha = \hat{p}_\alpha.
+  \label{eq:kin_vel}
+\end{equation}
+
+\paragraph{Nonlocal part---key commutator.}
+The separable $\VNL$ is \emph{not} multiplicative, so it does not commute with
+$\hat{r}_\alpha$:
+\begin{equation}
+  \ii\comm{\VNL}{\hat{r}_\alpha}
+  = \ii\sum_{I,lm} D^I_{lm}\comm{\ket{\beta^I_{lm}}\bra{\beta^I_{lm}}}{\hat{r}_\alpha}.
+  \label{eq:nlpp_comm}
+\end{equation}
+Using the operator identity $[AB, C] = A[B,C] + [A,C]B$:
+\begin{align}
+  \comm{\ket{\beta}\bra{\beta}}{\hat{r}_\alpha}
+  &= \ket{\beta}\bra{\beta}\hat{r}_\alpha - \hat{r}_\alpha\ket{\beta}\bra{\beta} \nonumber \\
+  &= \ket{\beta}\bra{r_\alpha\beta} - \ket{r_\alpha\beta}\bra{\beta},
+  \label{eq:comm_expand}
+\end{align}
+where we defined $\ket{r_\alpha\beta} \equiv \hat{r}_\alpha\ket{\beta}$, i.e.,
+the projector multiplied pointwise by the coordinate $r_\alpha$.
+
+The \emph{full velocity operator} is therefore:
+\begin{equation}
+  \boxed{\hat{v}_\alpha = \hat{p}_\alpha
+  + \ii\sum_{I,lm} D^I_{lm}
+    \Bigl(\ket{\beta^I_{lm}}\bra{r_\alpha\beta^I_{lm}}
+         - \ket{r_\alpha\beta^I_{lm}}\bra{\beta^I_{lm}}\Bigr)}.
+  \label{eq:full_velocity}
+\end{equation}
+
+\subsubsection{Matrix Element of the NL-PP Correction}
+
+Taking the matrix element between KS orbitals $\varphi_i$ and $\varphi_j$:
+\begin{equation}
+  \mel{\varphi_i}{\ii\comm{\VNL}{\hat{r}_\alpha}}{\varphi_j}
+  = \ii\sum_{I,lm} D^I_{lm}
+    \Bigl[
+      \underbrace{\braket{\varphi_i}{\beta^I_{lm}}}_{\text{overlap}}
+      \underbrace{\braket{r_\alpha\beta^I_{lm}}{\varphi_j}}_{\text{coord-weighted proj.}}
+      -
+      \underbrace{\braket{\varphi_i}{r_\alpha\beta^I_{lm}}}_{\text{coord-weighted proj.}}
+      \underbrace{\braket{\beta^I_{lm}}{\varphi_j}}_{\text{overlap}}
+    \Bigr].
+  \label{eq:nlpp_mel}
+\end{equation}
+
+\paragraph{How RMG computes Eq.~(\ref{eq:nlpp_mel}).}
+The key observation is that $\braket{r_\alpha\beta}{\varphi} = \braket{\varphi}{r_\alpha\beta}^*$
+for real $\beta$ and complex $\varphi$.  Both terms therefore involve the
+quantity $\mel{\varphi_i}{r_\alpha\,\delta V_l\,\psiPS}{...}$.
+
+\texttt{AppNls\_0xyz} with direction flag \texttt{ixyz}$=1,2,3$ computes, for
+a block of orbitals $\varphi_j$ (index $j$ from \texttt{st\_start} to
+\texttt{st\_start+this\_block\_size}):
+\begin{equation}
+  \texttt{nv}[r] = \sum_{I,lm} D^I_{lm}\,\beta^I_{lm}(\bm{r})\,r_\alpha
+  \cdot \braket{\beta^I_{lm}}{\varphi_j},
+  \label{eq:appnls0xyz}
+\end{equation}
+i.e., the KB projector $\beta$ weighted by the Cartesian coordinate $r_\alpha$
+and multiplied by the pre-computed overlap $\braket{\beta}{\varphi_j}$.
+
+In \texttt{CurrentNlpp.cpp}, after calling \texttt{AppNls\_0xyz} for each
+direction, a GEMM computes:
+\begin{equation}
+  \texttt{block\_matrix}_\alpha = v_{\rm cell}\,
+  \underbrace{\bigl[\varphi_{\rm block}\bigr]^\dagger}_{\text{bra}} \cdot
+  \underbrace{\texttt{nv}}_{\text{ket}},
+  \label{eq:nlpp_gemm}
+\end{equation}
+which gives $v_{\rm cell}\cdot\mel{\varphi_i}{r_\alpha\,\VNL^\dagger}{\varphi_j}$ for
+the block.  Multiplying by $\ii$ and adding to \texttt{Pxmatrix} accumulates
+the NL-PP correction onto the kinetic-only $P^\alpha$ from \texttt{VecPHmatrix}:
+\begin{lstlisting}[style=cppstyle, caption={Accumulation in CurrentNlpp.cpp (upper triangle)}]
+kptr->Pxmatrix_cpu[...] += I_t * block_matrix_x[...];  // I_t = i
+kptr->Pymatrix_cpu[...] += I_t * block_matrix_y[...];
+kptr->Pzmatrix_cpu[...] += I_t * block_matrix_z[...];
+\end{lstlisting}
+
+\subsubsection{Hermiticity Requirement}
+\label{sec:pp:hermiticity}
+
+The velocity operator $\hat{v}_\alpha$ must be Hermitian ($\hat{v}_\alpha^\dagger = \hat{v}_\alpha$)
+to guarantee that the current $J_\alpha = \operatorname{Re}[\operatorname{Tr}(P\hat{v}_\alpha)] \in \mathbb{R}$.
+
+\paragraph{Kinetic contribution.}
+The gradient operator is anti-Hermitian: $(-\ii\nabla)^\dagger = -\ii\nabla$, so
+$\hat{p}_\alpha = -\ii\partial_\alpha$ is Hermitian.
+In matrix form: $\mel{\varphi_i}{\partial_\alpha}{\varphi_j}^* = -\mel{\varphi_j}{\partial_\alpha}{\varphi_i}$
+(after integration by parts), so $\nabla$ is anti-Hermitian.  Multiplying by $\ii$
+gives a Hermitian matrix.
+
+\paragraph{NL-PP contribution.}
+From Eq.~(\ref{eq:comm_expand}): interchanging $i \leftrightarrow j$ and
+complex-conjugating gives exactly $-1$ times the original expression, confirming
+that $\comm{\VNL}{\hat{r}_\alpha}$ is anti-Hermitian.  Multiplying by $\ii$
+produces a Hermitian contribution to $\hat{v}_\alpha$.
+
+\paragraph{Symmetrization in RMG.}
+\texttt{CurrentNlpp} computes only the \emph{upper triangle} of $P^\alpha$
+(block rows $\geq$ block column for the tiledMM path, or the $(ib,jb)$ block
+structure for ScaLAPACK).  The lower triangle is filled by
+\texttt{MyConj}: $P^\alpha_{ji} = (P^\alpha_{ij})^*$, enforcing the required
+Hermitian symmetry:
+\begin{lstlisting}[style=cppstyle, caption={Hermitian symmetrization in CurrentNlpp.cpp (lower triangle)}]
+kptr->Pxmatrix_cpu[...] += MyConj(I_t * block_matrix_x[...]);
+\end{lstlisting}
+
+\subsection{Comparison: NCPP vs USPP vs PAW}
+\label{sec:pp:uspp}
+
+Although RMG uses NCPP, the reader may encounter USPP or PAW in other codes.
+Table~\ref{tab:pp_comparison} summarizes the key differences relevant for
+RT-TDDFT.
+
+\begin{table}[ht]
+\centering
+\caption{Comparison of pseudopotential types relevant for RT-TDDFT.}
+\label{tab:pp_comparison}
+\begin{tabular}{@{}llll@{}}
+\toprule
+Aspect & NCPP & USPP & PAW \\
+\midrule
+Norm conservation & Yes & No & Implicit (AE) \\
+Augmentation charges & No & Yes ($Q_{ij}$) & Yes (on-site) \\
+Overlap matrix $S$ & $\mathbb{1}$ & $\neq\mathbb{1}$ & $\neq\mathbb{1}$ \\
+von Neumann equation & $\ii\dot{P}=[H,P]$ & $\ii S\dot{P}=[H,P]$ & $\ii S\dot{P}=[H,P]$ \\
+Current correction & $\ii[\VNL,\hat{r}]$ & $+ Q$-augmented & $+$ on-site AE \\
+Chemistry analogue & ECP (approx.) & No direct analogue & No direct analogue \\
+RMG support & \textbf{Yes} & No & No \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{USPP Liouville equation.}
+For USPP the Liouville equation $\ii S\dot{P}=[H,P]$ is structurally identical
+to the \emph{AO-basis equation} familiar from Gaussian codes:
+$\ii S\dot{\sigma} = [F,\sigma]$ where $F$ is the Fock/KS matrix and $\sigma$
+is the AO density matrix.  The key point for the quantum chemist: in
+both cases, $S\neq\mathbb{1}$ forces a more expensive propagator and modifies
+the current.
+
+\subsection{Pseudopotential Contribution to Forces (Ehrenfest Preview)}
+\label{sec:pp:forces}
+
+For completeness---and as a preview of Ehrenfest dynamics---the NL-PP
+contribution to the force on nucleus $I$ along direction $\alpha$ is:
+\begin{equation}
+  F^I_{\alpha,\rm NL} = -\frac{\partial E_{\rm NL}}{\partial R^I_\alpha}
+  = -\sum_{ij} P_{ij}\sum_{lm} D^I_{lm}
+    \Bigl[
+      \mel{\frac{\partial\varphi_i}{\partial R^I_\alpha}}{\beta^I_{lm}}\braket{\beta^I_{lm}}{\varphi_j}
+      + \text{h.c.}
+    \Bigr],
+  \label{eq:nlpp_force}
+\end{equation}
+where the derivative $\partial\beta^I_{lm}/\partial R^I_\alpha$ arises because
+the projector $\beta^I_{lm}(\bm{r}-\bm{R}_I)$ moves with the nucleus.
+In RMG, the nonlocal force contribution is evaluated in \texttt{Force/CorrectForces.cpp}.
+Ehrenfest dynamics will require calling this force routine with the
+\emph{time-dependent} density matrix $P(t)$ at each timestep.
+
+% ============================================================================
+\section{Propagation Algorithm}
+\label{sec:algorithm}
+% ============================================================================
+
+\subsection{Magnus Expansion}
+\label{sec:magnus}
+
+The formal solution to the von Neumann equation Eq.~(\ref{eq:vonneumann}) is
+\begin{equation}
+  P(t+\Delta t) = e^{-\ii\Omega}\,P(t)\,e^{+\ii\Omega},
+\end{equation}
+where $\Omega$ is given by the Magnus expansion~\cite{Magnus1954}:
+\begin{equation}
+  \Omega = \Omega_1 + \Omega_2 + \cdots,
+  \qquad
+  \Omega_1 = \int_t^{t+\Delta t}\!\! H(t')\,\dd t'.
+\end{equation}
+To first order (midpoint rule), $\Omega_1 \approx \tfrac{1}{2}[H(t)+H(t+\Delta t)]\Delta t$.
+\textbf{Key property}: the Magnus propagator is exactly unitary regardless of
+$\Delta t$ (unlike simple Euler integration), guaranteeing conservation of
+particle number and orthonormality.
+
+\subsection{Predictor-Corrector Scheme}
+\label{sec:predictor}
+
+Because $H(t+\Delta t)$ depends on $P(t+\Delta t)$ (via $\rho\to V_{\rm KS}\to H$),
+RMG uses a self-consistent predictor-corrector loop:
+
+\begin{enumerate}[label=\textbf{Step \arabic*.}, leftmargin=*, itemsep=4pt]
+  \item \textbf{Predictor} (linear extrapolation, \texttt{extrapolate\_Hmatrix}):
+    \begin{equation}
+      H_{\rm pred}(t+\Delta t) = 2H(t) - H(t-\Delta t).
+      \label{eq:extrapolate}
+    \end{equation}
+
+  \item \textbf{SCF corrector loop} (convergence when
+    $\|H_{\rm new}-H_{\rm old}\|_\infty < 10^{-7}$):
+    \begin{enumerate}[label=(\alph*), itemsep=2pt]
+      \item \textbf{Magnus operator} (\texttt{magnus}):
+        \begin{equation}
+          \Omega = \tfrac{1}{2}\bigl[H(t) + H_{\rm pred}(t+\Delta t)\bigr]\Delta t.
+          \label{eq:magnus_step}
+        \end{equation}
+      \item \textbf{Propagate density matrix} (\texttt{eldyn\_ort} $\to$ \texttt{commutp}
+        or \texttt{diagev}):
+        \begin{equation}
+          P(t+\Delta t) = e^{-\ii\Omega}P(t)e^{+\ii\Omega}.
+          \label{eq:propagate}
+        \end{equation}
+      \item \textbf{New density} (\texttt{GetNewRho\_rmgtddft}):
+        $\rho(t+\Delta t)$ from $\Delta P = P(t+\Delta t)-\operatorname{diag}(f_i)$.
+      \item \textbf{Update potentials}: $V_{\rm H}$ via Poisson solver,
+        $V_{\rm xc}$ via adiabatic functional.
+      \item \textbf{Update Hamiltonian} (\texttt{HmatrixUpdate}):
+        \begin{equation}
+          H(t+\Delta t) \mathrel{+}= v_{\rm cell}\sum_j\mel{\varphi_i}{\Delta V}{\varphi_j}.
+        \end{equation}
+    \end{enumerate}
+
+  \item \textbf{Advance}: $P(t) \leftarrow P(t+\Delta t)$;
+    $H(t-\Delta t) \leftarrow H(t)$; $H(t) \leftarrow H(t+\Delta t)$.
+\end{enumerate}
+
+\subsection{BCH Propagator (\texttt{commutp})}
+\label{sec:bch}
+
+The Baker-Campbell-Hausdorff (BCH) identity expresses the similarity transform
+in Eq.~(\ref{eq:propagate}) as a nested commutator series:
+\begin{equation}
+  e^{-\ii\Omega}P e^{+\ii\Omega}
+  = \sum_{k=0}^{\infty} \frac{1}{k!}(-\ii)^k\,
+    \underbrace{[\Omega,[\Omega,\cdots[\Omega,P]\cdots]]}_{k\text{ nested commutators}}.
+  \label{eq:bch}
+\end{equation}
+RMG stores $P$ split into real symmetric ($S$) and antisymmetric ($A$) parts:
+$P = S + \ii A$, packed as a single block of size $2N^2$ doubles.  Each
+iteration computes
+\begin{equation}
+  P^{(k)} = P^{(k-1)} + \frac{1}{k}\comm{\Omega}{P^{(k-1)}},
+\end{equation}
+alternating between \texttt{commatr} (real correction to $A$) and
+\texttt{commstr} (imaginary correction to $S$), until $\|P^{(k)}-P^{(k-1)}\|$
+falls below tolerance.
+
+\subsection{Diagonalization Propagator (\texttt{diagev}) --- Alternative}
+\label{sec:diagev}
+
+An alternative propagator (selected by \texttt{Ieldyn=2}) diagonalizes $\Omega$:
+$\Omega = V\,\mathrm{diag}(\varepsilon_k)\,V^\dagger$, then:
+\begin{equation}
+  P(t+\Delta t) = V\,e^{-\ii\,\mathrm{diag}(\varepsilon_k)}\,V^\dagger
+    P(t)\,V\,e^{+\ii\,\mathrm{diag}(\varepsilon_k)}\,V^\dagger.
+\end{equation}
+This is exact but requires a real symmetric $\Omega$ (Gamma-point, real
+orbitals).  For complex k-point Hamiltonians only the BCH propagator is used.
+
+% ============================================================================
+\section{RMG Implementation}
+\label{sec:implementation}
+% ============================================================================
+
+\subsection{Basis, Orbital Storage, and Grid}
+\label{sec:impl:basis}
+
+The ground-state KS orbitals $\{\varphi_j\}$ are stored as real-space grid
+functions on the \emph{coarse grid} (wavefunction grid).  The fine grid (density
+grid) has a higher resolution by the ratio \texttt{default\_FG\_RATIO} in each
+direction.
+
+The real-space integration weight is:
+\begin{equation}
+  v_{\rm cell} = \frac{\Omega_{\rm cell}}{N_x N_y N_z},
+\end{equation}
+where $N_x, N_y, N_z$ are the number of coarse-grid points in each direction.
+All matrix-element GEMMs carry this prefactor.
+
+Template types encode the physics:
+\begin{center}
+\begin{tabular}{@{}lll@{}}
+\toprule
+\texttt{OrbitalType} & \texttt{MatrixType} & Scenario \\
+\midrule
+\texttt{double} & \texttt{double} & $\Gamma$-point + \texttt{EFIELD} \\
+\texttt{double} & \texttt{complex<double>} & $\Gamma$-point + \texttt{VECTOR\_POT} \\
+\texttt{complex<double>} & \texttt{complex<double>} & k-points + \texttt{VECTOR\_POT} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{EFIELD Mode (Finite Systems)}
+\label{sec:impl:efield}
+
+A delta-kick in the length gauge applies:
+\begin{equation}
+  V_{\rm kick}(\bm{r}) = -\bm{E}_0\cdot\bm{r},
+  \qquad
+  H(t=0) \mathrel{+}= \frac{1}{\Delta t}\mel{\varphi_i}{V_{\rm kick}}{\varphi_j},
+\end{equation}
+where the factor $1/\Delta t$ converts the instantaneous kick into a
+finite-amplitude perturbation.  The dipole moment
+$\bm{d}(t) = \int\!\bm{r}\,\rho(\bm{r},t)\,\dd\bm{r}$ is the observable.
+
+\subsection{VECTOR\_POT Mode (Periodic Systems)}
+\label{sec:impl:vp}
+
+\paragraph{Pre-computation (once, at $t=0$).}
+\begin{enumerate}
+  \item \texttt{VecPHmatrix}: compute $P^\alpha_{ij}(\text{KE})$
+    [Eq.~(\ref{eq:Palpha_bloch})] via finite-difference gradient +
+    k-correction.
+  \item \texttt{CurrentNlpp}: add $P^\alpha_{ij}(\VNL)$
+    [Eq.~(\ref{eq:nlpp_mel})] via \texttt{AppNls\_0xyz}.
+  \item Result: \texttt{kptr->Pxmatrix\_cpu}, \texttt{Pymatrix\_cpu},
+    \texttt{Pzmatrix\_cpu} contain the total $P^\alpha$ [Eq.~(\ref{eq:Ptotal})].
+\end{enumerate}
+
+\paragraph{Initial kick at $t=0$.}
+\begin{equation}
+  H(t=0) \mathrel{+}= \sum_\alpha A^\alpha_0\,P^\alpha,
+\end{equation}
+applied to both \texttt{Hmatrix\_0\_cpu} and \texttt{Hmatrix\_m1\_cpu} (guard:
+\texttt{pre\_steps == 0}).
+
+\paragraph{Current observable.}
+At each timestep, for each k-point:
+\begin{equation}
+  J_\alpha(t) = w_k\,\operatorname{Re}\bigl[\operatorname{Tr}(P(t)\cdot P^\alpha)\bigr]
+  = w_k\,\operatorname{Re}\bigl[\texttt{zdotc}(\texttt{Pn0},\texttt{Pxmatrix})\bigr].
+  \label{eq:current_impl}
+\end{equation}
+Brillouin zone average: $J_\alpha = \sum_k J_\alpha^{(k)}$ with MPI reduction
+over \texttt{kpsub\_comm} and \texttt{eldyn\_comm}.
+
+\subsection{Buffer Layout and Aliasing}
+\label{sec:impl:buffers}
+
+\begin{table}[ht]
+\centering
+\caption{Key density-matrix and Hamiltonian buffers in RMG RT-TDDFT.
+  Hmatrix\_m1\_cpu serves three sequential roles within a single timestep.}
+\label{tab:buffers}
+\begin{tabular}{@{}lll@{}}
+\toprule
+Buffer & Size & Role \\
+\midrule
+\texttt{Pn0\_cpu} & $2N^2$ & $P(t)$ (current density matrix) \\
+\texttt{Pn1\_cpu} & $2N^2$ & $P(t+\Delta t)$ (updated each SCF iter) \\
+\texttt{Hmatrix\_0\_cpu} & $N^2$ & $H(t)$ \\
+\texttt{Hmatrix\_m1\_cpu} & $N^2$ & $H(t-\Delta t)$ \textbf{then} $\Omega$ \textbf{then} $\langle\Delta V\rangle$ \\
+\texttt{Hmatrix\_1\_cpu} & $N^2$ & $H_{\rm pred}(t+\Delta t)$ \\
+\texttt{Hmatrix\_cpu} & $N^2$ & Accumulator for $H(t+\Delta t)$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The triple aliasing of \texttt{Hmatrix\_m1\_cpu} is intentional but fragile
+(Gap~\ref{gap:alias}).
+
+% ============================================================================
+\section{Finite vs.\ Periodic: Comparative Summary}
+\label{sec:comparison}
+% ============================================================================
+
+\begin{table}[ht]
+\centering
+\caption{Comparison of the EFIELD (finite) and VECTOR\_POT (periodic) RT-TDDFT
+  modes in RMG\@.}
+\label{tab:comparison}
+\begin{tabular}{@{}lll@{}}
+\toprule
+Aspect & EFIELD (finite) & VECTOR\_POT (periodic) \\
+\midrule
+\texttt{OrbitalType} & \texttt{double} & \texttt{double}/\texttt{complex<double>} \\
+\texttt{MatrixType} & \texttt{double} & \texttt{complex<double>} \\
+GEMM adjoint & \texttt{"t"} (transpose) & \texttt{"c"} (conj.\ transpose) \\
+Gauge & Length: $V=-\bm{E}\cdot\bm{r}$ & Velocity: $H=H_{\rm KS}+\bm{A}\cdot\hat{\bm{p}}$ \\
+Perturbation & $V_{\rm kick}$ on grid & $A_0 P^\alpha$ matrix \\
+Observable & Dipole $\bm{d}(t)$ & Current $J_\alpha(t)$ \\
+k-point sum & N/A (Gamma only) & $\sum_k w_k J^{(k)}_\alpha$ \\
+NL-PP correction & Not needed for dipole & Required for $J$ \\
+Position operator $\hat{r}$ & Well-defined & Ill-defined under PBC \\
+Output file & \texttt{*\_dipole.dat} & \texttt{*\_current.dat} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% ============================================================================
+\section{Known Gaps: Theory vs.\ Implementation}
+\label{sec:gaps}
+% ============================================================================
+
+The following gaps were identified by tracing the C++ source against the
+theoretical formalism.  Each gap is labelled with a severity:
+\textbf{Critical} (gives wrong physics in named scenarios),
+\textbf{Moderate} (limitation or fragility), \textbf{Minor} (cosmetic/documentation).
+
+% -------- GAP-1 --------
+\begin{gapbox}[label=gap:cw]{[GAP-1] CRITICAL --- VECTOR\_POT implements delta-kick only}
+\textbf{Theory:} The velocity-gauge Hamiltonian should evolve as
+$H(t) = H_{\rm KS} + \bm{A}(t)\cdot\hat{\bm{p}}$ with a general $\bm{A}(t)$,
+e.g., $\bm{A}(t)=A_0\cos(\omega t)\hat{\bm{\varepsilon}}$ for a CW laser.
+
+\textbf{Code:} The block that would add $\bm{A}(t)\cos(\omega t)\cdot P^\alpha$
+to $H$ at each timestep is commented out (RmgTddft.cpp, lines 694--701), and
+\texttt{ct.tddft\_frequency} is never used in the propagation loop.
+
+\textbf{Consequence:} Linear-response optical spectra (FT of $J(t)$ after a
+delta-kick) are valid.  CW, pulse, or non-perturbative field simulations are
+not possible.
+
+\textbf{Fix required:} Uncomment and correct the \texttt{daxpy} block that
+adds $A_0\cos(\omega t_{\rm step})\,P^\alpha$ to \texttt{Hmatrix\_0\_cpu} at
+each time step.
+\end{gapbox}
+
+% -------- GAP-2 --------
+\begin{gapboxmod}{[GAP-2] MODERATE --- Diamagnetic current absent}
+\textbf{Theory:} $J_{\rm total} = J_{\rm para} + J_{\rm dia}$, with
+$J_{\rm dia} = -\rho(\bm{r},t)\bm{A}(t)$ needed for gauge invariance under a
+sustained field.
+
+\textbf{Code:} Only $J_{\rm para} = \operatorname{Re}[\operatorname{Tr}(P\cdot P^\alpha)]$
+is computed [Eq.~(\ref{eq:current_impl})].
+
+\textbf{Current status:} Harmless for the delta-kick ($\bm{A}(t)=0$ for $t>0$).
+Must be added before GAP-1 can be fixed.
+\end{gapboxmod}
+
+% -------- GAP-3 --------
+\begin{gapboxmod}[label=gap:A2]{[GAP-3] MODERATE --- $A^2$ term dropped, undocumented}
+\label{gap:A2}
+\textbf{Theory:} The full minimal-coupling Hamiltonian [Eq.~(\ref{eq:minimal_coupling})]
+contains $A^2(t)/2$.
+
+\textbf{Code:} Only the linear term $\bm{A}\cdot\hat{\bm{p}}$ is included.
+No amplitude check enforces the weak-field ($A\ll 1$) regime.
+
+\textbf{Consequence:} The diamagnetic energy shift $A^2\rho/2$ is missing;
+results are physically correct only in the perturbative (linear-response) regime.
+\end{gapboxmod}
+
+% -------- GAP-4 --------
+\begin{gapbox}{[GAP-4] CRITICAL --- Non-collinear spin incomplete in VECTOR\_POT path}
+\textbf{Theory:} For non-collinear spin, $V_{\rm xc}$ is a $2\times2$ matrix in
+spin space with components $(c_x, c_y, c_z)$ (off-diagonal spin terms from the
+Zeeman-like XC field).
+
+\textbf{Code:} \texttt{HmatrixUpdate} uses only the scalar \texttt{vtot} (spin-up
+or spin-down diagonal) in the VECTOR\_POT path.  Two comments labelled
+``noncoll need change'' mark the exact locations in the code.
+
+\textbf{Consequence:} Spin dynamics with the vector potential give a silently
+wrong $H(t)$ --- the XC spin-orbit-like off-diagonal terms are absent.
+
+\textbf{Fix:} Extend \texttt{HmatrixUpdate} to construct the full $2\times2$
+\texttt{vtot} spinor and apply it in the GEMM, analogous to the scalar path.
+\end{gapbox}
+
+% -------- GAP-5 --------
+\begin{gapboxmod}[label=gap:alias]{[GAP-5] MODERATE --- \texttt{Hmatrix\_m1\_cpu} triple aliasing}
+\label{gap:alias}
+Within a single timestep, \texttt{Hmatrix\_m1\_cpu} serves three sequential
+roles: (1) $H(t-\Delta t)$ read by \texttt{extrapolate\_Hmatrix}; (2) $\Omega$
+written by \texttt{magnus}; (3) $\langle\Delta V\rangle$ written by
+\texttt{HmatrixUpdate}.  This is not a current bug---the sequential order is
+correct---but it is a hazard for any future developer who reorders or parallelizes
+these calls.  See Table~\ref{tab:buffers}.
+\end{gapboxmod}
+
+% -------- GAP-6 --------
+\begin{gapboxmin}{[GAP-6] MINOR --- \texttt{Hmatrix\_cpu} implicit accumulation}
+\texttt{Hmatrix\_cpu} is never explicitly reset to $H(t)$ at the start of each
+timestep.  Correctness relies on \texttt{vtot} always containing the
+\emph{incremental} potential change between SCF iterations.  If this convention
+is ever broken (e.g., by resetting \texttt{vtot} to the full potential), the
+accumulated $H$ will be incorrect.
+\end{gapboxmin}
+
+% -------- GAP-7 --------
+\begin{gapboxmod}{[GAP-7] MODERATE --- No mode/boundary-condition guard}
+No assertion or error check prevents the user from selecting
+\texttt{EFIELD} with k-points or \texttt{VECTOR\_POT} with
+\texttt{is\_gamma = true}.  Both combinations produce unphysical results
+silently.  A guard at startup (e.g., in \texttt{RmgTddft.cpp}) should
+enforce the correct pairing.
+\end{gapboxmod}
+
+% -------- GAP-8 --------
+\begin{gapboxmin}{[GAP-8] MINOR --- \texttt{efield\_tddft\_crds} dual meaning}
+In \texttt{EFIELD} mode, \texttt{ct.efield\_tddft\_crds[0,1,2]} is the electric
+field amplitude $E_0\hat{\bm{\varepsilon}}$.  In \texttt{VECTOR\_POT} mode it is
+the vector potential amplitude $A_0\hat{\bm{\varepsilon}}$.  The physical
+relationship $E_0 = A_0\omega$ is nowhere documented in the input handler,
+so a user who sets the same numerical value in both modes applies perturbations
+that differ by a factor $\omega$.
+\end{gapboxmin}
+
+% ============================================================================
+\section{Future Directions}
+\label{sec:future}
+% ============================================================================
+
+\subsection{Sustained Field / CW Laser (fixing GAP-\ref{gap:cw})}
+
+The most important near-term fix is to complete the velocity-gauge time loop by
+un-commenting and correcting the $\bm{A}(t)\cos(\omega t)\cdot P^\alpha$ update.
+This enables:
+\begin{itemize}
+  \item Resonant excitation and Rabi oscillations.
+  \item Non-linear (high-harmonic) response.
+  \item Time-domain pump-probe simulations.
+\end{itemize}
+Adding the diamagnetic current (GAP-2) is a prerequisite.
+
+\subsection{Non-Collinear Spin RT-TDDFT (fixing GAP-4)}
+
+Extending \texttt{HmatrixUpdate} to the full $2\times2$ spin-space Hamiltonian
+enables spin dynamics---the primary scientific goal of the current development
+effort.  The pseudo-spinor orbitals $\Psi_{n} = (\psi_{n\uparrow}, \psi_{n\downarrow})^T$
+carry two-component wavefunctions on the grid; the density matrix becomes a
+$2N\times2N$ block matrix and $P^\alpha$ must be extended accordingly.
+
+\subsection{Ehrenfest Dynamics}
+
+Ehrenfest dynamics couples the electronic $P(t)$ propagation to classical
+nuclear motion:
+\begin{equation}
+  M_I\ddot{\bm{R}}_I = -\nabla_{\bm{R}_I} E[\rho(t)],
+\end{equation}
+where the force includes the time-dependent NL-PP term of
+Eq.~(\ref{eq:nlpp_force}).  The key implementation challenge is updating the
+fixed KS orbital basis $\{\varphi_j\}$ as nuclei move: the projectors $\beta^I_{lm}$
+shift with $\bm{R}_I$, requiring a re-projection at each step or an on-the-fly
+Pulay correction to the force.
+
+\subsection{Spin + Ehrenfest}
+
+The combination of non-collinear spin dynamics and Ehrenfest nuclear motion
+constitutes the full spin-TDDFT + MD target.  The $P^\alpha$ matrices must
+be extended to $2\times2$ spinor blocks, and the force expression must include
+the spin-dependent XC contribution $\partial E_{\rm xc}^{\rm noncoll}/\partial\bm{R}_I$.
+
+% ============================================================================
+% Bibliography
+% ============================================================================
+\bibliographystyle{unsrt}
+\bibliography{rmg_tddft_theory}
+
+\end{document}

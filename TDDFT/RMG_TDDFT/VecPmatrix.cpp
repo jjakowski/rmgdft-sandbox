@@ -46,6 +46,69 @@
 #include "transition.h"
 #include "prototypes_tddft.h"
 
+/*
+ * ============================================================================
+ * VecPHmatrix — Momentum matrix elements for the velocity-gauge perturbation
+ * ============================================================================
+ *
+ * PURPOSE
+ * -------
+ * Computes and stores the matrix representation of the canonical momentum
+ * operator in the basis of ground-state KS orbitals {phi_j}.  These matrix
+ * elements are needed in two places:
+ *
+ *   1. Adding the vector-potential coupling to H at t=0 (the initial kick).
+ *   2. Extracting the paramagnetic current density J(t) at every timestep.
+ *
+ * THEORY: velocity gauge
+ * ----------------------
+ * For periodic solids, the electric field cannot be represented as a scalar
+ * potential V = -e*E*r because the position operator r is not Hermitian
+ * under periodic boundary conditions (PBC).  Instead, the field is coupled
+ * via the vector potential A(t) in the minimal-coupling Hamiltonian:
+ *
+ *   H(t) = (p + A(t))^2 / 2  +  V_KS
+ *        ~ H_KS  +  A(t) · p           [linear in A; A^2 term neglected]
+ *
+ * where A(t) = E_0/omega * cos(omega*t) for a monochromatic field, or
+ *       A(t) = A_0 * delta(t)           for an instantaneous broadband kick.
+ *
+ * WHAT THIS FUNCTION COMPUTES
+ * ---------------------------
+ * The time-independent part of the A(t)·p coupling — the matrix elements of
+ * the momentum operator — split into Cartesian components x, y, z:
+ *
+ *   P^alpha_ij = i * Omega/N * <phi_i | d/dx_alpha | phi_j>
+ *
+ * where Omega/N = vel is the real-space integration weight (unit-cell volume
+ * divided by the number of grid points), and the factor i comes from p = -i*grad.
+ *
+ * For Bloch states phi_{nk}(r) = e^{i k·r} u_{nk}(r), the gradient includes
+ * a k-vector correction (chain rule on the Bloch envelope):
+ *
+ *   grad phi_{nk}(r) = e^{i k·r} [ grad u_{nk}(r) + i*k * u_{nk}(r) ]
+ *
+ * so the full momentum matrix element is:
+ *
+ *   <phi_{mk} | p | phi_{nk}> = <u_{mk} | (-i grad + k) | u_{nk}>
+ *
+ * The gradient term is applied by ApplyGradient (finite-difference stencil on
+ * the real-space grid), and the +ik*psi term is added explicitly at lines
+ * labelled "k-correction" below.
+ *
+ * RESULT
+ * ------
+ * Stored in kptr->Pxmatrix_cpu, Pymatrix_cpu, Pzmatrix_cpu (complex N×N).
+ * Each element carries the extra factor i:
+ *
+ *   P^alpha_ij  =  i * vel * <phi_i | d/dx_alpha + i*k_alpha | phi_j>
+ *
+ * This sign/phase choice means that when the current is computed as
+ *   J_alpha = Re[ Tr( P(t) * P^alpha ) ]
+ * the result is the correct paramagnetic current with the right sign.
+ * See also CurrentNlpp.cpp which adds the nonlocal PP correction to these matrices.
+ * ============================================================================
+ */
 template void VecPHmatrix<double> (Kpoint<double> *kptr, double *efield_tddft, int *desca, int tddft_start_state, int num_states);
 template void VecPHmatrix<std::complex<double>> (Kpoint<std::complex<double>> *kptr, double *efield_tddft, int *desca, int tddft_start_state, int num_states);
 template <typename OrbitalType>
@@ -137,6 +200,11 @@ template <typename OrbitalType>
 
             if(!ct.is_gamma)
             {
+                // k-CORRECTION for Bloch states:
+                // grad phi_nk = e^{ikr}(grad u_nk + ik * u_nk)
+                // ApplyGradient gave the grad u_nk part (in the cell-periodic u);
+                // here we add the +ik * phi_nk term to get the full Bloch gradient.
+                // The factor I_t = i converts from -i*grad to the momentum operator.
                 std::complex<double> *psi_C, *psi_xC, *psi_yC, *psi_zC;
                 psi_C = (std::complex<double> *) psi1;
                 psi_xC = (std::complex<double> *) psi1_x;
@@ -152,6 +220,10 @@ template <typename OrbitalType>
 
         }
 
+        // GEMM: block_matrix_alpha[i,j] = vel * <phi_i | (d/dx_alpha + ik_alpha) phi_j>
+        //   = vel * sum_r  phi_i*(r) * (grad_alpha + ik_alpha) phi_j(r)
+        // The conjugate-transpose "c" on phi_i gives the bra <phi_i|.
+        // After block_reduce: matrix is summed over all real-space MPI domains.
         rmg::gemm(trans_a, trans_n, this_block_size, num_states,  pbasis_noncol, alpha, psi_x, pbasis_noncol, psi_dev,
                 pbasis_noncol, beta, block_matrix_x, this_block_size);
         rmg::block_reduce((double *)block_matrix_x, (size_t)this_block_size * (size_t)num_states * (size_t)factor , pct.grid_comm);
@@ -164,6 +236,9 @@ template <typename OrbitalType>
                 pbasis_noncol, beta, block_matrix_z, this_block_size);
         rmg::block_reduce((double *)block_matrix_z, (size_t)this_block_size * (size_t)num_states * (size_t)factor , pct.grid_comm);
 
+        // Pack into Pxmatrix/Pymatrix/Pzmatrix with the extra factor of i:
+        //   P^alpha_ij = i * vel * <phi_i | d/dx_alpha + ik_alpha | phi_j>
+        // The Hermitian conjugate (lower triangle) is filled as P^alpha_ji = conj(P^alpha_ij).
         //block_matrix to distHij;
         if(ct.tddft_tiledMM)
         {

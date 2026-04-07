@@ -46,6 +46,52 @@
 #include "transition.h"
 #include "prototypes_tddft.h"
 
+/*
+ * ============================================================================
+ * CurrentNlpp — Nonlocal pseudopotential correction to the current operator
+ * ============================================================================
+ *
+ * PURPOSE
+ * -------
+ * Adds the nonlocal pseudopotential (NL-PP) contribution to the momentum
+ * matrix Pxmatrix/Pymatrix/Pzmatrix that was initialized by VecPHmatrix.
+ *
+ * THEORY
+ * ------
+ * With a nonlocal pseudopotential V_NL, the velocity (current) operator is
+ * NOT simply p/m.  The full current operator for the Hamiltonian
+ *
+ *   H = p^2/2 + V_loc + V_NL
+ *
+ * is obtained from the Heisenberg equation of motion for the position:
+ *
+ *   v = dr/dt = i[H, r] = p + i[V_NL, r]
+ *
+ * The second term, i[V_NL, r], is the nonlocal correction.  For a
+ * separable NCPP  V_NL = sum_I sum_lm D_lm |beta_lm><beta_lm|, this gives:
+ *
+ *   <phi_i | i[V_NL, r_alpha] | phi_j>
+ *       = i * sum_I sum_lm D_lm [<phi_i|beta_lm> <beta_lm|r_alpha|phi_j>
+ *                                - <phi_i|r_alpha|beta_lm> <beta_lm|phi_j>]
+ *
+ * In practice this is computed by applying the NL projectors projected
+ * onto each Cartesian direction (AppNls_0xyz with direction flags 1,2,3
+ * for x,y,z), then forming the matrix elements by GEMM against all orbitals.
+ *
+ * RESULT
+ * ------
+ * The += accumulation into Pxmatrix/Pymatrix/Pzmatrix means that after
+ * CurrentNlpp, those matrices contain the TOTAL current operator:
+ *
+ *   P^alpha_ij  (total)  =  P^alpha_ij (kinetic, from VecPHmatrix)
+ *                         + P^alpha_ij (nonlocal PP, from CurrentNlpp)
+ *
+ * These complete matrices are then used for:
+ *   (a) J(t) = Re[Tr(P(t) * P^alpha)]   — current density at each step
+ *   (b) The initial kick H(t=0) += A_0 * eps * P^alpha  (only kinetic part
+ *       from VecPHmatrix is used there; CurrentNlpp affects only J, not H).
+ * ============================================================================
+ */
 template void CurrentNlpp<std::complex<double>> (Kpoint<std::complex<double>> *kptr, int *desca, int tddft_start_state, int num_states);
 template void CurrentNlpp<double> (Kpoint<double> *kptr, int *desca, int tddft_start_state, int num_states);
 template <typename OrbitalType>
@@ -128,6 +174,10 @@ void CurrentNlpp (Kpoint<OrbitalType> *kptr, int *desca, int tddft_start_state, 
         this_block_size = std::min(nb, length_block);
         int st_start = ib *nb + tddft_start_state;
 
+        // Apply NL projectors weighted by the Cartesian coordinate direction:
+        //   AppNls_0xyz(..., direction=1) -> nv = sum_I D_lm <beta_lm|phi_j> * x-component
+        //   direction=2 -> y-component,  direction=3 -> z-component
+        // Result nv[r] represents the action of i[V_NL, r_alpha] on the orbital block.
         AppNls_0xyz(kptr, newsint_local, kptr->Kstates[0].psi, nv, ns, st_start, this_block_size, 1);
         for (int idx = 0; idx < this_block_size * pbasis_noncol; idx++)
         {

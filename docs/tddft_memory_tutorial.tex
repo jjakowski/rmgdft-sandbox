@@ -1,0 +1,2659 @@
+% ============================================================================
+% Memory Effects, Dissipation, and Current Density in TDDFT
+% A Derivation-Based Graduate Tutorial
+% ============================================================================
+% Compile: pdflatex tddft_memory_tutorial && bibtex tddft_memory_tutorial &&
+%          pdflatex tddft_memory_tutorial && pdflatex tddft_memory_tutorial
+% ============================================================================
+\documentclass[12pt,letterpaper]{article}
+
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{hyperref}
+\usepackage{booktabs}
+\usepackage{geometry}
+\usepackage{enumitem}
+\usepackage{tcolorbox}
+\usepackage{bm}
+\usepackage{xcolor}
+\usepackage{mdframed}
+\usepackage{mathtools}
+
+\geometry{margin=1in}
+
+\hypersetup{colorlinks=true,linkcolor=blue!70!black,citecolor=green!50!black}
+
+% ---------- Boxed derivation environment ----------
+\tcbuselibrary{skins,breakable}
+\newtcolorbox{derivbox}[1][]{
+  colback=blue!3!white, colframe=blue!40!black,
+  fonttitle=\bfseries\small, title={Derivation},
+  breakable, #1
+}
+\newtcolorbox{keyresult}[1][]{
+  colback=green!4!white, colframe=green!50!black,
+  fonttitle=\bfseries\small, title={Key Result},
+  breakable, #1
+}
+\newtcolorbox{insight}[1][]{
+  colback=orange!5!white, colframe=orange!60!black,
+  fonttitle=\bfseries\small, title={Physical Insight},
+  breakable, #1
+}
+
+% ---------- Macros ----------
+\newcommand{\bra}[1]{\langle #1 \rvert}
+\newcommand{\ket}[1]{\lvert #1 \rangle}
+\newcommand{\braket}[2]{\langle #1 \vert #2 \rangle}
+\newcommand{\mel}[3]{\langle #1 \vert #2 \vert #3 \rangle}
+\newcommand{\comm}[2]{\left[#1,\,#2\right]}
+\newcommand{\dd}{\mathrm{d}}
+\newcommand{\ii}{\mathrm{i}}
+\newcommand{\Hks}{H_{\mathrm{KS}}}
+\newcommand{\Vxc}{V_{\mathrm{xc}}}
+\newcommand{\fxc}{f_{\mathrm{xc}}}
+\newcommand{\Exc}{E_{\mathrm{xc}}}
+\newcommand{\etal}{\textit{et al.}}
+
+\theoremstyle{definition}
+\newtheorem{theorem}{Theorem}
+\newtheorem{remark}{Remark}
+
+% ============================================================================
+\begin{document}
+
+\title{\Large\bfseries Memory Effects, Dissipation, and Current Density\\
+in Time-Dependent Density Functional Theory\\[6pt]
+\normalsize\textit{A Derivation-Based Graduate Tutorial}}
+
+\author{Notes compiled from discussion --- Jacek Jakowski}
+\date{\today}
+\maketitle
+
+\begin{abstract}
+This tutorial addresses four questions that arise naturally when studying
+RT-TDDFT from a quantum-chemistry perspective:
+(i) what does the adiabatic approximation discard and why finite-order
+time-derivative corrections are insufficient;
+(ii) why a closed unitary quantum system can still exhibit dephasing in
+the one-body density matrix;
+(iii) why double excitations are absent from adiabatic TDDFT and what
+is actually required to recover them;
+(iv) why the charge density alone is insufficient as a basic variable
+for periodic systems and how current-density TDDFT resolves this.
+Each topic is developed through explicit derivations at the level of a
+first-year graduate student in quantum chemistry or condensed-matter physics.
+\end{abstract}
+
+\tableofcontents
+\newpage
+
+% ============================================================================
+\section{Background: The Exact TDDFT Framework}
+\label{sec:background}
+% ============================================================================
+
+We work in atomic units ($\hbar = m_e = e = 1$) throughout.
+The time-dependent Kohn-Sham (TDKS) equations are:
+\begin{equation}
+  \ii\frac{\partial\psi_n}{\partial t} = \Hks[\rho]\,\psi_n,
+  \qquad
+  \Hks = -\tfrac{1}{2}\nabla^2 + V_{\mathrm{ext}} + V_H[\rho] + \Vxc[\rho],
+  \label{eq:tdks}
+\end{equation}
+with electron density $\rho(\bm{r},t) = \sum_n f_n|\psi_n|^2$.
+The \textbf{occupation numbers} $f_n \in \{0,1\}$ (or $\{0,1,2\}$ for
+spin-restricted closed-shell) are set by the \textbf{Aufbau principle}
+at $t=0$: orbitals are filled from lowest to highest KS eigenvalue
+$\epsilon_n$, giving $f_n = 1$ for the $N$ lowest and $f_n = 0$ for
+the rest.
+They are \emph{fixed at their initial values} for all $t>0$: the TDKS
+equations propagate the orbital shapes $\psi_n(\bm{r},t)$ but do not
+change which orbitals are occupied.
+This is why adiabatic TDDFT cannot describe $T_1$ population relaxation
+(Section~\ref{sec:dissipation}) --- the $f_n$ are frozen constants, not
+dynamical variables.
+(Koopmans' theorem connects $\epsilon_n$ to ionisation energies;
+Janak's theorem generalises this to fractional occupations, relevant for
+smearing in metallic systems, but not used in the present tutorial.)
+
+\paragraph{The Runge-Gross theorem.}
+Recall the \textbf{Hohenberg-Kohn (HK) theorem} (1964): for a
+ground-state system, there is a one-to-one mapping between the static
+external potential $V_{\mathrm{ext}}(\bm{r})$ and the ground-state density
+$\rho_0(\bm{r})$.
+Consequently, every ground-state observable is a functional of $\rho_0$
+alone — this is the foundation of ground-state DFT.
+
+Runge and Gross (1984) proved the time-dependent analogue of HK: given a fixed
+initial state $\Psi_0$, there is
+a one-to-one mapping between the time-dependent external potential
+$V_{\mathrm{ext}}(\bm{r},t)$ and the density $\rho(\bm{r},t)$.
+This guarantees the existence of an exact time-dependent XC functional:
+\begin{equation}
+  \Vxc(\bm{r},t) = \Vxc\!\left[\rho(\bm{r}',t');\,t'\leq t\right](\bm{r},t).
+  \label{eq:exact_vxc}
+\end{equation}
+The critical feature of Eq.~(\ref{eq:exact_vxc}) is that $\Vxc$ at time $t$
+is a \emph{functional of the entire density history} from the initial time
+to $t$ --- not just a function of the instantaneous density $\rho(\bm{r},t)$.
+
+\paragraph{The adiabatic approximation defined.}
+The adiabatic approximation replaces the history-dependent functional by
+the ground-state XC functional evaluated at the instantaneous density:
+\begin{equation}
+  \boxed{\Vxc^{\mathrm{ATDDFT}}(\bm{r},t) = \Vxc^{\mathrm{gs}}\!\left[\rho(\cdot,t)\right](\bm{r})}.
+  \label{eq:atddft}
+\end{equation}
+At every timestep, Eq.~(\ref{eq:atddft}) calls the same LDA/GGA routine
+used in a ground-state calculation, passing the instantaneous density.
+The functional has no knowledge that $\rho$ is time-evolving.
+
+% ============================================================================
+\section{Functional Derivatives: A Primer for Quantum Chemists}
+\label{sec:funcderiv}
+% ============================================================================
+
+This section is a self-contained introduction to functional derivatives,
+written for readers comfortable with Gaussian-basis DFT but not variational
+calculus. Every symbol used later in this tutorial---$\Vxc = \delta\Exc/\delta\rho$,
+the XC kernel $\fxc = \delta\Vxc/\delta\rho$, the linear-response equations---is
+a functional derivative. Understanding what these objects \emph{are} makes the
+rest of the theory transparent.
+
+\begin{tcolorbox}[colback=yellow!6!white, colframe=orange!70!black,
+  fonttitle=\bfseries\small, title={Notation: Three Different Uses of $\delta$},
+  breakable]
+The symbol $\delta$ carries three distinct meanings in this section.
+They are easy to tell apart by context, but it is worth listing them
+explicitly before they all appear on the same page.
+
+\medskip
+\begin{tabular}{@{}lll@{}}
+\toprule
+Symbol & Name & What it is \\
+\midrule
+$\dfrac{\delta F}{\delta f(x)}$ & functional derivative
+  & a \emph{function} of $x$; measures sensitivity of $F$ to $f$ at $x$ \\[10pt]
+$\delta(x - x_0)$ & Dirac delta
+  & a \emph{distribution}; zero everywhere except $x_0$, unit integral \\[10pt]
+$\delta f$, $\delta\rho$ & variation
+  & an \emph{infinitesimal perturbation} of the function $f$ or density $\rho$ \\
+\bottomrule
+\end{tabular}
+
+\medskip
+\noindent The functional derivative $\delta F/\delta f(x)$ is defined via an
+integral against a test function $\phi$
+(Eq.~\ref{eq:fd_def} below): it is never a ratio of two $\delta$'s.
+The Dirac delta $\delta(x-x_0)$ appears when that test function is chosen
+to be a spike at a single point (Eq.~\ref{eq:fd_pointwise}).
+A variation $\delta f$ is the perturbation you add to $f$; it plays
+the role of $\phi$ when no specific form is needed.
+\end{tcolorbox}
+
+% ----------------------------------------------------------------------------
+\subsection{What Is a Functional?}
+% ----------------------------------------------------------------------------
+
+In ordinary calculus a \emph{function} maps a number to a number:
+$f : \mathbb{R} \to \mathbb{R}$, e.g.\ $f(x) = x^2$.
+A \emph{functional} maps an entire \emph{function} to a number:
+$F : \{\text{functions}\} \to \mathbb{R}$.
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+Object & Input & Output \\
+\midrule
+Function $f(x)$ & a number $x$ & a number \\
+Functional $F[f]$ & an entire function $f(\cdot)$ & a number \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent The square bracket $F[\,\cdot\,]$ is the conventional notation for a
+functional to distinguish it from a function $f(\,\cdot\,)$.
+
+\paragraph{Examples you already know.}
+\begin{itemize}[leftmargin=*]
+  \item \textbf{Norm}: $\|f\|^2 = \int |f(x)|^2\,\dd x$ --- maps a wavefunction to a
+    real number.
+  \item \textbf{Energy expectation value}: $E[\Psi] = \langle\Psi|H|\Psi\rangle$ ---
+    maps a many-body wavefunction to the energy.
+  \item \textbf{Hartree energy}: $E_H[\rho] = \tfrac{1}{2}\iint
+    \frac{\rho(\bm{r})\,\rho(\bm{r}')}{|\bm{r}-\bm{r}'|}\,\dd^3r\,\dd^3r'$ ---
+    maps the electron density to the classical electrostatic self-energy.
+  \item \textbf{XC energy}: $\Exc[\rho]$ --- maps $\rho$ to a number whose exact
+    form is unknown; approximated by LDA, PBE, etc.
+\end{itemize}
+
+% ----------------------------------------------------------------------------
+\subsection{The Functional Derivative: Intuition First}
+% ----------------------------------------------------------------------------
+
+\paragraph{Analogy with ordinary derivatives.}
+For a function $f(x)$, the derivative $f'(x_0)$ answers:
+\begin{quote}
+  \textit{If I nudge the argument by $\varepsilon$ at the point $x_0$,
+  how much does $f$ change?}
+\end{quote}
+$\delta f = f'(x_0)\,\delta x$.
+
+For a functional $F[f]$, the functional derivative
+$\frac{\delta F}{\delta f(x_0)}$ answers:
+\begin{quote}
+  \textit{If I nudge the input function $f$ by a tiny spike at the
+  single point $x_0$, how much does $F$ change?}
+\end{quote}
+
+\begin{keyresult}[title={The Dirac Delta: Definition and Sifting Property}]
+The \textbf{Dirac delta} $\delta(x - x_0)$ is not a function in the ordinary
+sense but a \emph{distribution} (generalised function) defined by what it does
+inside an integral.  Its two essential properties are:
+\begin{align}
+  \delta(x - x_0) &= 0 \quad \text{for all } x \neq x_0,
+  \label{eq:dirac_zero}\\
+  \int_{-\infty}^{\infty} \delta(x - x_0)\,g(x)\,\dd x &= g(x_0)
+  \quad\text{for any continuous } g.
+  \label{eq:sifting}
+\end{align}
+Equation~(\ref{eq:sifting}) is the \textbf{sifting property}: the delta
+``picks out'' the value of $g$ at the single point $x_0$.
+
+\medskip
+\noindent\textbf{Contrast with the Kronecker delta.}
+The Kronecker delta $\delta_{ij}$ is an ordinary number (0 or 1) that acts on
+discrete indices.  The Dirac delta $\delta(x-x_0)$ is a continuous analogue:
+it is zero everywhere except at one point, but it is normalised so that its
+integral equals 1.  On a grid with spacing $h$, $\delta(x-x_0)\approx \delta_{i,i_0}/h$,
+which recovers the Kronecker delta in the discrete limit.
+
+\medskip
+\noindent\textbf{Intuitive picture.}
+Think of $\delta(x-x_0)$ as the limit of a very narrow, very tall Gaussian:
+$\delta(x-x_0) = \lim_{\sigma\to 0}
+\frac{1}{\sigma\sqrt{2\pi}}\exp\!\bigl[-(x-x_0)^2/2\sigma^2\bigr]$.
+The area under the spike is always 1, but the width shrinks to zero.
+\end{keyresult}
+
+The ``tiny spike at $x_0$'' is mathematically a Dirac delta:
+$f(x) \to f(x) + \varepsilon\,\delta(x - x_0)$.
+This is the infinitesimal perturbation of a function: it leaves $f$
+unchanged everywhere except at $x_0$, where it adds $\varepsilon$.
+
+\paragraph{Gradient analogy.}
+If $F$ depended on a finite set of numbers $(a_1, a_2, \ldots, a_N)$
+instead of on a continuous function $f(x)$, its sensitivity to each
+$a_i$ would be the partial derivative $\partial F/\partial a_i$, and
+the full gradient would be
+$\nabla F = (\partial F/\partial a_1, \ldots, \partial F/\partial a_N)$.
+
+A functional $F[f]$ is the limit $N\to\infty$ of this construction,
+where $a_i \equiv f(x_i)$ are the values of $f$ at a dense grid of
+points. The functional derivative $\delta F/\delta f(x)$ is the
+continuum analogue of the gradient component at grid point $x$:
+
+\begin{equation}
+  \frac{\delta F}{\delta f(x)} \;\longleftrightarrow\;
+  \frac{\partial F}{\partial a_i}\bigg|_{a_i = f(x_i)},
+  \qquad x_i \to x.
+  \label{eq:fd_gradient_analogy}
+\end{equation}
+
+This is not merely suggestive --- it is exact on a discrete grid.
+\begin{derivbox}[title={Proof: functional derivative = partial derivative / grid spacing}]
+Let the grid have $N$ points $x_1,\ldots,x_N$ with uniform spacing $h$,
+so $f$ is represented by the vector $(a_1,\ldots,a_N)$ with $a_i = f(x_i)$.
+A functional $F[f] = \int g(f(x))\,\dd x$ is approximated by
+$F \approx \sum_k g(a_k)\,h$.
+Apply the definition~(\ref{eq:fd_def}) with $\phi(x) = \delta(x-x_i)$
+(a spike at grid point $x_i$, which on the grid acts as a unit vector in
+the $i$-th direction):
+\begin{align}
+  \frac{\delta F}{\delta f(x_i)}
+  &= \lim_{\varepsilon\to 0}
+     \frac{F[\bm{a}+\varepsilon\bm{e}_i] - F[\bm{a}]}{\varepsilon}
+   = \frac{\partial F}{\partial a_i}
+   = h\,g'(a_i).
+\end{align}
+But the definition also requires dividing by the ``volume element'' to
+obtain a density: comparing $\int(\delta F/\delta f(x))\phi(x)\,\dd x$
+with the finite sum $\sum_k (\partial F/\partial a_k)\phi_k$ shows
+that $\delta F/\delta f(x_i) = (\partial F/\partial a_i)/h$.
+
+For the example $F=\sum_k a_k^2 h$:
+$\partial F/\partial a_i = 2a_i h$, so
+$\delta F/\delta f(x_i) = 2a_i h / h = 2a_i = 2f(x_i)$.
+This is exactly the continuum result $\delta F/\delta f(x)=2f(x)$,
+confirmed at grid level.
+\end{derivbox}
+
+% ----------------------------------------------------------------------------
+\subsection{Formal Definition}
+% ----------------------------------------------------------------------------
+
+\begin{keyresult}[title={Definition: Functional Derivative}]
+The functional derivative of $F[f]$ with respect to $f$ at the point
+$x_0$ is defined by:
+\begin{equation}
+  \int \frac{\delta F}{\delta f(x)}\,\phi(x)\,\dd x
+  \;=\;
+  \lim_{\varepsilon\to 0}
+  \frac{F[f + \varepsilon\phi] - F[f]}{\varepsilon}
+  \;\equiv\;
+  \left.\frac{\dd}{\dd\varepsilon}F[f+\varepsilon\phi]\right|_{\varepsilon=0},
+  \label{eq:fd_def}
+\end{equation}
+for all ``\textbf{test functions}'' $\phi$.
+A test function is any well-behaved function used to \emph{probe} the
+sensitivity of $F$ to changes in $f$: it represents the direction in
+function space along which $f$ is perturbed.
+Any choice of $\phi$ gives a valid directional derivative; different
+choices probe different directions.
+In a Gaussian-basis code, the discrete analogue of $\phi$ is a variation
+$\delta P_{\mu\nu}$ of one density-matrix element: perturbing $P_{\mu\nu}$
+by $\varepsilon$ probes the sensitivity of $E[\bm{P}]$ to that element,
+giving $\partial E/\partial P_{\mu\nu}$ --- exactly the matrix-element
+version of the functional derivative.
+Choosing $\phi(x) = \delta(x-x_0)$
+and applying the sifting property~(\ref{eq:sifting}) to the left-hand side:
+\begin{equation}
+  \int \frac{\delta F}{\delta f(x)}\,\delta(x-x_0)\,\dd x
+  = \frac{\delta F}{\delta f(x_0)},
+\end{equation}
+recovers the pointwise version:
+\begin{equation}
+  \frac{\delta F}{\delta f(x_0)}
+  = \left.\frac{\dd}{\dd\varepsilon}F\bigl[f+\varepsilon\,\delta(\cdot-x_0)\bigr]
+    \right|_{\varepsilon=0}.
+  \label{eq:fd_pointwise}
+\end{equation}
+\end{keyresult}
+
+\begin{keyresult}[title={Algorithm: How to Compute a Functional Derivative}]
+Every functional derivative calculation in this tutorial follows the same
+four steps.
+\begin{enumerate}[label=\textbf{Step \arabic*.}, leftmargin=*, itemsep=4pt]
+  \item \textbf{Perturb.}
+    Replace $f \to f + \varepsilon\phi$ in the definition of $F$ and expand
+    to first order in $\varepsilon$, discarding $O(\varepsilon^2)$ terms.
+  \item \textbf{Subtract and divide.}
+    Form $(F[f+\varepsilon\phi] - F[f])/\varepsilon$ and take $\varepsilon\to 0$
+    (equivalently, $\dd/\dd\varepsilon|_{\varepsilon=0}$).
+    The result is a linear functional of $\phi$.
+  \item \textbf{Write as a single integral.}
+    Bring the result into the form $\int (\cdots)\,\phi(x)\,\dd x$,
+    using symmetry of the integration variable or Fubini's theorem
+    (switching order of a double integral) if needed.
+  \item \textbf{Read off the coefficient.}
+    The expression multiplying $\phi(x)$ inside the integral is
+    $\delta F/\delta f(x)$.
+    That is the functional derivative.
+\end{enumerate}
+\noindent This procedure defines the \textbf{Gâteaux derivative} (named after
+René Gâteaux, 1913) --- the functional analogue of the directional derivative
+in ordinary calculus.
+It is a weaker notion than the Fréchet derivative (which requires uniform
+convergence over all directions), but for the smooth, well-behaved functionals
+that arise in DFT the two coincide.
+No topology or functional-analysis background is required; the four-step
+algorithm above is all one ever needs in practice.
+\end{keyresult}
+
+% ----------------------------------------------------------------------------
+\subsection{Worked Example 1 --- A Simple Integral Functional}
+% ----------------------------------------------------------------------------
+
+Let
+\begin{equation}
+  F[f] = \int f(x)^2\,\dd x.
+  \label{eq:ex1_F}
+\end{equation}
+
+\begin{derivbox}
+Perturb $f \to f + \varepsilon\phi$:
+\begin{align}
+  F[f+\varepsilon\phi]
+  &= \int \bigl(f(x)+\varepsilon\phi(x)\bigr)^2\,\dd x \notag\\
+  &= \int f(x)^2\,\dd x
+     + 2\varepsilon\int f(x)\,\phi(x)\,\dd x
+     + \varepsilon^2\int\phi(x)^2\,\dd x.
+\end{align}
+Subtract $F[f]$, divide by $\varepsilon$, and take $\varepsilon\to 0$:
+\begin{equation}
+  \left.\frac{\dd}{\dd\varepsilon}F[f+\varepsilon\phi]\right|_{\varepsilon=0}
+  = 2\int f(x)\,\phi(x)\,\dd x.
+\end{equation}
+Comparing with the definition (\ref{eq:fd_def}),
+the coefficient of $\phi(x)$ in the integrand is $2f(x)$, so:
+\begin{equation}
+  \boxed{\frac{\delta F}{\delta f(x)} = 2f(x).}
+\end{equation}
+\end{derivbox}
+
+\noindent\textbf{Check with ordinary calculus.}
+On a finite grid of $N$ points with spacing $h$,
+$F \approx \sum_i f_i^2\,h$, so $\partial F/\partial f_j = 2f_j\,h$.
+Dividing by $h$ to get the continuum limit gives $2f(x_j)$. Consistent.
+
+% ----------------------------------------------------------------------------
+\subsection{Worked Example 2 --- The Hartree Energy}
+% ----------------------------------------------------------------------------
+
+The Hartree (Coulomb self-interaction) energy is:
+\begin{equation}
+  E_H[\rho] = \frac{1}{2}\iint
+    \frac{\rho(\bm{r})\,\rho(\bm{r}')}{|\bm{r}-\bm{r}'|}
+    \,\dd^3r\,\dd^3r'.
+  \label{eq:hartree}
+\end{equation}
+The factor of $\tfrac{1}{2}$ prevents \textbf{double counting}.
+The integrand $\rho(\bm{r})\rho(\bm{r}')/|\bm{r}-\bm{r}'|$ counts the
+interaction between volume elements at $\bm{r}$ and $\bm{r}'$.
+Because the double integral $\int\!\int\!\dd^3r\,\dd^3r'$ runs over
+all ordered pairs, each unordered pair $\{\bm{r},\bm{r}'\}$ appears
+twice (once as $(\bm{r},\bm{r}')$ and once as $(\bm{r}',\bm{r})$).
+The $\tfrac{1}{2}$ divides by 2 to correct this.
+This is the \emph{nonlocal} functional: $E_H$ depends on $\rho$ at
+\emph{all} pairs of points, not just locally.
+
+\begin{derivbox}
+Perturb $\rho \to \rho + \varepsilon\phi$ and expand the product:
+\begin{align}
+  E_H[\rho+\varepsilon\phi]
+  &= \frac{1}{2}\iint
+    \frac{(\rho(\bm{r})+\varepsilon\phi(\bm{r}))
+          (\rho(\bm{r}')+\varepsilon\phi(\bm{r}'))}
+         {|\bm{r}-\bm{r}'|}
+    \,\dd^3r\,\dd^3r' \notag\\
+  &= E_H[\rho]
+     + \frac{\varepsilon}{2}\iint
+       \frac{\rho(\bm{r}')\,\phi(\bm{r})}{|\bm{r}-\bm{r}'|}
+       \,\dd^3r\,\dd^3r'
+     + \frac{\varepsilon}{2}\iint
+       \frac{\rho(\bm{r})\,\phi(\bm{r}')}{|\bm{r}-\bm{r}'|}
+       \,\dd^3r\,\dd^3r'
+     + O(\varepsilon^2).
+\end{align}
+\textbf{Relabelling dummy variables.}
+In the second $\varepsilon$-linear term, swap the integration variables
+$\bm{r}\leftrightarrow\bm{r}'$ (both are dummy variables of integration;
+$|\bm{r}-\bm{r}'|=|\bm{r}'-\bm{r}|$):
+\begin{equation}
+  \frac{1}{2}\iint\frac{\rho(\bm{r})\,\phi(\bm{r}')}{|\bm{r}-\bm{r}'|}
+  \,\dd^3r\,\dd^3r'
+  \;\overset{\bm{r}\leftrightarrow\bm{r}'}{=}\;
+  \frac{1}{2}\iint\frac{\rho(\bm{r}')\,\phi(\bm{r})}{|\bm{r}-\bm{r}'|}
+  \,\dd^3r\,\dd^3r'.
+\end{equation}
+Both $\varepsilon$-linear terms are now identical; their sum gives a factor
+of 2 that cancels the $\tfrac{1}{2}$:
+\begin{equation}
+  E_H[\rho+\varepsilon\phi]
+  = E_H[\rho]
+    + \varepsilon\iint
+      \frac{\rho(\bm{r}')\,\phi(\bm{r})}{|\bm{r}-\bm{r}'|}
+      \,\dd^3r\,\dd^3r'
+    + O(\varepsilon^2).
+\end{equation}
+\textbf{Fubini's theorem} (switching the order of the $\bm{r}$ and $\bm{r}'$
+integrations, valid here because the integrand is absolutely integrable away
+from the diagonal) lets us write the double integral as an iterated integral
+with the $\bm{r}'$ integration performed first:
+\begin{equation}
+  \left.\frac{\dd}{\dd\varepsilon}E_H[\rho+\varepsilon\phi]\right|_{\varepsilon=0}
+  = \int \phi(\bm{r})
+    \underbrace{\left[\int\frac{\rho(\bm{r}')}{|\bm{r}-\bm{r}'|}\,\dd^3r'\right]}_{V_H(\bm{r})}
+    \,\dd^3r.
+\end{equation}
+The term in brackets is exactly the Hartree potential $V_H(\bm{r})$. So:
+\begin{equation}
+  \boxed{\frac{\delta E_H}{\delta\rho(\bm{r})} = V_H(\bm{r})
+    = \int\frac{\rho(\bm{r}')}{|\bm{r}-\bm{r}'|}\,\dd^3r'.}
+  \label{eq:vh_fd}
+\end{equation}
+\end{derivbox}
+
+\noindent\textbf{Physical meaning.}
+$V_H(\bm{r})$ is the electrostatic potential at $\bm{r}$ due to the
+charge distribution $\rho$. The functional derivative says: if you add
+one electron at $\bm{r}_0$, the electrostatic energy increases by $V_H(\bm{r}_0)$.
+This is exactly the definition of electrostatic potential from classical
+physics.
+
+\begin{insight}
+\textbf{Connection to Gaussian-basis DFT: from $\delta E_H/\delta\rho$ to
+$\partial E_H/\partial P_{\mu\nu}$.}
+In a Gaussian-basis code the electron density is written
+$\rho(\bm{r}) = \sum_{\mu\nu}P_{\mu\nu}\,\chi_\mu(\bm{r})\chi_\nu(\bm{r})$,
+where $P_{\mu\nu}$ is the one-particle density matrix and $\{\chi_\mu\}$ are
+the basis functions.
+The Hartree energy becomes a function of the matrix elements $P_{\mu\nu}$:
+\begin{equation}
+  E_H = \tfrac{1}{2}\sum_{\mu\nu\lambda\sigma}
+        P_{\mu\nu}\,P_{\lambda\sigma}\,(\mu\nu|\lambda\sigma),
+  \label{eq:hartree_gaussian}
+\end{equation}
+where $(\mu\nu|\lambda\sigma)=\iint
+\chi_\mu(\bm{r})\chi_\nu(\bm{r})\,|\bm{r}-\bm{r}'|^{-1}\,
+\chi_\lambda(\bm{r}')\chi_\sigma(\bm{r}')\,\dd^3r\,\dd^3r'$
+is the two-electron repulsion integral (ERI), familiar from Hartree-Fock.
+
+The analogue of $\delta E_H/\delta\rho = V_H$ is the \emph{Coulomb matrix}
+$\bm{G}$, obtained by differentiating with respect to the density matrix:
+\begin{equation}
+  G_{\mu\nu} \equiv \frac{\partial E_H}{\partial P_{\mu\nu}}
+  = \sum_{\lambda\sigma} P_{\lambda\sigma}\,(\mu\nu|\lambda\sigma).
+  \label{eq:G_matrix}
+\end{equation}
+This is a matrix equation ($\bm{G} = \bm{J}[\bm{P}]$ in standard notation).
+The continuous functional derivative $\delta E_H/\delta\rho(\bm{r}) = V_H(\bm{r})$
+and the discrete matrix derivative $\partial E_H/\partial P_{\mu\nu} = G_{\mu\nu}$
+are the same object in two different representations:
+$V_H(\bm{r}) = \sum_{\mu\nu}G_{\mu\nu}\chi_\mu(\bm{r})\chi_\nu(\bm{r})$.
+
+\medskip
+\noindent The real-space grid in RMG plays exactly the role of the Gaussian
+basis: the continuous functional derivative $\delta E_H/\delta\rho(\bm{r}_i)$
+at grid point $\bm{r}_i$ is the grid-point analogue of $G_{\mu\nu}$.
+\end{insight}
+
+\begin{insight}
+The Kohn-Sham equation is derived by requiring that the total energy
+$E[\rho]$ is stationary under variations $\delta\rho$ subject to
+the constraint $\int\rho\,\dd^3r = N$.
+Setting $\delta E/\delta\rho = \mu$ (the chemical potential) gives
+the Euler equation, from which the KS potential emerges as
+$V_\text{KS} = V_\text{ext} + \delta E_H/\delta\rho + \delta\Exc/\delta\rho$.
+Functional derivatives are not a formalism bolted onto DFT --- they
+\emph{define} the KS potential.
+\end{insight}
+
+% ----------------------------------------------------------------------------
+\subsection{Worked Example 3 --- The Bilinear Functional}
+% ----------------------------------------------------------------------------
+
+The Hartree energy is a special case of the \emph{bilinear functional}:
+\begin{equation}
+  F[f] = \iint K(x,y)\,f(x)\,f(y)\,\dd x\,\dd y,
+  \label{eq:bilinear_F}
+\end{equation}
+where $K(x,y)$ is a fixed symmetric kernel, $K(x,y)=K(y,x)$.
+(For Hartree: $f=\rho$, $K(\bm{r},\bm{r}')=\tfrac{1}{2}|\bm{r}-\bm{r}'|^{-1}$.)
+This example is worth working through because its first and second functional
+derivatives appear in three places later in this tutorial: the Hartree potential,
+the Casida coupling matrix, and hybrid XC kernels.
+
+\paragraph{First functional derivative.}
+\begin{derivbox}
+Perturb $f \to f + \varepsilon\phi$:
+\begin{align}
+  F[f+\varepsilon\phi]
+  &= \iint K(x,y)\bigl(f(x)+\varepsilon\phi(x)\bigr)
+                    \bigl(f(y)+\varepsilon\phi(y)\bigr)\,\dd x\,\dd y \notag\\
+  &= F[f]
+     + \varepsilon\iint K(x,y)\,\phi(x)\,f(y)\,\dd x\,\dd y
+     + \varepsilon\iint K(x,y)\,f(x)\,\phi(y)\,\dd x\,\dd y
+     + O(\varepsilon^2).
+\end{align}
+Rename $x\leftrightarrow y$ in the second integral and use $K(y,x)=K(x,y)$:
+both integrals are equal.  Taking $\varepsilon\to 0$:
+\begin{equation}
+  \left.\frac{\dd}{\dd\varepsilon}F[f+\varepsilon\phi]\right|_{\varepsilon=0}
+  = 2\int\phi(x)\underbrace{\left[\int K(x,y)\,f(y)\,\dd y\right]}_{
+    \equiv\,K*f\,(x)}\dd x.
+\end{equation}
+Reading off the coefficient of $\phi(x)$:
+\begin{equation}
+  \boxed{\frac{\delta F}{\delta f(x)} = 2\int K(x,y)\,f(y)\,\dd y.}
+  \label{eq:bilinear_first}
+\end{equation}
+\end{derivbox}
+
+\noindent\textbf{Check against Hartree.}
+With $K(\bm{r},\bm{r}')=\tfrac{1}{2}|\bm{r}-\bm{r}'|^{-1}$, the factor of 2
+cancels the $\tfrac{1}{2}$ and Eq.~(\ref{eq:bilinear_first}) reduces to
+$\delta E_H/\delta\rho(\bm{r}) = \int \rho(\bm{r}')/|\bm{r}-\bm{r}'|\,\dd^3r' = V_H(\bm{r})$,
+consistent with Eq.~(\ref{eq:vh_fd}).
+
+\paragraph{Second functional derivative.}
+Apply Eq.~(\ref{eq:sfd_def}) to $\delta F/\delta f(x) = 2\int K(x,y)f(y)\,\dd y$.
+This is a linear functional of $f$, so the second derivative is simply its
+kernel:
+\begin{derivbox}
+Perturb $f\to f+\varepsilon\,\delta(\cdot-x')$ inside
+$\delta F/\delta f(x) = 2\int K(x,y)f(y)\,\dd y$:
+\begin{align}
+  \frac{\delta}{\delta f(x')}\left[2\int K(x,y)f(y)\,\dd y\right]
+  &= 2\int K(x,y)\,\delta(y-x')\,\dd y \notag\\
+  &= 2K(x,x').
+\end{align}
+Therefore:
+\begin{equation}
+  \boxed{\frac{\delta^2 F}{\delta f(x)\,\delta f(x')} = 2K(x,x').}
+  \label{eq:bilinear_second}
+\end{equation}
+\end{derivbox}
+
+\noindent\textbf{Interpretation.}
+The second functional derivative of a bilinear functional is (twice) the kernel
+itself.  The kernel $K(x,x')$ directly measures the nonlocality of $F$:
+\begin{itemize}[leftmargin=*]
+  \item If $K(x,y)=c\,\delta(x-y)$ (local kernel), $\delta^2F/\delta f^2 = 2c\,\delta(x-x')$
+    --- a diagonal Hessian, like LDA.
+  \item If $K(x,y)=1/|x-y|$ (Coulomb), $\delta^2 F/\delta f^2 = 2/|x-x'|$
+    --- fully nonlocal, like exact exchange.
+\end{itemize}
+
+\begin{insight}
+\textbf{Connection to Casida and hybrid XC.}
+In the Casida linear-response equations (Section~\ref{sec:casida}),
+the coupling matrix element is
+$K_{ia,jb} = \iint\phi_i(\bm{r})\phi_a(\bm{r})
+\left[\frac{1}{|\bm{r}-\bm{r}'|}+\fxc(\bm{r},\bm{r}')\right]
+\phi_j(\bm{r}')\phi_b(\bm{r}')\,\dd^3r\,\dd^3r'$.
+The Coulomb part is structurally $2K(x,x')$ from Eq.~(\ref{eq:bilinear_second})
+with $K = 1/|\bm{r}-\bm{r}'|$ and the density evaluated in MO pairs.
+Adding $\fxc$ is the XC correction to this bilinear structure.
+In hybrid functionals, a fraction $\alpha$ of the exact exchange contributes
+$2\alpha K(\bm{r},\bm{r}')$ with $K=1/2|\bm{r}-\bm{r}'|$ --- again bilinear.
+\end{insight}
+
+% ----------------------------------------------------------------------------
+\subsection{The XC Potential as a Functional Derivative}
+% ----------------------------------------------------------------------------
+
+The total ground-state energy in DFT is decomposed as:
+\begin{equation}
+  E_{\mathrm{tot}}[\rho]
+  = T_s[\rho] + E_{\mathrm{ext}}[\rho] + E_H[\rho] + \Exc[\rho],
+  \label{eq:etot_decomp}
+\end{equation}
+where $T_s[\rho]$ is the kinetic energy of the \emph{non-interacting}
+KS electrons (not the true interacting kinetic energy),
+$E_{\mathrm{ext}}[\rho] = \int V_{\mathrm{ext}}(\bm{r})\rho(\bm{r})\,\dd^3r$
+is the electron-nuclear attraction, and $E_H[\rho]$ is the Hartree
+energy~(\ref{eq:hartree}).
+
+The XC energy $\Exc[\rho]$ is defined as whatever is left over:
+\begin{equation}
+  \Exc[\rho]
+  \equiv E_{\mathrm{tot}}^{\mathrm{exact}}[\rho]
+       - T_s[\rho] - E_{\mathrm{ext}}[\rho] - E_H[\rho].
+  \label{eq:exc_def}
+\end{equation}
+It collects the kinetic correlation (difference between true and
+non-interacting kinetic energies) and all exchange-correlation effects
+beyond the classical Hartree repulsion.
+Its explicit form is unknown, but its functional derivative defines the XC
+potential that appears in the KS equation:
+
+\begin{equation}
+  \boxed{\Vxc(\bm{r}) = \frac{\delta\Exc[\rho]}{\delta\rho(\bm{r})}.}
+  \label{eq:vxc_fd}
+\end{equation}
+
+\paragraph{LDA: functional derivative reduces to an ordinary derivative.}
+In the local density approximation (LDA):
+\begin{equation}
+  \Exc^{\mathrm{LDA}}[\rho] = \int \varepsilon_{\mathrm{xc}}\!\left(\rho(\bm{r})\right)
+    \rho(\bm{r})\,\dd^3r,
+  \label{eq:exc_lda}
+\end{equation}
+where $\varepsilon_{\mathrm{xc}}(\rho)$ is the XC energy per particle of a
+\emph{uniform} electron gas at density $\rho$.
+The density of the uniform gas is conveniently parametrised by the
+\textbf{Wigner-Seitz radius} $r_s = (3/4\pi\rho)^{1/3}$ (in bohr),
+the radius of the sphere containing one electron on average.
+For real materials $r_s \approx 2$--$6\,a_0$ (metals: $r_s\approx2$--$3$;
+valence electrons in atoms: $r_s\approx 3$--$6$).
+The exact $\varepsilon_{\mathrm{xc}}(r_s)$ is known from
+\textbf{quantum Monte Carlo} (Ceperley and Alder, 1980) and fitted to
+analytic forms: the \textbf{VWN} (Vosko-Wilk-Nusair) parameterization
+is standard in most codes, giving $\varepsilon_{\mathrm{xc}}$ as a
+function of $r_s$ with both exchange ($\propto r_s^{-1}$, Dirac 1930)
+and correlation (QMC) contributions.
+Because each point $\bm{r}$ contributes independently (no nonlocal coupling),
+the functional derivative reduces to an ordinary derivative of the integrand
+with respect to $\rho$:
+
+\begin{derivbox}
+Perturb $\rho\to\rho+\varepsilon\phi$:
+\begin{align}
+  \Exc^{\mathrm{LDA}}[\rho+\varepsilon\phi]
+  &= \int \varepsilon_{\mathrm{xc}}\!\left(\rho(\bm{r})+\varepsilon\phi(\bm{r})\right)
+    \bigl(\rho(\bm{r})+\varepsilon\phi(\bm{r})\bigr)\,\dd^3r \notag\\
+  &= \int
+    \Bigl[\varepsilon_{\mathrm{xc}}(\rho)
+    + \varepsilon\phi\,\varepsilon_{\mathrm{xc}}'(\rho)
+    + O(\varepsilon^2)\Bigr]
+    \bigl[\rho + \varepsilon\phi\bigr]\,\dd^3r \notag\\
+  &= \Exc^{\mathrm{LDA}}[\rho]
+    + \varepsilon\int\phi(\bm{r})
+      \underbrace{\left[\varepsilon_{\mathrm{xc}}(\rho)
+        + \rho\,\varepsilon_{\mathrm{xc}}'(\rho)\right]}_{
+        = \dd[\rho\,\varepsilon_{\mathrm{xc}}]/\dd\rho}
+      \,\dd^3r + O(\varepsilon^2).
+\end{align}
+Reading off the coefficient of $\phi(\bm{r})$:
+\begin{equation}
+  \boxed{\Vxc^{\mathrm{LDA}}(\bm{r})
+    = \frac{\delta\Exc^{\mathrm{LDA}}}{\delta\rho(\bm{r})}
+    = \frac{\dd\bigl[\rho\,\varepsilon_{\mathrm{xc}}(\rho)\bigr]}{\dd\rho}
+    \bigg|_{\rho = \rho(\bm{r})}.}
+  \label{eq:vxc_lda}
+\end{equation}
+\end{derivbox}
+
+\noindent\textbf{Key message.}
+For LDA, the functional derivative is an ordinary derivative of the integrand
+because LDA is \emph{local in space}: the XC energy density at $\bm{r}$
+depends only on $\rho(\bm{r})$, not on $\rho(\bm{r}')$ at any other point.
+For GGAs the same procedure applies but one must integrate by parts
+because $\Exc^{\mathrm{GGA}}$ depends on $|\nabla\rho|$ as well.
+Here is the essential step.
+A GGA energy density has the form
+$\varepsilon_{\mathrm{xc}}(\rho,|\nabla\rho|)$, so:
+\begin{equation}
+  \Exc^{\mathrm{GGA}}[\rho]
+  = \int \varepsilon_{\mathrm{xc}}\!\bigl(\rho(\bm{r}),|\nabla\rho(\bm{r})|\bigr)
+    \,\rho(\bm{r})\,\dd^3r.
+\end{equation}
+Perturbing $\rho\to\rho+\varepsilon\phi$ generates a term
+$\varepsilon_{\mathrm{xc},s}\,(\nabla\rho\cdot\nabla\phi)/|\nabla\rho|$
+(where $\varepsilon_{\mathrm{xc},s} = \partial(\rho\varepsilon_{\mathrm{xc}})/\partial s$,
+$s=|\nabla\rho|$) that contains $\nabla\phi$ rather than $\phi$.
+To read off the coefficient of $\phi$ one integrates by parts,
+using $\int f\,\nabla\phi\,\dd^3r = -\int(\nabla f)\phi\,\dd^3r$
+(boundary term vanishes for localised densities):
+\begin{equation}
+  \Vxc^{\mathrm{GGA}}(\bm{r})
+  = \frac{\partial(\rho\,\varepsilon_{\mathrm{xc}})}{\partial\rho}
+  - \nabla\cdot\left[
+      \frac{\partial(\rho\,\varepsilon_{\mathrm{xc}})}{\partial|\nabla\rho|}
+      \frac{\nabla\rho}{|\nabla\rho|}
+    \right].
+  \label{eq:vxc_gga}
+\end{equation}
+The second term is the gradient correction absent from LDA.
+In practice, codes evaluate both terms on the quadrature grid via
+automatic differentiation or analytical GGA implementations.
+
+\begin{insight}
+\textbf{How $V_\text{xc}^\text{LDA}$ enters the KS matrix in a Gaussian-basis code.}
+$V_\text{xc}^\text{LDA}(\bm{r}) = \dd[\rho\varepsilon_{\rm xc}]/\dd\rho|_{\rho(\bm{r})}$
+is a \emph{multiplicative} (local) potential: it is just a number at each
+point $\bm{r}$, not an integral operator.
+In a Gaussian basis $\{\chi_\mu\}$, it enters the KS Fock matrix via:
+\begin{equation}
+  (V_{\rm xc})_{\mu\nu}
+  = \int \chi_\mu(\bm{r})\,V_\text{xc}^{\rm LDA}(\bm{r})\,\chi_\nu(\bm{r})
+    \,\dd^3r
+  \approx \sum_g w_g\,\chi_\mu(\bm{r}_g)\,V_\text{xc}^{\rm LDA}(\rho(\bm{r}_g))
+    \,\chi_\nu(\bm{r}_g),
+  \label{eq:vxc_matrix}
+\end{equation}
+where $\{(\bm{r}_g, w_g)\}$ is a numerical quadrature grid (e.g.\ Becke
+grid in molecular codes, FFT grid in plane-wave codes).
+This is the computational realization of Eq.~(\ref{eq:vxc_lda}): the
+functional derivative is evaluated at each grid point as an ordinary
+number, then integrated against basis-function pairs.
+
+In RMG (real-space grid), each grid point \emph{is} a quadrature point,
+so the sum over $g$ is identical to the matrix element:
+$(V_{\rm xc})_{ij} = \sum_g w_g\,\phi_i(\bm{r}_g)\,V_\text{xc}(\bm{r}_g)\,\phi_j(\bm{r}_g)$.
+The two codes differ only in the basis set, not in how $V_\text{xc}$ is applied.
+\end{insight}
+
+% ----------------------------------------------------------------------------
+\subsection{The Second Functional Derivative and the XC Kernel}
+% ----------------------------------------------------------------------------
+
+Just as ordinary second derivatives $f''(x) = \dd^2f/\dd x^2$ measure the
+\emph{curvature} of $f$, the second functional derivative
+$\delta^2 F/\delta f(x)\,\delta f(x')$ measures the \emph{nonlocal curvature}
+of a functional.
+
+\paragraph{Definition.}
+The second functional derivative is defined iteratively: differentiate
+$\delta F/\delta f(x)$ --- which is itself a functional of $f$ --- with
+respect to $f$ at a second point $x'$:
+\begin{equation}
+  \frac{\delta^2 F}{\delta f(x)\,\delta f(x')}
+  \;=\;
+  \frac{\delta}{\delta f(x')}
+  \left[\frac{\delta F}{\delta f(x)}\right].
+  \label{eq:sfd_def}
+\end{equation}
+
+\paragraph{Gradient analogy.}
+On a finite grid, the first derivative is the gradient vector
+$g_i = \partial F/\partial a_i$.
+The second functional derivative is the \emph{Hessian matrix}:
+\begin{equation}
+  \frac{\delta^2 F}{\delta f(x)\,\delta f(x')}
+  \;\longleftrightarrow\;
+  H_{ij} = \frac{\partial^2 F}{\partial a_i\,\partial a_j}.
+  \label{eq:sfd_hessian}
+\end{equation}
+The Hessian $H_{ij}$ tells you how the gradient component at grid point $i$
+changes when you change the value at grid point $j$.
+The second functional derivative $\delta^2 F/\delta f(x)\,\delta f(x')$ is
+the continuum limit: how the ``gradient'' $\delta F/\delta f(x)$ changes when
+$f$ is nudged at a different point $x'$.
+
+\paragraph{Physical meaning for DFT.}
+For the XC energy, the second functional derivative is the \emph{XC kernel}:
+\begin{equation}
+  \fxc^{\mathrm{gs}}(\bm{r},\bm{r}')
+  = \frac{\delta^2\Exc}{\delta\rho(\bm{r})\,\delta\rho(\bm{r}')}
+  = \frac{\delta\Vxc(\bm{r})}{\delta\rho(\bm{r}')}.
+  \label{eq:fxc_kernel_primer}
+\end{equation}
+
+\noindent\textbf{Reading this equation:}
+$\fxc(\bm{r},\bm{r}')$ tells you how much the XC potential at point $\bm{r}$
+changes when the electron density is nudged by a tiny amount at the
+\emph{different} point $\bm{r}'$.
+If $\bm{r}\neq\bm{r}'$, this measures the \emph{spatial nonlocality} of the XC
+interaction: an electron added at $\bm{r}'$ ``feels'' the XC environment change
+at $\bm{r}$.
+
+\paragraph{Worked example: second derivative of $F[f]=\int f^2\,\dd x$.}
+We already know from Worked Example~1 that $\delta F/\delta f(x) = 2f(x)$.
+Apply the definition~(\ref{eq:sfd_def}): differentiate $2f(x)$ --- which is
+a local functional of $f$ --- with respect to $f$ at the second point $x'$.
+
+\begin{derivbox}
+By the composite chain rule~(\ref{eq:chain_rule_local}) with $g(f) = 2f$
+and $g'(f) = 2$:
+\begin{equation}
+  \frac{\delta^2 F}{\delta f(x)\,\delta f(x')}
+  = \frac{\delta}{\delta f(x')}\bigl[2f(x)\bigr]
+  = 2\,\delta(x - x').
+  \label{eq:sfd_example}
+\end{equation}
+\textbf{Grid check.}
+On a grid with spacing $h$, $F \approx \sum_i f_i^2 h$, so
+$\partial F/\partial f_i = 2f_i h$ and
+$\partial^2 F/\partial f_i\,\partial f_j = 2h\,\delta_{ij}$.
+Dividing by $h^2$ to convert two grid-value derivatives to continuum:
+$2h\,\delta_{ij}/h^2 = 2\delta_{ij}/h \to 2\delta(x-x')$ as $h\to 0$.
+Consistent.
+\end{derivbox}
+
+\noindent\textbf{Physical meaning of the result.}
+The Hessian of $F[f]=\int f^2\,\dd x$ is \emph{diagonal} in the continuum
+sense: nudging $f$ at $x'$ only changes the gradient $\delta F/\delta f(x)$
+at the \emph{same} point $x = x'$, by the amount $2$.
+A nonlocal functional would have off-diagonal structure: nudging at $x'$
+would affect the gradient at distant $x\neq x'$.
+For DFT: LDA is diagonal ($\fxc \propto \delta(\bm{r}-\bm{r}')$);
+hybrid functionals and exact exchange are off-diagonal.
+
+\begin{keyresult}[title={Why $\fxc$ Controls Linear Response}]
+Suppose the system is in its ground state and is then perturbed by
+$\delta V_\text{ext}(\bm{r},\omega)$.
+The induced density change is:
+\begin{equation}
+  \delta\rho(\bm{r},\omega)
+  = \int \chi(\bm{r},\bm{r}',\omega)\,\delta V_\text{ext}(\bm{r}',\omega)\,\dd^3r',
+  \label{eq:chi_def}
+\end{equation}
+where $\chi$ is the interacting density-response function.
+
+The key idea is that the KS electrons respond to the \emph{total} effective
+potential $V_\text{eff} = V_\text{ext} + V_H + V_\text{xc}$, not just
+$V_\text{ext}$ alone.  Because $V_H$ and $V_\text{xc}$ themselves depend on
+$\delta\rho$, the perturbation is self-consistently amplified.
+Writing $\delta V_\text{eff} = \delta V_\text{ext} + (1/|\bm{r}-\bm{r}'| + \fxc)\delta\rho$
+and using $\delta\rho = \chi_s\,\delta V_\text{eff}$ (KS electrons respond
+to $V_\text{eff}$) gives a self-consistent equation for $\delta\rho$.
+Substituting $\chi\,\delta V_\text{ext} \equiv \delta\rho$ to eliminate
+$\delta V_\text{ext}$ yields the Dyson equation for the interacting response
+$\chi$ in terms of the non-interacting KS response $\chi_s$:
+\begin{equation}
+  \chi(\bm{r},\bm{r}',\omega) = \chi_s(\bm{r},\bm{r}',\omega)
+  + \iint \chi_s(\bm{r},\bm{r}'',\omega)
+    \left[\frac{1}{|\bm{r}''-\bm{r}'''|}
+    + \fxc(\bm{r}'',\bm{r}''',\omega)\right]
+    \chi(\bm{r}''',\bm{r}',\omega)\,\dd^3r''\,\dd^3r'''.
+  \label{eq:dyson}
+\end{equation}
+The XC kernel $\fxc$ enters as the \emph{exchange-correlation contribution
+to the effective screening}.
+In the adiabatic approximation, $\fxc(\omega) = \fxc^{\mathrm{gs}}$
+is frequency-independent.
+\end{keyresult}
+
+\begin{keyresult}[title={Composite Chain Rule for Local Functionals}]
+Let $g(\rho)$ be an ordinary differentiable function of a real variable, and
+define the functional $G[\rho]$ by pointwise evaluation:
+$G[\rho](\bm{r}) \equiv g\!\left(\rho(\bm{r})\right)$.
+Then:
+\begin{equation}
+  \frac{\delta G[\rho](\bm{r})}{\delta\rho(\bm{r}')}
+  = g'\!\left(\rho(\bm{r})\right)\,\delta(\bm{r}-\bm{r}').
+  \label{eq:chain_rule_local}
+\end{equation}
+\begin{derivbox}[title={Proof}]
+Perturb $\rho \to \rho + \varepsilon\,\delta(\cdot - \bm{r}')$ (a spike at $\bm{r}'$):
+\begin{equation}
+  G[\rho + \varepsilon\,\delta(\cdot-\bm{r}')\,](\bm{r})
+  = g\!\left(\rho(\bm{r}) + \varepsilon\,\delta(\bm{r}-\bm{r}')\right).
+\end{equation}
+Taylor-expand $g$ to first order in $\varepsilon$:
+\begin{equation}
+  = g\!\left(\rho(\bm{r})\right)
+    + \varepsilon\,g'\!\left(\rho(\bm{r})\right)\,\delta(\bm{r}-\bm{r}')
+    + O(\varepsilon^2).
+\end{equation}
+Subtract $G[\rho](\bm{r})$, divide by $\varepsilon$, take $\varepsilon\to 0$:
+\begin{equation}
+  \frac{\delta G[\rho](\bm{r})}{\delta\rho(\bm{r}')}
+  = g'\!\left(\rho(\bm{r})\right)\,\delta(\bm{r}-\bm{r}'). \qquad\square
+\end{equation}
+\end{derivbox}
+\noindent\textbf{Interpretation.}
+Because $g$ acts locally (it only sees $\rho(\bm{r})$, not $\rho$ at any other
+point), nudging the density at $\bm{r}'$ can only affect $G(\bm{r})$ when
+$\bm{r}' = \bm{r}$.  The Dirac delta enforces this: the sensitivity is
+$g'(\rho(\bm{r}))$ at $\bm{r}' = \bm{r}$ and zero everywhere else.
+This is precisely why LDA produces a spatially local kernel.
+\end{keyresult}
+
+\paragraph{Computing $\fxc$ for LDA.}
+Since $\Vxc^{\mathrm{LDA}}(\bm{r}) = v_\text{xc}(\rho(\bm{r}))$ is a local function
+of $\rho$, Eq.~(\ref{eq:chain_rule_local}) applies with $g = v_\text{xc}$:
+\begin{derivbox}
+\begin{align}
+  \fxc^{\mathrm{LDA}}(\bm{r},\bm{r}')
+  &= \frac{\delta\Vxc^{\mathrm{LDA}}(\bm{r})}{\delta\rho(\bm{r}')} \notag\\
+  &= \frac{\delta}{\delta\rho(\bm{r}')}\left[
+    \frac{\dd[\rho\,\varepsilon_{\mathrm{xc}}(\rho)]}{\dd\rho}
+    \bigg|_{\rho(\bm{r})}
+    \right] \notag\\
+  &\overset{(\ref{eq:chain_rule_local})}{=}
+    \frac{\dd^2[\rho\,\varepsilon_{\mathrm{xc}}(\rho)]}{\dd\rho^2}
+    \bigg|_{\rho(\bm{r})}
+    \cdot\delta(\bm{r}-\bm{r}').
+  \label{eq:fxc_lda_full}
+\end{align}
+The middle line identifies $g = \dd[\rho\varepsilon_{\mathrm{xc}}]/\dd\rho$,
+an ordinary function of $\rho$; the chain rule then supplies the factor
+$g' = \dd^2[\rho\varepsilon_{\mathrm{xc}}]/\dd\rho^2$ multiplied by
+$\delta(\bm{r}-\bm{r}')$.
+\end{derivbox}
+
+\noindent The delta function $\delta(\bm{r}-\bm{r}')$ encodes the fact that
+LDA is \emph{spatially local}: nudging the density at $\bm{r}'$ only changes
+$\Vxc$ at that same point $\bm{r}' = \bm{r}$.
+A nonlocal functional (e.g.\ a hybrid with exact exchange) would produce a
+kernel that is nonzero for $\bm{r}\neq\bm{r}'$.
+
+% ----------------------------------------------------------------------------
+\subsection{Summary Table: Analogy Between Ordinary and Functional Calculus}
+% ----------------------------------------------------------------------------
+
+\begin{center}
+\renewcommand{\arraystretch}{1.5}
+\begin{tabular}{lll}
+\toprule
+\textbf{Ordinary calculus} & & \textbf{Functional calculus} \\
+\midrule
+Function $f(x):\mathbb{R}\to\mathbb{R}$ & $\longleftrightarrow$ &
+  Functional $F[f]:\{\text{functions}\}\to\mathbb{R}$ \\
+Derivative $f'(x_0)$ & $\longleftrightarrow$ &
+  Functional deriv.\ $\delta F/\delta f(x_0)$ \\
+Gradient $\partial F/\partial a_i$ & $\longleftrightarrow$ &
+  $\delta F/\delta f(x)$ at continuum point $x$ \\
+Hessian $\partial^2 F/\partial a_i\partial a_j$ & $\longleftrightarrow$ &
+  $\delta^2 F/\delta f(x)\,\delta f(x')$ \\
+Chain rule: $\dd F/\dd x = \sum_i (\partial F/\partial a_i)(\dd a_i/\dd x)$ &
+  $\longleftrightarrow$ &
+  $\delta F/\delta g(y) = \int (\delta F/\delta f(x))(\delta f(x)/\delta g(y))\,\dd x$ \\
+Local function: $F(a_i)$ depends only on $a_i$ & $\longleftrightarrow$ &
+  Local functional: $F[f]$ at $x$ depends only on $f(x)$ (e.g.\ LDA) \\
+$\partial^2 F/\partial a_i\partial a_j = 0$ for $i\neq j$ (diagonal Hessian) &
+  $\longleftrightarrow$ &
+  $\fxc^{\mathrm{LDA}}(\bm{r},\bm{r}') \propto \delta(\bm{r}-\bm{r}')$ \\
+\bottomrule
+\end{tabular}
+\renewcommand{\arraystretch}{1}
+\end{center}
+
+\paragraph{The functional chain rule: when does it arise?}
+The chain rule row in the table applies whenever one functional depends on
+another.
+$f$ is a functional of $g$ when $f[g]$ maps functions $g$ to functions $f$:
+each value $f(x)$ is determined by the entire function $g(\cdot)$, not just
+$g$ at a single point.
+
+\textbf{When this arises in DFT.}
+The density $\rho$ is a functional of the external potential $V_\text{ext}$
+(via the ground-state KS equations), so any functional of $\rho$ is
+implicitly a functional of $V_\text{ext}$.
+The chain rule then relates $\delta F/\delta V_\text{ext}$ to
+$\delta F/\delta\rho$ and $\delta\rho/\delta V_\text{ext} \equiv \chi_s$
+(the KS response function).
+
+\textbf{Concrete example.}
+Let $f(x) = \int K(x,y)\,g(y)\,\dd y$ (a linear transform of $g$) and
+$F[f] = \int f(x)^2\,\dd x$.
+We know $\delta F/\delta f(x) = 2f(x)$ and
+$\delta f(x)/\delta g(y) = K(x,y)$.
+The chain rule gives:
+\begin{equation}
+  \frac{\delta F}{\delta g(y)}
+  = \int \frac{\delta F}{\delta f(x)}\,\frac{\delta f(x)}{\delta g(y)}\,\dd x
+  = \int 2f(x)\,K(x,y)\,\dd x
+  = 2\int K(x,y)\,f(x)\,\dd x.
+  \label{eq:chain_rule_example}
+\end{equation}
+\textbf{Check by direct calculation.}
+$F[g] = \int\!\bigl(\int K(x,y)g(y)\,\dd y\bigr)^2\!\dd x$.
+Perturb $g\to g+\varepsilon\phi$ and take $\varepsilon\to 0$:
+$\delta F/\delta g(y) = 2\int K(x,y)f(x)\,\dd x$. Consistent. $\checkmark$
+
+\begin{insight}
+\textbf{Why $\fxc^{\mathrm{LDA}}$ is a delta function in space but not in time
+(for TDDFT).}
+Spatially, LDA is local: $\Vxc(\bm{r})$ depends only on $\rho(\bm{r})$,
+not on $\rho(\bm{r}')$ at other points.
+This makes $\delta\Vxc(\bm{r})/\delta\rho(\bm{r}') \propto \delta(\bm{r}-\bm{r}')$.
+The adiabatic approximation further makes it a delta function \emph{in time}:
+$\fxc(\bm{r},\bm{r}',t-t') = \fxc^{\mathrm{gs}}(\bm{r},\bm{r}')\,\delta(t-t')$.
+Both delta functions together say:
+the XC response has zero range in space and zero memory in time.
+This is what Section~\ref{sec:memory} now analyzes in detail.
+\end{insight}
+
+% ============================================================================
+\section{Memory: What Is Discarded and Why Derivatives Are Insufficient}
+\label{sec:memory}
+% ============================================================================
+
+\subsection{Memory as a Convolution Integral}
+
+\begin{keyresult}[title={Functional Taylor Expansion}]
+Any sufficiently smooth functional $F[f]$ can be expanded around a
+reference $f_0$ in powers of the deviation $\delta f = f - f_0$:
+\begin{equation}
+  F[f_0 + \delta f]
+  = F[f_0]
+    + \int \frac{\delta F}{\delta f(x)}\bigg|_{f_0}\!\!\delta f(x)\,\dd x
+    + \frac{1}{2}\iint
+        \frac{\delta^2 F}{\delta f(x)\,\delta f(x')}\bigg|_{f_0}\!\!
+        \delta f(x)\,\delta f(x')\,\dd x\,\dd x'
+    + \cdots
+  \label{eq:func_taylor}
+\end{equation}
+This is the functional analogue of the ordinary Taylor series
+$F(x_0+\delta x) = F(x_0) + F'(x_0)\delta x + \tfrac{1}{2}F''(x_0)(\delta x)^2 + \cdots$,
+with the sum over discrete terms replaced by integrals over continuous variables.
+Truncating at first order gives the \textbf{linear response} approximation:
+\begin{equation}
+  \delta F \equiv F[f_0+\delta f] - F[f_0]
+  \approx \int \frac{\delta F}{\delta f(x)}\bigg|_{f_0}\!\!\delta f(x)\,\dd x.
+  \label{eq:linear_response}
+\end{equation}
+\end{keyresult}
+
+To see concretely what ``memory'' means, linearize $\Vxc$ around a
+reference density $\rho_0$ using Eq.~(\ref{eq:linear_response}). For a small perturbation
+$\delta\rho(\bm{r},t)$:
+\begin{equation}
+  \delta\Vxc(\bm{r},t)
+  = \int_0^t\!\dd t'\!\int\!\dd^3r'\;
+    \underbrace{\frac{\delta\Vxc(\bm{r},t)}{\delta\rho(\bm{r}',t')}}_{\displaystyle\fxc(\bm{r},\bm{r}',t-t')}
+    \delta\rho(\bm{r}',t').
+  \label{eq:fxc_def}
+\end{equation}
+The quantity $\fxc(\bm{r},\bm{r}',\tau)$ is the \emph{XC kernel}.
+\textbf{It is exactly the second functional derivative of the XC energy
+computed in Section~\ref{sec:funcderiv}}, now promoted to a time-dependent
+object:
+\begin{equation}
+  \fxc(\bm{r},\bm{r}',t-t')
+  = \frac{\delta\Vxc(\bm{r},t)}{\delta\rho(\bm{r}',t')}
+  = \frac{\delta^2\Exc[\rho]}{\delta\rho(\bm{r},t)\,\delta\rho(\bm{r}',t')}.
+  \label{eq:fxc_is_sfd}
+\end{equation}
+In the ground-state (static) limit $t\to t'$, this reduces to
+$\fxc^{\rm gs}(\bm{r},\bm{r}') = \delta^2\Exc/\delta\rho(\bm{r})\delta\rho(\bm{r}')$
+from Eq.~(\ref{eq:fxc_kernel_primer}).
+The memory structure ($\tau = t-t'$ dependence) is the new feature:
+it encodes how a density perturbation at time $t'$ continues to affect
+the XC potential at all later times $t > t'$, i.e., XC has a causal
+memory kernel. $\fxc = 0$ for $\tau < 0$ (causality).
+
+\begin{insight}
+The exact $\Vxc$ is a \textbf{convolution over history}: the XC
+response today depends on the whole trajectory $\delta\rho(\bm{r}',t')$
+for all past times $t'\leq t$, weighted by the memory kernel
+$\fxc(\tau)$.  This is analogous to a viscoelastic material whose
+stress today reflects the full history of its deformation --- not just
+its current state.
+\end{insight}
+
+The adiabatic approximation drops the time-nonlocality entirely.
+In the adiabatic approximation, $V_\text{xc}(\bm{r},t) = V_\text{xc}^{\rm gs}[\rho(\cdot,t)](\bm{r})$
+depends only on the density \emph{at the same instant} $t$, not on any
+earlier time $t'$.
+Therefore, varying with respect to $\rho(\bm{r}',t')$:
+\begin{itemize}[noitemsep]
+  \item For $t' = t$: the variation gives the \emph{static} XC kernel
+    $\fxc^{\rm gs}(\bm{r},\bm{r}') = \delta V_\text{xc}^{\rm gs}/\delta\rho(\bm{r}')$,
+    exactly the ground-state second functional derivative.
+  \item For $t' \neq t$: $V_\text{xc}(t)$ does not depend on $\rho(t')$
+    at all, so $\delta V_\text{xc}(\bm{r},t)/\delta\rho(\bm{r}',t') = 0$.
+\end{itemize}
+Combined, the adiabatic kernel is:
+\begin{equation}
+  \fxc^{\mathrm{ATDDFT}}(\bm{r},\bm{r}',\tau)
+  = \fxc^{\mathrm{gs}}(\bm{r},\bm{r}')\;\delta(\tau),
+  \label{eq:fxc_adiab}
+\end{equation}
+a delta function in time: the response depends only on the density
+at the same instant, with zero memory.
+
+\subsection{The Frequency-Domain Picture}
+
+Causality — $\fxc(\tau) = 0$ for $\tau < 0$ — means the standard
+two-sided Fourier transform $\int_{-\infty}^{\infty}\fxc(\tau)e^{i\omega\tau}\,\dd\tau$
+reduces to a one-sided integral: the $\tau<0$ half contributes nothing.
+This one-sided transform is the \textbf{Laplace transform evaluated on
+the real axis} (or equivalently, the Fourier transform restricted to
+causal functions):
+\begin{equation}
+  \fxc(\bm{r},\bm{r}',\omega)
+  = \int_0^\infty\!\fxc(\bm{r},\bm{r}',\tau)\,e^{\ii\omega\tau}\,\dd\tau.
+  \label{eq:fxc_fourier}
+\end{equation}
+The sign convention $e^{+i\omega\tau}$ (rather than $e^{-i\omega\tau}$)
+is chosen so that $\fxc(\omega)$ is analytic in the upper complex
+half-plane $\operatorname{Im}\omega > 0$, which is the standard
+physics convention for retarded response functions and is required for
+the Kramers-Kronig relations (Section~\ref{sec:cdft}).
+The adiabatic kernel corresponds to:
+\begin{equation}
+  \fxc^{\mathrm{ATDDFT}}(\omega) = \fxc^{\mathrm{gs}} = \text{const.}
+  \quad\text{(independent of }\omega\text{)}.
+  \label{eq:fxc_static}
+\end{equation}
+The \emph{exact} $\fxc(\omega)$ has a much richer structure.
+
+\paragraph{Why response functions have poles: the resonance picture.}
+Consider driving a quantum system with a perturbation at frequency $\omega$.
+The response $\delta\rho(\omega)$ is proportional to the resolvent
+$(H - \omega)^{-1}$, which diverges whenever $\omega$ equals an eigenvalue of $H$.
+In Dirac notation, the exact density-response function has the
+\textbf{Lehmann representation}:
+\begin{equation}
+  \chi(\bm{r},\bm{r}',\omega)
+  = \sum_k \left[
+      \frac{\langle 0|\hat\rho(\bm{r})|k\rangle\langle k|\hat\rho(\bm{r}')|0\rangle}
+           {\omega - \Omega_k + \ii\eta}
+    - \frac{\langle 0|\hat\rho(\bm{r}')|k\rangle\langle k|\hat\rho(\bm{r})|0\rangle}
+           {\omega + \Omega_k + \ii\eta}
+    \right],
+  \label{eq:lehmann}
+\end{equation}
+where $\Omega_k = E_k - E_0 > 0$ are the exact excitation energies and
+$|k\rangle$ the exact excited states ($\eta\to 0^+$ enforces causality).
+Each term $1/(\omega - \Omega_k)$ is a \emph{simple pole} at $\omega = \Omega_k$:
+a sharp divergence at the resonance frequency.
+Physically, near $\omega\approx\Omega_k$ the perturbation drives the system
+at exactly the frequency where it ``wants to oscillate,'' producing an
+unbounded linear response (bounded in practice by damping or finite pulse duration).
+
+Because $\fxc$ is defined via the Dyson equation~(\ref{eq:dyson})
+relating $\chi_s$ (KS, poles at KS excitation energies) to $\chi$
+(interacting, poles at exact excitation energies $\Omega_k$), $\fxc$
+must itself have poles at $\Omega_k$ to shift the KS poles to the correct
+positions.  For a finite system:
+\begin{equation}
+  \fxc(\omega) \sim \sum_k \frac{R_k}{\omega - \Omega_k}
+  + \text{regular terms},
+  \label{eq:fxc_poles}
+\end{equation}
+where $R_k$ are residues encoding the coupling strengths.  The imaginary
+part $\operatorname{Im}\fxc(\omega)\neq 0$ for $\omega>0$ encodes dissipation.
+
+\subsection{Why Time Derivatives Cannot Replace Full Memory}
+\label{sec:derivatives}
+
+A natural attempt to go beyond the adiabatic limit is to include
+time derivatives of the density:
+\begin{equation}
+  \Vxc[\rho](t) \approx \Vxc^{\mathrm{gs}}[\rho(t)]
+  + \alpha_1\frac{\partial\rho}{\partial t}
+  + \alpha_2\frac{\partial^2\rho}{\partial t^2} + \cdots
+  \label{eq:gradient_expansion}
+\end{equation}
+This is the \emph{adiabatic gradient expansion in time}.
+
+In frequency space, including terms up to order $N$ corresponds to
+replacing the full $\fxc(\omega)$ by a polynomial of degree $N$:
+\begin{equation}
+  \fxc^{\mathrm{ATDDFT}+N}(\omega)
+  \approx c_0 + c_1\omega + c_2\omega^2 + \cdots + c_N\omega^N.
+  \label{eq:polynomial}
+\end{equation}
+
+\begin{keyresult}
+A polynomial in $\omega$ cannot reproduce a function with poles.
+No finite-order derivative expansion can capture the poles in
+Eq.~(\ref{eq:fxc_poles}).  The poles are essential for:
+\begin{enumerate}[noitemsep]
+  \item Exact resonance positions of excitation energies.
+  \item Finite linewidths (imaginary part of poles).
+  \item Double excitations (poles at two-electron excitation frequencies).
+\end{enumerate}
+\end{keyresult}
+
+\begin{derivbox}
+\textbf{Explicit demonstration.}
+Suppose the exact $\fxc(\omega)$ has a single pole at $\Omega_1$:
+\[
+  \fxc(\omega) = \frac{R_1}{\omega - \Omega_1}.
+\]
+Its Taylor expansion around $\omega=0$ is:
+\[
+  \fxc(\omega) = -\frac{R_1}{\Omega_1}\sum_{n=0}^\infty
+  \left(\frac{\omega}{\Omega_1}\right)^n
+  = -\frac{R_1}{\Omega_1} - \frac{R_1}{\Omega_1^2}\omega
+  - \frac{R_1}{\Omega_1^3}\omega^2 - \cdots
+\]
+This series \emph{diverges} for $|\omega|>|\Omega_1|$ and never
+converges to the correct form at $\omega=\Omega_1$.  The pole cannot
+be represented by any finite polynomial.
+
+\textbf{Deeper reason (complex analysis).}
+A polynomial $p(\omega) = \sum_{n=0}^N c_n\omega^n$ is an \emph{entire
+function}: it is analytic everywhere in the complex $\omega$-plane and
+has no singularities at any finite point.
+A function with a pole at $\Omega_1$ is \emph{not} entire --- it is
+meromorphic, with a singularity at $\Omega_1$.
+No entire function can equal a meromorphic function:
+their analyticity structures are fundamentally different.
+Increasing $N$ does not help; adding more polynomial terms keeps the
+function entire.  The mismatch is not a convergence-radius problem but
+a topological one: you cannot continuously deform an analytic function
+into one with a pole.
+
+Physically: near $\omega \approx \Omega_1$, the electron system has a
+resonant response that persists in time.  The polynomial approximation
+has no singularity and therefore no resonant buildup.
+\end{derivbox}
+
+\begin{remark}
+Driving with $\cos(\omega_{\rm drive}\,t)$ at the resonance frequency
+does produce a resonant buildup in the \emph{total} density response
+even in adiabatic TDDFT, because the KS system has its own resonance
+near $\omega_0$.  What the adiabatic approximation gets wrong are:
+(a) the exact position of $\omega_0$ (determined by the poles of
+$\fxc$); (b) the linewidth (Im~$\fxc = 0$ in the adiabatic limit);
+(c) states dominated by double-excitation character (Section~\ref{sec:doubles}).
+\end{remark}
+
+% ============================================================================
+\section{Dissipation, Unitarity, and Dephasing}
+\label{sec:dissipation}
+% ============================================================================
+
+\subsection{The Apparent Paradox}
+
+Adiabatic TDDFT uses a Hermitian KS Hamiltonian $\Hks^\dagger = \Hks$.
+The KS one-body density matrix is $P_{ij}(t) = \langle\psi_j|\psi_i\rangle$
+(more precisely, for a set of occupied orbitals,
+$P = \sum_n f_n |\psi_n\rangle\langle\psi_n|$).
+Differentiating with respect to time and using the TDKS equation
+$\ii\partial_t|\psi_n\rangle = \Hks|\psi_n\rangle$ (and its conjugate
+$-\ii\partial_t\langle\psi_n| = \langle\psi_n|\Hks$):
+\begin{align}
+  \ii\dot{P}
+  &= \ii\sum_n f_n\bigl(\partial_t|\psi_n\rangle\langle\psi_n|
+                       + |\psi_n\rangle\partial_t\langle\psi_n|\bigr)
+   = \sum_n f_n\bigl(\Hks|\psi_n\rangle\langle\psi_n|
+                     - |\psi_n\rangle\langle\psi_n|\Hks\bigr)
+   = \comm{\Hks}{P}.
+  \label{eq:vonneumann_derive}
+\end{align}
+This is the \textbf{von Neumann equation} $\ii\dot{P} = \comm{\Hks}{P}$.
+
+\begin{insight}
+\textbf{MO-basis vs AO-basis density matrix: connecting RMG to Gaussian codes.}
+RMG propagates $P(t)$ in the basis of \emph{ground-state KS orbitals}
+$\{\phi_n(\bm{r})\}$ (MO basis), so $P_{ij}(t) = \langle\phi_j|P(t)|\phi_i\rangle$
+is a matrix in MO space.
+
+Gaussian codes such as NWChem or Gaussian propagate the density matrix in
+the \emph{atomic orbital} (AO) basis $\{\chi_\mu(\bm{r})\}$:
+\begin{equation}
+  P_{\mu\nu}(t) = \langle\chi_\nu|P(t)|\chi_\mu\rangle
+  = \sum_{kl} C_{\mu k}^*\,P_{kl}(t)\,C_{\nu l},
+  \label{eq:P_AO_MO}
+\end{equation}
+where $C_{\mu n}$ is the MO coefficient matrix ($\phi_n = \sum_\mu C_{\mu n}\chi_\mu$).
+In matrix notation: $\bm{P}_\text{AO} = \bm{C}\bm{P}_\text{MO}\bm{C}^\dagger$.
+
+The von Neumann equation in the AO basis includes the overlap matrix
+$S_{\mu\nu} = \langle\chi_\mu|\chi_\nu\rangle$ (non-orthogonal basis):
+\begin{equation}
+  \ii\bm{S}\dot{\bm{P}}_\text{AO} = \bm{H}_\text{AO}\bm{P}_\text{AO}\bm{S}
+                                   - \bm{S}\bm{P}_\text{AO}\bm{H}_\text{AO}.
+\end{equation}
+In the MO basis $\bm{S} = \bm{1}$ (orthonormal KS orbitals), so the
+equation reduces to the clean form $\ii\dot{P} = [H,P]$ used in RMG.
+The two representations are physically identical; the MO basis simply
+removes the overhead of carrying $\bm{S}$.
+\end{insight}
+
+The \textbf{solution} of the von Neumann equation over one timestep $\Delta t$
+is given by the \textbf{Magnus propagator}.
+The equation of motion $\ii\dot{P} = [H,P]$ is an operator differential
+equation; its formal solution for a time-dependent $H$ is \emph{not} simply
+$P(t) = e^{-iHt}P(0)e^{+iHt}$ (that would only be correct for constant $H$).
+Instead, the Magnus expansion provides the exact solution as
+$P(t+\Delta t) = e^{-i\Omega}P(t)e^{+i\Omega}$, where $\Omega$ is
+a Hermitian operator built from time-ordered integrals of $H$.
+To second order (the level used in RMG):
+\begin{equation}
+  P(t+\Delta t) = e^{-\ii\Omega}\,P(t)\,e^{+\ii\Omega}, \qquad
+  \Omega \approx \tfrac{1}{2}(H(t)+H(t+\Delta t))\,\Delta t,
+  \quad \Omega = \Omega^\dagger.
+  \label{eq:magnus}
+\end{equation}
+This is a unitary similarity transform: $e^{-i\Omega}$ is the propagator,
+and its Hermitian conjugate $e^{+i\Omega}$ appears because $P$ carries
+a ket on the left and a bra on the right ($P = |\psi\rangle\langle\psi|$).  One might then ask: can the
+exact TDDFT functional (with memory) restore dissipation?  And does
+unitarity preclude all relaxation?
+
+The answer requires distinguishing three different things:
+the $N$-body wavefunction, the one-body density matrix, and what
+it means to have a ``closed'' system.
+
+\subsection{Unitarity of the Magnus Propagator and Conservation of Occupations}
+
+\begin{derivbox}
+\textbf{Eigenvalues of $P$ are conserved under unitary propagation.}
+
+Let $P(t) = V\Lambda V^\dagger$ be the eigendecomposition of $P$ at time $t$,
+with eigenvalues $\Lambda = \mathrm{diag}(f_1, f_2, \ldots)$ (occupation numbers).
+Under the Magnus step Eq.~(\ref{eq:magnus}):
+\begin{align}
+  P(t+\Delta t)
+  &= e^{-\ii\Omega}V\Lambda V^\dagger e^{+\ii\Omega} \notag \\
+  &= \underbrace{\left(e^{-\ii\Omega}V\right)}_{\tilde{V}}
+     \;\Lambda\;
+     \underbrace{\left(e^{-\ii\Omega}V\right)^\dagger}_{\tilde{V}^\dagger}.
+\end{align}
+Since $e^{-\ii\Omega}$ is unitary (because $\Omega$ is Hermitian),
+$\tilde{V}$ is unitary, and $P(t+\Delta t) = \tilde{V}\Lambda\tilde{V}^\dagger$
+has the \emph{same eigenvalues} $\Lambda$.
+
+Consequence: the occupation numbers $\{f_n\}$ are constants of motion in
+KS-TDDFT.  No population can transfer from an excited state to the
+ground state --- ever.  This is exact regardless of whether
+$V_{\rm xc}$ has memory.
+\end{derivbox}
+
+Therefore: \textbf{T$_1$ relaxation (population decay) is absent in
+TDDFT}, not because of the adiabatic approximation, but because the
+KS Hamiltonian is Hermitian and the evolution is unitary.
+
+\subsection{T\textsubscript{1} and T\textsubscript{2}: The Bloch Equation Analogy}
+
+The language of $T_1$ and $T_2$ relaxation, familiar from NMR
+spectroscopy, clarifies what can and cannot be captured by TDDFT.
+Consider a two-level system with ground state $|g\rangle$ and excited
+state $|e\rangle$.  The density matrix is:
+\begin{equation}
+  \rho = \begin{pmatrix} \rho_{ee} & \rho_{eg} \\ \rho_{ge} & \rho_{gg} \end{pmatrix},
+  \qquad \rho_{ee} + \rho_{gg} = 1.
+\end{equation}
+The Bloch equations with relaxation read:
+\begin{align}
+  \dot{\rho}_{ee} &= -\frac{\rho_{ee}}{T_1}
+    + \text{(driving terms)}, \label{eq:bloch_pop}\\
+  \dot{\rho}_{eg} &= -\ii\omega_0\rho_{eg}
+    - \frac{\rho_{eg}}{T_2}
+    + \text{(driving terms)}, \label{eq:bloch_coh}
+\end{align}
+where $\omega_0 = E_e - E_g$ is the transition frequency.
+
+\begin{itemize}
+  \item $T_1$ (\textbf{longitudinal, population relaxation}): excited
+    population $\rho_{ee}$ decays exponentially.  In spectroscopy this
+    is spontaneous emission + non-radiative decay.  Physical mechanism:
+    coupling to the radiation field (QED photon bath) or phonons.
+    \emph{Not present in TDDFT, which describes only electrons.}
+
+  \item $T_2$ (\textbf{transverse, dephasing}): the off-diagonal element
+    $\rho_{eg}$ (coherence) decays as $e^{-t/T_2}$.  The general bound
+    is $T_2 \leq 2T_1$.  The excess decay beyond the $2T_1$ limit is
+    called \emph{pure dephasing} ($T_2^*$) and arises from
+    elastic processes that randomize the quantum phase without
+    changing populations:
+    \begin{equation}
+      \frac{1}{T_2} = \frac{1}{2T_1} + \frac{1}{T_2^*}.
+      \label{eq:T2}
+    \end{equation}
+\end{itemize}
+
+\begin{insight}
+\textbf{Your atom-in-vacuum example is exactly right.}
+A single atom in perfect vacuum with no external coupling has:
+$T_1 = \infty$ (no radiation bath to emit into --- spontaneous emission
+is a QED effect, absent from the Schr\"{o}dinger equation for electrons
+alone), and $T_2 = \infty$ (no elastic collisions to dephase the
+coherence).  The excited state is stable forever.  This is the
+correct quantum-mechanical result in the absence of a bath.
+\end{insight}
+
+\subsection{The Reduced Density Matrix and Intrinsic Dephasing}
+
+Here is the resolution of the apparent paradox between unitary evolution
+and dephasing.
+
+The exact $N$-electron wavefunction $\Psi(\bm{r}_1,\ldots,\bm{r}_N,t)$
+evolves unitarily.  The \emph{one-body reduced density matrix} (1-RDM):
+\begin{equation}
+  \gamma(\bm{r},\bm{r}',t) = N\int\!\Psi^*(\bm{r},\bm{r}_2,\ldots)\,
+  \Psi(\bm{r}',\bm{r}_2,\ldots)\,\dd\bm{r}_2\cdots\dd\bm{r}_N
+  \label{eq:1rdm}
+\end{equation}
+is obtained by tracing out $N-1$ electrons.  Its equation of motion is:
+\begin{equation}
+  \ii\dot{\gamma} = \comm{T + V_{\mathrm{ext}}}{\gamma} + \mathcal{C},
+  \label{eq:1rdm_eom}
+\end{equation}
+where $\mathcal{C}$ is the \emph{collision integral} --- the contribution
+from the two-body correlations that survive after tracing over $N-1$
+electrons.  This term is \emph{non-unitary} for the 1-RDM even though
+the $N$-body evolution is unitary.  It is the source of intrinsic
+dephasing from electron-electron scattering.
+
+\textbf{Contrast with the KS density matrix.}
+The KS system is \emph{non-interacting} by construction: its $N$ electrons
+move independently in the effective potential $V_\text{KS}$.
+Tracing over $N-1$ KS electrons produces no residual two-body correlation
+because there are none --- so $\mathcal{C}=0$ for the KS system.
+The KS density matrix therefore satisfies the \emph{homogeneous} equation:
+\begin{equation}
+  \ii\dot{P} = \comm{\Hks}{P}, \qquad \mathcal{C} = 0.
+\end{equation}
+Both $\gamma$ and $P$ satisfy equations that \emph{look} like $i\dot{M}=[H,M]$,
+but they describe different objects at different levels of theory.
+The collision integral $\mathcal{C}$ is precisely what $P$ is missing
+compared to $\gamma$, and it is what would be needed for physical dephasing.
+
+\begin{derivbox}
+\textbf{Why $\mathcal{C}$ causes pure dephasing.}
+
+Decompose $\mathcal{C}$ into a Hermitian part $\mathcal{C}_H$ and an
+anti-Hermitian part $\mathcal{C}_A$:
+\[
+  \mathcal{C} = \mathcal{C}_H + \mathcal{C}_A,
+  \quad
+  \mathcal{C}_H = \tfrac{1}{2}(\mathcal{C}+\mathcal{C}^\dagger),
+  \quad
+  \mathcal{C}_A = \tfrac{1}{2}(\mathcal{C}-\mathcal{C}^\dagger).
+\]
+$\mathcal{C}_H$ renormalizes the effective Hamiltonian (energy shifts).
+$\mathcal{C}_A$ is non-Hermitian and causes the \emph{magnitude} of
+off-diagonal elements to decay:
+\[
+  \ii\dot{\gamma}_{ij} = (\epsilon_i - \epsilon_j)\gamma_{ij}
+  + \mathcal{C}_{A,ij}.
+\]
+If $\mathcal{C}_A = -\ii\Gamma\,\gamma$ with $\Gamma > 0$, then
+$\gamma_{ij}(t) \propto e^{-\ii\omega_{ij}t}e^{-\Gamma t}$ ---
+the coherence decays exponentially while the diagonal populations
+(in the eigenstate basis) remain conserved.  This is pure dephasing
+with $T_2^* = 1/\Gamma$.
+\end{derivbox}
+
+In TDDFT, the exact $\fxc(\omega)$ with
+$\operatorname{Im}\fxc(\omega)\neq 0$ plays the role of $\mathcal{C}_A$.
+Here is why.
+The linearised TDKS equation for a density perturbation $\delta\rho$ reads
+(in frequency space, using Eq.~\ref{eq:func_taylor}):
+\begin{equation}
+  \delta\rho(\omega)
+  = \chi_s\!\left[\delta V_{\mathrm{ext}}
+    + \frac{1}{|\bm{r}-\bm{r}'|}\delta\rho
+    + \fxc(\omega)\,\delta\rho\right]\!(\omega).
+\end{equation}
+When $\fxc(\omega)$ is real, the effective KS Hamiltonian that drives
+$\delta\rho$ is Hermitian, and the response is purely oscillatory (no
+decay).
+When $\operatorname{Im}\fxc(\omega)\neq 0$, the effective driving potential
+acquires an imaginary part, which acts like a damping term in the equation
+of motion for the off-diagonal elements of $P$.  Specifically, an
+off-diagonal coherence $P_{nm}$ evolves as
+$\ii\dot{P}_{nm} \approx (\omega_{nm} - \ii\,\Gamma_{nm})P_{nm}$,
+where $\Gamma_{nm} \propto \operatorname{Im}\fxc(\omega_{nm}) > 0$
+is the dephasing rate.  This is the same exponential decay produced by
+the collision integral $\mathcal{C}_A$ in the reduced density matrix
+equation:
+it introduces an effective non-Hermitian correction to the KS
+Hamiltonian in the frequency domain, providing $T_2$ dephasing without
+violating $N$-body unitarity.
+
+\paragraph{Summary.}
+\begin{center}
+\begin{tabular}{@{}lll@{}}
+\toprule
+Relaxation & Physical origin & In TDDFT? \\
+\midrule
+$T_1$ (population) & Coupling to radiation/phonon bath & No \\
+$T_2$ pure dephasing & Electron-electron scattering ($\mathcal{C}_A$) & Only with $\operatorname{Im}\fxc\neq 0$ \\
+$T_2$ from $T_1$ & Same bath as $T_1$ & No \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+% ============================================================================
+\section{Double Excitations: Selection Rules and CI Mixing}
+\label{sec:doubles}
+% ============================================================================
+
+\subsection{Pure Double Excitations Are Dipole-Forbidden --- Your Intuition Is Correct}
+
+Consider two non-interacting helium atoms A and B, separated in space.
+Define:
+\begin{align*}
+  |G_A\rangle &= \text{He}_A \text{ ground state } (1s)^2, \\
+  |E_A\rangle &= \text{He}_A \text{ singly excited state } (1s)(2p), \\
+  |G_B\rangle,\;|E_B\rangle &= \text{same for He}_B.
+\end{align*}
+The composite two-atom states are tensor products:
+\begin{align*}
+  |\Psi_0\rangle &= |G_A\rangle\otimes|G_B\rangle \equiv |GG\rangle, \\
+  |\Psi_{\rm S}^A\rangle &= |E_A\rangle\otimes|G_B\rangle \equiv |EG\rangle, \\
+  |\Psi_{\rm S}^B\rangle &= |G_A\rangle\otimes|E_B\rangle \equiv |GE\rangle, \\
+  |\Psi_{\rm D}\rangle &= |E_A\rangle\otimes|E_B\rangle \equiv |EE\rangle.
+\end{align*}
+The dipole operator for the whole system decomposes as:
+\begin{equation}
+  \hat{x} = \hat{x}_A\otimes\hat{1}_B + \hat{1}_A\otimes\hat{x}_B.
+  \label{eq:dipole_total}
+\end{equation}
+
+\begin{derivbox}
+\textbf{Transition moment from ground to doubly excited state.}
+\begin{align}
+  \mel{EE}{\hat{x}}{GG}
+  &= \mel{EE}{\hat{x}_A\otimes\hat{1}_B + \hat{1}_A\otimes\hat{x}_B}{GG}
+  \notag\\
+  &= \underbrace{\mel{E_A}{\hat{x}_A}{G_A}}_{\neq 0}
+     \underbrace{\braket{E_B}{G_B}}_{=0}
+   + \underbrace{\braket{E_A}{G_A}}_{=0}
+     \underbrace{\mel{E_B}{\hat{x}_B}{G_B}}_{\neq 0}
+  \notag\\
+  &= 0.
+  \label{eq:double_forbidden}
+\end{align}
+Both terms vanish because excited and ground states on the
+\emph{other} atom are orthogonal.  The dipole operator connects only
+states that differ by a \emph{single} local excitation; reaching $|EE\rangle$
+requires both atoms to be excited simultaneously, which a one-body
+operator cannot achieve.
+\end{derivbox}
+
+\begin{insight}
+You are correct: a pure doubly excited state is dipole-dark from the
+ground state.  To reach $|EE\rangle$ directly requires a two-photon
+operator $\hat{x}_A\hat{x}_B$ --- which is accessible in two-photon
+absorption spectroscopy.  This is a different (and real) phenomenon.
+
+The TDDFT ``double excitation problem'' concerns a \emph{different}
+situation: states that are \textbf{predominantly} doubly excited but
+have \textbf{mixed} character due to Coulomb coupling, and that
+\emph{are} dipole-accessible.
+\end{insight}
+
+\subsection{Turning On the Coulomb Interaction: CI Mixing}
+
+Now allow a Coulomb interaction between the two He atoms:
+\begin{equation}
+  V_{ee}^{AB} = \sum_{i\in A}\sum_{j\in B} \frac{1}{|\bm{r}_i - \bm{r}_j|}.
+  \label{eq:vee}
+\end{equation}
+Treat $V_{ee}^{AB}$ as a perturbation.  By first-order degenerate
+perturbation theory, the eigenstates of $H_0 + V_{ee}^{AB}$ are
+linear combinations of the unperturbed states.  In the subspace
+$\{|EG\rangle, |GE\rangle, |EE\rangle, \ldots\}$:
+
+\begin{derivbox}
+\textbf{First-order CI mixing of $|EE\rangle$ into $|EG\rangle$.}
+
+The coupling matrix element between $|EG\rangle$ and $|EE\rangle$
+is:
+\[
+  \mel{EG}{V_{ee}^{AB}}{EE}
+  = \mel{E_A,G_B}{V_{ee}^{AB}}{E_A,E_B}.
+\]
+Since $V_{ee}^{AB}$ involves coordinates of both atoms, this is
+generically nonzero --- it is the inter-atomic Coulomb integral.
+
+To first order in $V_{ee}^{AB}$, the corrected eigenstate is:
+\begin{equation}
+  |\tilde{\Psi}_1\rangle
+  = \alpha|EG\rangle + \beta|GE\rangle
+  + \underbrace{\frac{\mel{EE}{V_{ee}^{AB}}{EG}}{E_{EG}-E_{EE}}}_{\gamma}|EE\rangle
+  + \cdots
+  \label{eq:mixed_state}
+\end{equation}
+The coefficient $\gamma$ is generically nonzero; the state
+$|\tilde{\Psi}_1\rangle$ has genuine double-excitation character.
+\end{derivbox}
+
+Now compute the dipole transition moment from the ground state to
+$|\tilde{\Psi}_1\rangle$:
+\begin{align}
+  \mel{\tilde{\Psi}_1}{\hat{x}}{GG}
+  &= \alpha\underbrace{\mel{EG}{\hat{x}}{GG}}_{\neq 0}
+   + \beta\underbrace{\mel{GE}{\hat{x}}{GG}}_{\neq 0}
+   + \gamma\underbrace{\mel{EE}{\hat{x}}{GG}}_{=0}
+  \notag\\
+  &= \alpha\mel{E_A}{\hat{x}_A}{G_A}
+   + \beta\mel{E_B}{\hat{x}_B}{G_B}
+  \neq 0.
+  \label{eq:mixed_dipole}
+\end{align}
+
+\begin{keyresult}
+Once the Coulomb interaction mixes a double-excitation component
+into an otherwise singly-excited state, that state becomes:
+\begin{enumerate}[noitemsep]
+  \item \textbf{Dipole-accessible} from the ground state (nonzero
+    transition moment), and
+  \item \textbf{At an energy shifted} by the CI mixing --- an energy
+    that adiabatic TDDFT cannot reproduce.
+\end{enumerate}
+The TDDFT failure is primarily \textbf{energetic}: the state appears
+in the spectrum, but at the wrong position.
+\end{keyresult}
+
+\subsection{The Casida Linear-Response Equations}
+\label{sec:casida}
+
+Linear-response TDDFT (Casida 1995) reframes excitation energies as
+eigenvalues of a matrix equation.  Starting from the linear response
+of the TDKS density to an external perturbation $V_{\rm ext}(\omega)$,
+one derives the response function:
+\begin{equation}
+  \delta\rho(\omega) = \chi(\omega)\,V_{\rm ext}(\omega),
+  \qquad
+  \chi(\omega) = \chi_0(\omega)\bigl[1 - (v_{ee}+\fxc(\omega))\chi_0(\omega)\bigr]^{-1},
+  \label{eq:chi}
+\end{equation}
+where $\chi_0$ is the non-interacting KS response function and
+$v_{ee}(\bm{r},\bm{r}') = 1/|\bm{r}-\bm{r}'|$.
+
+Poles of $\chi(\omega)$ are the excitation frequencies.  In the
+molecular orbital (MO) basis $\{\phi_i, \phi_a\}$ (occupied $i$,
+virtual $a$), expanding $\chi_0$ in terms of KS orbital pairs gives
+the Casida eigenvalue problem:
+\begin{equation}
+  \begin{pmatrix} A(\omega) & B \\ B^* & A^*(\omega) \end{pmatrix}
+  \begin{pmatrix} X \\ Y \end{pmatrix}
+  = \omega\begin{pmatrix} \mathbf{1} & 0 \\ 0 & -\mathbf{1} \end{pmatrix}
+  \begin{pmatrix} X \\ Y \end{pmatrix},
+  \label{eq:casida}
+\end{equation}
+where:
+\begin{align}
+  A_{ia,jb}(\omega) &= (\epsilon_a-\epsilon_i)\delta_{ij}\delta_{ab}
+    + K_{ia,jb}(\omega),\label{eq:Amat}\\
+  B_{ia,jb} &= K_{ia,bj},\\
+  K_{ia,jb}(\omega) &= \iint\phi_i^*(\bm{r})\phi_a(\bm{r})
+    \left[\frac{1}{|\bm{r}-\bm{r}'|}+\fxc(\bm{r},\bm{r}',\omega)\right]
+    \phi_j(\bm{r}')\phi_b^*(\bm{r}')\,\dd^3r\,\dd^3r'.
+\end{align}
+
+\begin{insight}
+\textbf{Connection to Gaussian-basis CI/RPA: $K_{ia,jb}$ and the ERI $(ia|jb)$.}
+The Coulomb part of $K_{ia,jb}$ is exactly a two-electron repulsion integral
+(ERI) in the MO basis:
+\begin{equation}
+  K_{ia,jb}^{\rm Coulomb}
+  = \iint\frac{\phi_i^*(\bm{r})\phi_a(\bm{r})\,
+               \phi_j(\bm{r}')\phi_b^*(\bm{r}')}{|\bm{r}-\bm{r}'|}
+    \,\dd^3r\,\dd^3r'
+  \equiv (ia|jb).
+  \label{eq:Kij_ERI}
+\end{equation}
+In Gaussian-basis codes this integral is stored in the two-electron integral
+file and is familiar from CIS, RPA, and TDDFT calculations.
+The full Casida matrix is therefore:
+\begin{equation}
+  K_{ia,jb}(\omega)
+  = (ia|jb) + (ia|\fxc|jb),
+  \label{eq:K_split}
+\end{equation}
+where $(ia|\fxc|jb) = \iint\phi_i^*\phi_a\,\fxc\,\phi_j\phi_b^*\,\dd^3r\,\dd^3r'$
+is the XC correction.
+
+\begin{center}
+\renewcommand{\arraystretch}{1.3}
+\begin{tabular}{@{}lll@{}}
+\toprule
+Method & $K_{ia,jb}$ & Notes \\
+\midrule
+CIS (HF) & $(ia|jb) - (ij|ab)$ & Coulomb + exchange, no correlation \\
+RPA (adiabatic) & $(ia|jb)$ & Coulomb only (Tamm-Dancoff approx.) \\
+TDDFT-LDA & $(ia|jb) + (ia|f_{\rm xc}^{\rm LDA}|jb)$ & Coulomb + local XC \\
+Exact TDDFT & $(ia|jb) + (ia|\fxc(\omega)|jb)$ & frequency-dep.\ XC kernel \\
+\bottomrule
+\end{tabular}
+\renewcommand{\arraystretch}{1}
+\end{center}
+The real-space grid in RMG evaluates the same integrals numerically:
+$\sum_i \phi_i^*(\bm{r}_i)\phi_a(\bm{r}_i)\,V_H(\bm{r}_i)\,h^3$
+is the grid-point analogue of $(ia|jb)$ contracted over the Hartree
+potential.
+\end{insight}
+
+\paragraph{Dimension of the Casida matrix.}
+The indices $(i,a)$ and $(j,b)$ run over \emph{single} KS
+excitation pairs: $N_{\rm occ}\times N_{\rm virt}$ in total.
+\textbf{Double excitations $(i,j)\to(a,b)$ are not included as
+basis vectors.}
+
+\subsection{Why Double Excitations Require Poles in $\fxc(\omega)$}
+
+To see why a pole in $\fxc$ is needed, consider what happens when a
+doubly excited state $|D\rangle$ at energy $\Omega_D$ is near a
+singly excited KS pair $(i\to a)$ at energy $\omega_{ia} = \epsilon_a-\epsilon_i$.
+
+\begin{derivbox}
+\textbf{A pole in $\fxc$ is equivalent to including $|D\rangle$ in CI.}
+
+Maitra \etal~(2004) showed that the contribution of the doubly
+excited state to the exact $\fxc$ takes the form:
+\begin{equation}
+  \fxc(\omega) \sim \frac{|\mel{\Phi_{ia}}{V_{ee}}{\Phi_{D}}\,|^2}
+                        {\omega - \omega_D^{\rm KS}}
+  + \text{regular},
+  \label{eq:maitra_pole}
+\end{equation}
+where $\Phi_{ia}$ is the KS single-excitation Slater determinant and
+$\Phi_D$ is the doubly excited determinant.  The numerator is the
+Coulomb matrix element coupling single to double excitation --- exactly
+the CI matrix element.
+
+Substituting Eq.~(\ref{eq:maitra_pole}) into the Casida coupling matrix
+$K_{ia,jb}(\omega)$ at $\omega\approx\omega_D^{\rm KS}$ gives a
+divergence that ``pulls'' a new eigenvalue of Eq.~(\ref{eq:casida})
+to the position $\Omega_D$ --- reproducing the double excitation.
+
+With the \emph{adiabatic} kernel $\fxc(\omega) = \text{const}$, the
+pole is absent, and $\Omega_D$ never appears as an eigenvalue,
+regardless of the strength of the driving field.
+\end{derivbox}
+
+\begin{remark}
+Using a field with symmetry $\hat{x}^2$ or $\hat{x}\hat{y}$ (two-photon
+absorption) drives a different physical process: it accesses states
+that are two-photon-allowed, which is a distinct spectroscopic
+phenomenon from what the Casida equations describe.
+The ``missing double excitations'' in TDDFT are states accessible by
+\emph{one photon} whose energy is wrong because of missing CI mixing.
+\end{remark}
+
+\paragraph{Energy shift from CI: perturbation theory estimate.}
+The second-order energy correction from the coupling between the
+singly excited state $|S\rangle$ at $\omega_S$ and the doubly excited
+state $|D\rangle$ at $\omega_D$ is:
+\begin{equation}
+  \Delta\omega_S = \frac{|\mel{S}{V_{ee}}{D}|^2}{\omega_S - \omega_D}.
+  \label{eq:2nd_order}
+\end{equation}
+Adiabatic TDDFT misses this shift entirely.  The magnitude can be
+$0.2$--$0.5$\,eV in conjugated molecules, explaining why the
+TDDFT absorption spectrum of polyenes is systematically too high in energy.
+
+% ============================================================================
+\section{Gauge Invariance and Current-Density TDDFT}
+\label{sec:gauge}
+% ============================================================================
+
+\subsection{Gauge Transformations in Quantum Mechanics}
+
+The Hamiltonian for an electron in an electromagnetic field is
+(in Gaussian units converted to atomic units):
+\begin{equation}
+  H = \frac{1}{2}\bigl(\hat{\bm{p}} + \bm{A}(\bm{r},t)\bigr)^2
+  + \phi(\bm{r},t),
+  \label{eq:H_em}
+\end{equation}
+where $\bm{A}$ is the vector potential and $\phi$ is the scalar potential.
+The physical electric and magnetic fields are:
+\begin{equation}
+  \bm{E} = -\nabla\phi - \frac{\partial\bm{A}}{\partial t},
+  \qquad
+  \bm{B} = \nabla\times\bm{A}.
+  \label{eq:EB}
+\end{equation}
+A \emph{gauge transformation} with a scalar function $\chi(\bm{r},t)$ leaves
+$\bm{E}$ and $\bm{B}$ unchanged while transforming the potentials:
+\begin{align}
+  \bm{A} &\to \bm{A}' = \bm{A} + \nabla\chi, \label{eq:gauge_A}\\
+  \phi &\to \phi' = \phi - \frac{\partial\chi}{\partial t}. \label{eq:gauge_phi}
+\end{align}
+The wavefunction transforms as:
+\begin{equation}
+  \Psi(\bm{r},t) \to \Psi'(\bm{r},t) = e^{\ii\chi(\bm{r},t)}\,\Psi(\bm{r},t).
+  \label{eq:gauge_psi}
+\end{equation}
+One can verify directly that $\Psi'$ satisfies the Schr\"{o}dinger equation with
+$(H', \Psi')$ if and only if $\Psi$ satisfies it with $(H, \Psi)$.
+
+\subsection{The Charge Density Is Gauge-Invariant}
+
+\begin{derivbox}
+Under Eq.~(\ref{eq:gauge_psi}):
+\begin{equation}
+  \rho'(\bm{r},t) = |\Psi'|^2
+  = \bigl|e^{\ii\chi}\Psi\bigr|^2
+  = e^{-\ii\chi}e^{+\ii\chi}|\Psi|^2
+  = |\Psi|^2 = \rho(\bm{r},t).
+  \label{eq:rho_invariant}
+\end{equation}
+The charge density is \textbf{gauge-invariant}: two different gauges
+related by $\chi$ give identical $\rho(\bm{r},t)$ for all $t$.
+\end{derivbox}
+
+\subsection{The Paramagnetic Current Is NOT Gauge-Invariant}
+
+The paramagnetic (canonical) current density is defined as:
+\begin{equation}
+  \bm{J}_p(\bm{r},t) = \frac{1}{2\ii}\bigl[
+    \Psi^*(\bm{r},t)\,\nabla\Psi(\bm{r},t)
+    - \Psi(\bm{r},t)\,\nabla\Psi^*(\bm{r},t)
+  \bigr].
+  \label{eq:Jp}
+\end{equation}
+
+\begin{derivbox}
+Under the gauge transformation $\Psi\to e^{\ii\chi}\Psi$, compute
+$\nabla\Psi'$:
+\begin{equation}
+  \nabla\Psi' = \nabla(e^{\ii\chi}\Psi)
+  = \ii(\nabla\chi)\,e^{\ii\chi}\Psi + e^{\ii\chi}\nabla\Psi.
+  \label{eq:grad_psi_gauge}
+\end{equation}
+Substituting into Eq.~(\ref{eq:Jp}):
+\begin{align}
+  \bm{J}_p' &= \frac{1}{2\ii}\bigl[
+    (e^{-\ii\chi}\Psi^*)
+    \bigl(\ii(\nabla\chi)e^{\ii\chi}\Psi + e^{\ii\chi}\nabla\Psi\bigr)
+    - \text{c.c.}
+  \bigr] \notag\\
+  &= \frac{1}{2\ii}\bigl[
+    \Psi^*\nabla\Psi - \Psi\nabla\Psi^*
+  \bigr]
+  + \frac{1}{2\ii}\bigl[
+    \ii\nabla\chi|\Psi|^2 + \ii\nabla\chi|\Psi|^2
+  \bigr] \notag\\
+  &= \bm{J}_p + \rho\,\nabla\chi.
+  \label{eq:Jp_gauge}
+\end{align}
+\end{derivbox}
+
+\begin{keyresult}
+$\bm{J}_p$ is \textbf{not} gauge-invariant: it changes by
+$\rho\,\nabla\chi$ under the transformation.
+\end{keyresult}
+
+\subsection{The Physical (Total) Current Is Gauge-Invariant}
+
+\paragraph{Canonical vs kinetic momentum.}
+In classical mechanics, a charged particle in a vector potential $\bm{A}$
+has two distinct momenta:
+\begin{itemize}[noitemsep]
+  \item \textbf{Canonical momentum}: $\bm{p} = m\bm{v} + e\bm{A}$
+    (the quantity conjugate to position in the Lagrangian; gauge-dependent).
+  \item \textbf{Kinetic momentum}: $m\bm{v} = \bm{p} - e\bm{A}$
+    (the physically observable momentum that equals $m\times$velocity;
+    gauge-invariant).
+\end{itemize}
+The same distinction carries over to quantum mechanics.
+The paramagnetic current $\bm{J}_p$ (Section~\ref{sec:Jp_not_invariant})
+is built from $\bm{p} = -i\nabla$ — the \emph{canonical} momentum operator.
+The physical, measurable current is built from the \emph{kinetic} momentum
+$(-i\nabla - e\bm{A})$, giving:
+\begin{equation}
+  \bm{J}(\bm{r},t)
+  = \underbrace{\bm{J}_p(\bm{r},t)}_{\text{canonical part}}
+  - \underbrace{\rho(\bm{r},t)\,\bm{A}(\bm{r},t)}_{\text{diamagnetic part}}.
+  \label{eq:J_total}
+\end{equation}
+The second term $-\rho\bm{A}$ is called the \textbf{diamagnetic current}:
+it represents the response of the charge density to the vector potential
+itself, and it is what makes $\bm{J}$ gauge-invariant while $\bm{J}_p$
+alone is not.
+
+\begin{derivbox}
+Under the gauge transformation $\bm{A}\to\bm{A}+\nabla\chi$,
+$\bm{J}_p\to\bm{J}_p + \rho\nabla\chi$:
+\begin{align}
+  \bm{J}' &= \bm{J}_p' - \rho'\bm{A}' \notag\\
+  &= (\bm{J}_p + \rho\nabla\chi) - \rho(\bm{A}+\nabla\chi) \notag\\
+  &= \bm{J}_p - \rho\bm{A} = \bm{J}.
+  \label{eq:J_invariant}
+\end{align}
+\end{derivbox}
+
+\begin{keyresult}
+$\bm{J}(\bm{r},t) = \bm{J}_p - \rho\bm{A}$ is \textbf{gauge-invariant}.
+It is the physically observable current that appears in Maxwell's equations.
+\end{keyresult}
+
+\subsection{Why $\rho$ Alone Fails for Periodic Systems}
+
+For an isolated finite system, the Runge-Gross theorem establishes a
+one-to-one mapping $V_{\rm ext}(t)\leftrightarrow\rho(t)$ even without
+discussing the gauge.  The reason: for a finite system, one can always
+choose a unique gauge by requiring, e.g., $\bm{A}=0$ (the Coulomb gauge).
+
+For a \emph{periodic crystal}, a spatially uniform (but time-dependent)
+vector potential $\bm{A}(t)$ drives a macroscopic current.  Under a gauge
+transformation with $\chi(\bm{r},t) = -\bm{A}(t)\cdot\bm{r}$:
+\begin{align}
+  \bm{A}(t) &\to \bm{A}' = \bm{A}(t) + \nabla(-\bm{A}(t)\cdot\bm{r})
+              = \bm{A}(t) - \bm{A}(t) = 0, \\
+  \phi &\to \phi' = \phi + \dot{\bm{A}}(t)\cdot\bm{r} = \bm{E}(t)\cdot\bm{r}.
+\end{align}
+This gauge transformation relates the \emph{velocity gauge}
+(vector potential $\bm{A}$, no scalar potential) to the \emph{length gauge}
+(scalar potential $\bm{E}\cdot\bm{r}$, no vector potential).
+
+The critical observation: in a crystal, $\chi = -\bm{A}(t)\cdot\bm{r}$ is
+\emph{spatially linear}, so $\nabla\chi$ is uniform.
+A uniform $\nabla\chi$ does not break the periodicity of $\rho(\bm{r},t)$:
+the density remains periodic regardless of the gauge.
+Therefore, \textbf{measuring $\rho(\bm{r},t)$ alone cannot distinguish the
+velocity gauge from the length gauge} --- it cannot detect whether $\bm{A}(t)$
+is present.  But $\bm{J}(\bm{r},t)$ can: the macroscopic current changes
+sign when $\bm{A}(t)$ reverses.
+
+This is the fundamental reason why the Runge-Gross theorem in its original
+form does not apply to periodic solids: the mapping
+$\bm{A}(t)\leftrightarrow\rho(t)$ is not one-to-one.
+
+\subsection{The Vignale-Kohn Theorem}
+
+Vignale and Kohn (1996) extended the Runge-Gross argument to the pair
+$(\rho(\bm{r},t),\,\bm{J}(\bm{r},t))$:
+
+\begin{theorem}[Vignale-Kohn 1996]
+Given a fixed initial state $\Psi_0$, there is a one-to-one mapping
+between the physical electromagnetic field and the pair
+$(\rho(\bm{r},t),\,\bm{J}(\bm{r},t))$.  Both $\rho$ and $\bm{J}$ together
+uniquely determine all physical observables.
+\end{theorem}
+
+Since both $\rho$ and $\bm{J}$ are gauge-invariant (proved above), this
+theorem is gauge-consistent.  The basic variable of current-density TDDFT
+(CDFT) is therefore the pair $(\rho, \bm{J})$, and the XC functional
+is:
+\begin{equation}
+  \Vxc^{\rm CDFT}[\rho,\bm{J};\,\bm{r},t]
+  = \Vxc^{\rm CDFT}[\rho(\bm{r}',t'),\bm{J}(\bm{r}',t');\,t'\leq t].
+  \label{eq:vxc_cdft}
+\end{equation}
+
+% -----------------------------------------------------------------------
+\subsection{What Is a Kernel?}
+\label{sec:kernel}
+% -----------------------------------------------------------------------
+
+The word \emph{kernel} appears repeatedly in this document --- the XC
+kernel, the memory kernel, the viscosity kernel.  Before applying these
+concepts to the electron gas, we build the mathematical intuition from
+the ground up.
+
+\subsubsection{Integral Operators and Their Kernels}
+
+An \emph{integral operator} $\mathcal{K}$ maps an input function $f$
+to an output function $g$ via integration:
+\begin{equation}
+  g(x) = (\mathcal{K}f)(x)
+  = \int K(x,\,y)\,f(y)\,\dd y.
+  \label{eq:integral_op}
+\end{equation}
+The function $K(x,y)$ is the \emph{kernel} of the operator.  It encodes
+the rule: ``how much does the value of $f$ at point $y$ contribute to
+the result at point $x$?''
+
+\paragraph{Three everyday examples.}
+\begin{enumerate}
+  \item \textbf{Gaussian smoothing} (image processing):
+    \begin{equation}
+      g(x) = \int \frac{1}{\sqrt{2\pi}\sigma}
+      e^{-(x-y)^2/2\sigma^2}\,f(y)\,\dd y.
+      \label{eq:gaussian_kernel}
+    \end{equation}
+    The kernel $K(x,y) = \frac{1}{\sqrt{2\pi}\sigma}e^{-(x-y)^2/2\sigma^2}$
+    is a Gaussian centered at $y=x$.  Each output value is a weighted
+    average of nearby input values.  Points far from $x$ contribute
+    little; points close to $x$ contribute much.
+
+  \item \textbf{Hartree (Coulomb) potential}:
+    \begin{equation}
+      V_H(\bm{r}) = \int \frac{\rho(\bm{r}')}{|\bm{r}-\bm{r}'|}\,\dd^3r'.
+      \label{eq:hartree_kernel}
+    \end{equation}
+    The kernel is $K(\bm{r},\bm{r}') = 1/|\bm{r}-\bm{r}'|$.
+    The Hartree potential at $\bm{r}$ is the sum of Coulomb contributions
+    from the density at every other point $\bm{r}'$.  This is a
+    \emph{nonlocal} operator in space: $V_H(\bm{r})$ depends on $\rho$
+    everywhere, not just at $\bm{r}$.
+
+  \item \textbf{Green's function of the Laplacian}:
+    The Poisson equation $-\nabla^2 V = 4\pi\rho$ has the solution
+    $V(\bm{r}) = \int G(\bm{r},\bm{r}')\rho(\bm{r}')\,\dd^3r'$
+    with $G(\bm{r},\bm{r}') = 1/|\bm{r}-\bm{r}'|$.
+    Green's functions are kernels of the inverse differential operator.
+\end{enumerate}
+
+\subsubsection{Convolution Kernels: Translation-Invariant Operators}
+
+When the kernel depends only on the difference $K(x,y)=K(x-y)$, the
+integral operator is a \emph{convolution}:
+\begin{equation}
+  g(x) = \int K(x-y)\,f(y)\,\dd y \equiv (K*f)(x).
+  \label{eq:convolution}
+\end{equation}
+Convolution kernels are particularly natural for:
+\begin{itemize}[noitemsep]
+  \item Homogeneous systems (same physics at every point).
+  \item Time-domain response (system looks the same at every time $t$).
+  \item Frequency analysis: convolution in time $\leftrightarrow$
+    \emph{multiplication} in frequency, $\hat{g}(\omega) = \hat{K}(\omega)\hat{f}(\omega)$.
+\end{itemize}
+
+\subsubsection{Causal (Memory) Kernels}
+
+In physics, response functions must be \emph{causal}: the effect cannot
+precede its cause.  A causal convolution kernel satisfies:
+\begin{equation}
+  K(\tau) = 0 \quad\text{for } \tau < 0,
+  \label{eq:causal}
+\end{equation}
+so the response at time $t$ depends only on inputs at times $t'<t$:
+\begin{equation}
+  g(t) = \int_0^t K(t-t')\,f(t')\,\dd t'
+  = \int_0^\infty K(\tau)\,f(t-\tau)\,\dd\tau.
+  \label{eq:causal_conv}
+\end{equation}
+The kernel $K(\tau)$ tells you ``how strongly does an input from $\tau$
+seconds ago influence the current output?''  If $K(\tau)\propto e^{-\tau/\tau_0}$,
+the influence decays exponentially with a characteristic memory time
+$\tau_0$.
+
+\begin{insight}
+A system with a causal memory kernel is the mathematical formalization
+of your car analogy.  The kernel $K(\tau)$ weights the past trajectory
+$f(t')$ of the input --- car position, density, deformation --- and the
+current output $g(t)$ depends on the full weighted history.  The
+adiabatic approximation corresponds to $K(\tau)=c\,\delta(\tau)$: zero
+memory, only the instantaneous value matters.
+\end{insight}
+
+\subsubsection{The XC Kernel in DFT}
+
+The \emph{exchange-correlation kernel} $\fxc$ is the functional
+derivative of the XC potential with respect to the density:
+\begin{equation}
+  \fxc(\bm{r},\bm{r}',t-t')
+  = \frac{\delta\Vxc(\bm{r},t)}{\delta\rho(\bm{r}',t')}.
+  \label{eq:fxc_kernel}
+\end{equation}
+This answers the question: ``if I add a tiny density perturbation
+$\delta\rho(\bm{r}')$ at time $t'$, how does $\Vxc(\bm{r})$ respond at
+a later time $t$?''
+
+In the \emph{static} (ground-state) limit, the XC kernel reduces to
+the second functional derivative of the XC energy:
+\begin{equation}
+  \fxc^{\rm gs}(\bm{r},\bm{r}')
+  = \frac{\delta^2 \Exc[\rho]}{\delta\rho(\bm{r})\,\delta\rho(\bm{r}')}.
+  \label{eq:fxc_static_def}
+\end{equation}
+For LDA, where $\Exc = \int\epsilon_{\rm xc}(n)\rho\,\dd^3r$:
+\begin{equation}
+  \fxc^{\rm LDA}(\bm{r},\bm{r}')
+  = \frac{\dd^2[\rho\,\epsilon_{\rm xc}(\rho)]}{\dd\rho^2}\,\delta(\bm{r}-\bm{r}').
+  \label{eq:fxc_lda}
+\end{equation}
+The delta function $\delta(\bm{r}-\bm{r}')$ makes LDA \emph{local} in space:
+the XC potential at $\bm{r}$ depends only on the density at the same
+point $\bm{r}$.  GGA kernels have a spatial gradient correction
+(nonzero for $|\bm{r}-\bm{r}'|\lesssim$ grid spacing).
+The frequency-dependent kernel $\fxc(\omega)$ additionally captures
+nonlocality \emph{in time} --- the memory.
+
+% -----------------------------------------------------------------------
+\subsection{Elements of Continuum Mechanics}
+\label{sec:mechanics}
+% -----------------------------------------------------------------------
+
+The Vignale-Kohn functional treats the electron gas as a
+\emph{viscoelastic fluid} --- a material that has both elastic
+(spring-like) and viscous (dashpot-like) properties, with a
+memory of its deformation history.  This section builds the
+necessary continuum mechanics background from scratch.
+
+\subsubsection{Displacement Field and Velocity Field}
+
+Consider a fluid (or solid) in which each material element
+at position $\bm{r}_0$ (its reference position) is displaced to
+a new position $\bm{r}_0 + \bm{u}(\bm{r}_0,t)$ at time $t$.
+The vector field $\bm{u}(\bm{r},t)$ is the \emph{displacement field}.
+
+The \emph{velocity field} of the fluid elements is:
+\begin{equation}
+  \bm{v}(\bm{r},t) = \frac{\partial\bm{u}(\bm{r},t)}{\partial t}.
+  \label{eq:velocity}
+\end{equation}
+For the electron gas, $\bm{u}(\bm{r},t)$ is the displacement of the
+electron fluid element at $\bm{r}$, and the current density is:
+\begin{equation}
+  \bm{J}(\bm{r},t) = n_0(\bm{r})\,\bm{v}(\bm{r},t)
+  = n_0(\bm{r})\,\frac{\partial\bm{u}}{\partial t},
+  \label{eq:current_displacement}
+\end{equation}
+where $n_0(\bm{r})$ is the equilibrium electron density.
+
+\subsubsection{The Strain Tensor: Measuring Deformation}
+
+The \emph{strain tensor} $\varepsilon_{\alpha\beta}$ measures how much
+the material is locally deformed:
+\begin{equation}
+  \varepsilon_{\alpha\beta} = \frac{1}{2}
+  \left(\frac{\partial u_\alpha}{\partial r_\beta}
+      + \frac{\partial u_\beta}{\partial r_\alpha}\right).
+  \label{eq:strain}
+\end{equation}
+It is symmetric ($\varepsilon_{\alpha\beta} = \varepsilon_{\beta\alpha}$)
+and captures two types of deformation:
+
+\paragraph{Volumetric (compressive) part --- the trace.}
+The trace of the strain tensor measures volume change:
+\begin{equation}
+  \varepsilon_{\rm vol} = \operatorname{Tr}(\varepsilon)
+  = \nabla\cdot\bm{u}
+  = \frac{\delta V}{V_0}.
+  \label{eq:volumetric}
+\end{equation}
+$\nabla\cdot\bm{u} > 0$: expansion; $\nabla\cdot\bm{u} < 0$: compression.
+
+\paragraph{Deviatoric (shear) part --- traceless.}
+The traceless part of $\varepsilon$ describes shape change without
+volume change:
+\begin{equation}
+  e_{\alpha\beta} = \varepsilon_{\alpha\beta}
+  - \tfrac{1}{3}(\nabla\cdot\bm{u})\,\delta_{\alpha\beta}.
+  \label{eq:deviatoric}
+\end{equation}
+This is the \emph{shear strain}: it measures how the angles between
+material lines change.
+
+\begin{tcolorbox}[colback=yellow!6!white, colframe=orange!70!black,
+  fonttitle=\bfseries\small, title={Notation: Three Roles of $e_{\alpha\beta}$},
+  breakable]
+The symbol $e_{\alpha\beta}$ carries three related but distinct meanings in
+this section.
+\begin{center}
+\renewcommand{\arraystretch}{1.3}
+\begin{tabular}{@{}lll@{}}
+\toprule
+Symbol & Object & Equation \\
+\midrule
+$\varepsilon_{\alpha\beta}$ & full strain tensor (symmetric) & (\ref{eq:strain}) \\
+$e_{\alpha\beta} = \varepsilon_{\alpha\beta} - \tfrac{1}{3}(\nabla\!\cdot\!\bm{u})\delta_{\alpha\beta}$
+  & deviatoric (traceless) strain & (\ref{eq:deviatoric}) \\
+$\dot{e}_{\alpha\beta} \equiv \partial e_{\alpha\beta}/\partial t$
+  & deviatoric strain \emph{rate} & (\ref{eq:viscoelastic}) \\
+\bottomrule
+\end{tabular}
+\renewcommand{\arraystretch}{1}
+\end{center}
+In the VK functional (Eq.~\ref{eq:sigma_vk}) the relevant quantity is the
+deviatoric strain \emph{rate} $\dot{e}_{\alpha\beta}$ (time derivative of the
+traceless part), sometimes written $e^{\alpha\beta}$ in index-raising notation.
+When reading the VK equation, $e^{\alpha\beta}$ always means the strain rate,
+not the strain itself.
+\end{tcolorbox}
+
+\begin{derivbox}
+\textbf{Concrete example: simple shear.}
+Suppose the displacement is purely in the $x$-direction and varies
+only with $y$: $\bm{u} = (u_x(y), 0, 0)$.  Then:
+\[
+  \varepsilon_{xy} = \varepsilon_{yx} = \frac{1}{2}\frac{\partial u_x}{\partial y},
+  \quad \text{all other components zero.}
+\]
+The material is being sheared: layers at different $y$ slide past each
+other.  A square element deforms into a parallelogram.  No volume change
+($\nabla\cdot\bm{u}=0$), only angular distortion.
+\end{derivbox}
+
+In the VK functional, the relevant quantity is the \emph{strain rate
+tensor} --- the time derivative of the strain:
+\begin{equation}
+  \dot{e}_{\alpha\beta}(\bm{r},t)
+  = \frac{\partial e_{\alpha\beta}}{\partial t}
+  = \frac{1}{2}\left(\frac{\partial v_\alpha}{\partial r_\beta}
+                   + \frac{\partial v_\beta}{\partial r_\alpha}\right)
+  - \frac{1}{3}(\nabla\cdot\bm{v})\,\delta_{\alpha\beta},
+  \label{eq:strain_rate}
+\end{equation}
+where $\bm{v} = \partial\bm{u}/\partial t$ is the fluid velocity.
+
+\subsubsection{The Stress Tensor: Internal Forces}
+
+When a material is deformed, internal restoring forces develop.
+The \emph{stress tensor} $\sigma_{\alpha\beta}$ describes these forces:
+$\sigma_{\alpha\beta}$ is the force per unit area in the $\alpha$-direction
+acting on a surface whose outward normal points in the $\beta$-direction.
+
+\begin{itemize}
+  \item \textbf{Diagonal elements} $\sigma_{\alpha\alpha}$: normal stresses
+    (tension or compression along $\alpha$).
+  \item \textbf{Off-diagonal elements} $\sigma_{\alpha\beta}$ ($\alpha\neq\beta$):
+    shear stresses (forces parallel to the surface).
+  \item \textbf{Symmetry}: $\sigma_{\alpha\beta} = \sigma_{\beta\alpha}$
+    (required so that fluid elements have no net torque).
+\end{itemize}
+
+The equation of motion for a fluid element is Newton's second law
+for a continuum:
+\begin{equation}
+  \rho_m \frac{\partial v_\alpha}{\partial t}
+  = \sum_\beta\frac{\partial\sigma_{\alpha\beta}}{\partial r_\beta} + f_\alpha,
+  \label{eq:newton_fluid}
+\end{equation}
+where $\rho_m$ is the mass density and $f_\alpha$ is any external body
+force per unit volume.  For the electron gas, this becomes the force
+balance between the XC stress tensor and the XC electric field
+(Eq.~\ref{eq:sigma_xc}).
+
+\subsubsection{Constitutive Relations: How Stress Relates to Strain}
+\label{sec:constitutive}
+
+A \emph{constitutive relation} specifies how the stress $\sigma_{\alpha\beta}$
+depends on the deformation.  Different materials obey different constitutive
+relations:
+
+\paragraph{1. Elastic solid (Hooke's law).}
+Stress is proportional to the instantaneous strain:
+\begin{equation}
+  \sigma_{\alpha\beta} = G_0\,e_{\alpha\beta}
+  + K_0\,(\nabla\cdot\bm{u})\,\delta_{\alpha\beta},
+  \label{eq:hookes_law}
+\end{equation}
+where $G_0$ is the shear modulus and $K_0$ is the bulk modulus.
+No memory: the stress depends only on the current deformation.
+If the force is removed, the material springs back instantly (rubber
+on short timescales).
+
+\paragraph{2. Viscous Newtonian fluid (Newton's law of viscosity).}
+Stress is proportional to the instantaneous strain \emph{rate}:
+\begin{equation}
+  \sigma_{\alpha\beta}^{\rm visc}
+  = \eta\,\dot{e}_{\alpha\beta}
+  + \zeta\,(\nabla\cdot\bm{v})\,\delta_{\alpha\beta},
+  \label{eq:newtons_viscosity}
+\end{equation}
+where $\eta$ is the \emph{shear viscosity} (resistance to sliding)
+and $\zeta$ is the \emph{bulk viscosity} (resistance to compression).
+Again no memory: only the current rate of deformation matters.
+Water is well-described by Eq.~(\ref{eq:newtons_viscosity}) at low flow speeds.
+
+\paragraph{3. Viscoelastic material: memory in the constitutive relation.}
+A viscoelastic material has both elastic and viscous character.
+The general constitutive relation replaces the instantaneous $G_0$
+by a \emph{time-convolution with a relaxation kernel} $G(\tau)$:
+\begin{equation}
+  \sigma_{\alpha\beta}(t)
+  = \int_0^\infty G(\tau)\,\dot{e}_{\alpha\beta}(t-\tau)\,\dd\tau
+  = \int_{-\infty}^t G(t-t')\,\dot{e}_{\alpha\beta}(t')\,\dd t'.
+  \label{eq:viscoelastic}
+\end{equation}
+The \emph{relaxation modulus} $G(\tau)$ is the kernel.  It tells you
+how strongly the shear strain rate from $\tau$ seconds ago still
+influences the current stress.
+
+\begin{derivbox}
+\textbf{Recovering elastic and viscous limits from the general form.}
+
+\textbf{Elastic limit}: $G(\tau) = G_0$ (constant, infinite memory).
+The material ``remembers'' its entire deformation history with equal
+weight. Substituting into Eq.~(\ref{eq:viscoelastic}):
+\[
+  \sigma(t) = G_0\int_0^\infty \dot{e}(t-\tau)\,\dd\tau
+  = G_0\bigl[e(t) - e(-\infty)\bigr]
+  = G_0\,e(t),
+\]
+where the last step uses $e(-\infty)=0$ (the solid starts undeformed).
+This is stress proportional to strain --- Hooke's law. $\checkmark$
+
+\textbf{Viscous limit}: $G(\tau) = \eta\,\delta(\tau)$ (instantaneous
+memory, no history). Substituting:
+\[
+  \sigma(t) = \int_0^\infty \eta\,\delta(\tau)\,\dot{e}(t-\tau)\,\dd\tau
+  = \eta\,\dot{e}(t).
+\]
+Stress proportional to strain \emph{rate} --- Newton's law of viscosity.
+$\checkmark$
+
+\textbf{General viscoelastic}: $G(\tau)$ is a smoothly decaying
+function, e.g.\ $G(\tau) = G_\infty + (G_0-G_\infty)e^{-\tau/\tau_{\rm rel}}$.
+\begin{itemize}[noitemsep]
+  \item For $\omega\tau_{\rm rel}\gg 1$ (fast deformation): the material
+    has no time to relax --- behaves like an elastic solid.
+  \item For $\omega\tau_{\rm rel}\ll 1$ (slow deformation): the material
+    relaxes before the next cycle --- behaves like a viscous fluid.
+\end{itemize}
+Silly putty, polymer melts, and --- crucially --- the electron gas all
+behave this way.
+\end{derivbox}
+
+\subsubsection{Summary: Mechanical Analogies for the VK Functional}
+
+The Vignale-Kohn XC stress tensor (Eq.~\ref{eq:sigma_vk}) is
+Eq.~(\ref{eq:viscoelastic}) applied to the electron gas:
+\begin{itemize}[noitemsep]
+  \item $e_{\alpha\beta}(t')$ $\to$ strain rate of the electron fluid
+    at past time $t'$, computed from the current density $\bm{J}$
+    (Eq.~\ref{eq:current_displacement}).
+  \item $G(\tau)$ $\to$ $\eta_{\rm xc}(n_0,\tau)$ and $\zeta_{\rm xc}(n_0,\tau)$,
+    the XC shear and bulk viscosity kernels of the homogeneous electron gas.
+  \item $\sigma_{\alpha\beta}(t)$ $\to$ $\sigma_{\rm xc}^{\alpha\beta}(\bm{r},t)$,
+    the XC stress that drives the correction to the KS vector potential.
+\end{itemize}
+The kernels $\eta_{\rm xc}$ and $\zeta_{\rm xc}$ are material properties
+of the electron gas --- analogous to the viscosity of water --- that
+must be computed from quantum Monte Carlo for the homogeneous electron gas
+and then applied locally via the LDA of CDFT.
+
+% -----------------------------------------------------------------------
+\subsection{The Electron Fluid as a Viscoelastic Medium}
+
+Vignale and Kohn showed that for a slowly varying perturbation (the
+``gradient'' approximation in space), the XC contribution can be expressed
+as a \emph{stress tensor} $\overleftrightarrow{\sigma}_{\rm xc}$, relating
+to the XC vector potential via:
+\begin{equation}
+  n_0(\bm{r})\,\bm{E}_{\rm xc}(\bm{r},t) = \nabla\cdot\overleftrightarrow{\sigma}_{\rm xc}(\bm{r},t),
+  \label{eq:sigma_xc}
+\end{equation}
+where $\bm{E}_{\rm xc} = -\partial\bm{A}_{\rm xc}/\partial t$.
+
+\paragraph{Connection to your car analogy.}
+This is the point where the analogy becomes exact.  The stress tensor has
+the form of a viscoelastic constitutive relation:
+\begin{equation}
+  \sigma_{\rm xc}^{\alpha\beta}(\bm{r},t)
+  = \int_{-\infty}^{t}
+    \underbrace{\eta_{\rm xc}(n_0,\,t-t')}_{\text{shear viscosity kernel}}
+    \underbrace{e^{\alpha\beta}(\bm{r},t')}_{\text{strain rate}}
+    \,\dd t'
+  + \int_{-\infty}^{t}
+    \underbrace{\zeta_{\rm xc}(n_0,\,t-t')}_{\text{bulk viscosity kernel}}
+    \underbrace{(\nabla\cdot\bm{u})\,\delta^{\alpha\beta}}_{\text{compression}}
+    \,\dd t',
+  \label{eq:sigma_vk}
+\end{equation}
+where:
+\begin{itemize}
+  \item $\bm{u}(\bm{r},t)$ is the \textbf{displacement field} of the electron
+    fluid, related to the current by
+    $\bm{J}(\bm{r},t) = n_0(\bm{r})\,\partial\bm{u}/\partial t$;
+  \item $e^{\alpha\beta} = \tfrac{1}{2}(\partial_\alpha u_\beta +
+    \partial_\beta u_\alpha) - \tfrac{1}{3}\delta_{\alpha\beta}\nabla\cdot\bm{u}$
+    is the \textbf{symmetrized strain rate tensor} (shear deformation);
+  \item $\eta_{\rm xc}(n_0,\tau)$ and $\zeta_{\rm xc}(n_0,\tau)$ are the
+    \textbf{shear and bulk viscosity kernels} of the homogeneous electron gas
+    at density $n_0$, computable from quantum Monte Carlo.
+\end{itemize}
+
+\begin{insight}
+The strain rate $e^{\alpha\beta}$ encodes how fast the electron fluid is
+being sheared at time $t'$: it is exactly your car analogy.  The XC
+response today (stress $\sigma_{\rm xc}$ at time $t$) depends on the
+full history of the deformation $e^{\alpha\beta}(\bm{r},t')$ for all
+past times $t'\leq t$, weighted by the viscosity kernel.  A static
+electron cloud produces zero shear and zero VK correction; a rapidly
+oscillating current produces a large strain-rate history and a large
+VK correction.
+\end{insight}
+
+\subsection{Viscosity Kernels: Explicit Forms and Limits}
+
+The kernels are related to the frequency-dependent XC moduli of the
+homogeneous electron gas:
+\begin{align}
+  \eta_{\rm xc}(n_0,\omega)
+  &= -\frac{n_0^2}{\omega}\operatorname{Im}\fxc^T(n_0,\omega),
+  \label{eq:eta_xc}\\
+  \zeta_{\rm xc}(n_0,\omega)
+  &= -\frac{n_0^2}{\omega}\left[\operatorname{Im}\fxc^L(n_0,\omega)
+     - \tfrac{4}{3}\operatorname{Im}\fxc^T(n_0,\omega)\right],
+  \label{eq:zeta_xc}
+\end{align}
+where $\fxc^T$ and $\fxc^L$ are the \textbf{transverse} and
+\textbf{longitudinal} XC kernels of the uniform electron gas.
+These labels refer to the direction of the density fluctuation relative
+to its wavevector $\bm{q}$:
+\begin{itemize}[noitemsep]
+  \item \textbf{Longitudinal} ($\fxc^L$): the density fluctuation is
+    \emph{parallel} to $\bm{q}$ --- a compressional (sound-wave) mode.
+    This is the only component that survives in ordinary TDDFT based
+    on the density $\rho$ alone, because $\rho$ is a scalar (longitudinal
+    field).
+  \item \textbf{Transverse} ($\fxc^T$): the density fluctuation is
+    \emph{perpendicular} to $\bm{q}$ --- a shear mode (like vorticity
+    in a fluid). Transverse response requires the vector current density
+    $\bm{J}$ as the basic variable, which is why current-DFT (VK) is
+    needed: ordinary TDDFT has $\fxc^T = 0$ by construction.
+\end{itemize}
+In the $q\to 0$ (long-wavelength) limit relevant to optical response,
+both $\fxc^L$ and $\fxc^T$ approach finite values that are the XC
+compressional and shear moduli of the electron gas.
+
+The known limiting behaviors are:
+\begin{align}
+  \lim_{\omega\to 0}\operatorname{Im}\fxc^T(\omega) &\propto \omega
+  &&\text{(Drude-like, weak low-frequency dissipation)},\\
+  \lim_{\omega\to\infty}\operatorname{Im}\fxc^T(\omega) &\propto \omega^{-3/2}
+  &&\text{(high-frequency algebraic decay)}.
+\end{align}
+In the time domain, $\eta_{\rm xc}(\tau)$ is a causal function that
+decays over a characteristic time $\sim 1/\omega_p$ (the inverse plasma
+frequency), meaning the memory has a finite range.  This is the basis for
+the practical truncation of the history integral in numerical implementations.
+
+% ============================================================================
+\section{Functional Forms and Implementation of Memory Functionals}
+\label{sec:implementation}
+% ============================================================================
+
+\subsection{The Simplest Memory Extension: Linear Convolution on Top of LDA}
+
+The minimal memory extension retains the scalar $\Vxc$ form and adds a
+linear convolution:
+\begin{equation}
+  \Vxc(\bm{r},t) = \Vxc^{\rm LDA}[\rho(\bm{r},t)]
+  + \int_0^t K_{\rm xc}(n_0(\bm{r}),\,t-t')\,\delta\rho(\bm{r},t')\,\dd t',
+  \label{eq:memory_lda}
+\end{equation}
+where $\delta\rho = \rho(t') - \rho_{\rm gnd}$ and $K_{\rm xc}(n_0,\tau)$
+is the Fourier transform of $[\fxc(n_0,\omega) - \fxc(n_0,0)]$ ---
+the frequency-dependent correction relative to the static (adiabatic) value.
+
+This form:
+\begin{itemize}[noitemsep]
+  \item Reduces to adiabatic LDA when $K_{\rm xc}=0$ (or $\omega\to 0$).
+  \item Captures shifts in excitation energies due to frequency-dependent
+    screening.
+  \item Does not capture full VK dissipation (which requires the vector
+    potential $\bm{A}_{\rm xc}$).
+\end{itemize}
+
+\paragraph{Implementation cost.}
+\begin{enumerate}[noitemsep]
+  \item Store $\delta\rho(\bm{r},t')$ for $t' \in [t-\tau_{\rm max}, t]$:
+    array of size $N_{\rm grid}\times N_{\rm history}$.
+  \item At each step: convolve with $K_{\rm xc}(n_0(\bm{r}),\tau)$:
+    $O(N_{\rm grid}\times N_{\rm history})$ operations.
+  \item Truncate history at $\tau_{\rm max}\sim 10/\omega_p$
+    (kernel is exponentially small beyond this).
+  \item Memory overhead: $\sim N_{\rm grid}\times 100$ doubles (modest).
+\end{enumerate}
+
+\subsection{The Vignale-Kohn Functional: Full Implementation Requirements}
+
+The full VK functional requires computing $\bm{A}_{\rm xc}$ from
+the stress tensor via Eq.~(\ref{eq:sigma_xc}):
+\begin{equation}
+  -n_0\,\frac{\partial\bm{A}_{\rm xc}}{\partial t}
+  = \nabla\cdot\overleftrightarrow{\sigma}_{\rm xc}.
+  \label{eq:Axc_from_sigma}
+\end{equation}
+Integrating in time gives $\bm{A}_{\rm xc}(\bm{r},t)$, which then
+enters the KS Hamiltonian as an additional velocity-gauge coupling:
+\begin{equation}
+  H_{\rm KS}(t) \to H_{\rm KS} + [\bm{A}_{\rm ext}(t)
+  + \bm{A}_{\rm xc}(\bm{r},t)]\cdot\hat{\bm{p}}.
+  \label{eq:H_vk}
+\end{equation}
+
+The matrix element of the XC correction in the KS basis is:
+\begin{equation}
+  \mel{\varphi_i}{\bm{A}_{\rm xc}\cdot\hat{\bm{p}}}{\varphi_j}
+  = \int\!\bm{A}_{\rm xc}(\bm{r},t)\cdot
+    \varphi_i^*(\bm{r})(-\ii\nabla)\varphi_j(\bm{r})\,\dd^3r.
+  \label{eq:vk_matrix}
+\end{equation}
+This has the same structure as the external-field matrix element
+$P^\alpha_{ij} = \ii v_{\rm cell}\mel{\varphi_i}{\partial_\alpha}{\varphi_j}$
+already computed in the RMG velocity-gauge framework.  The VK correction
+enters the same code path --- it is an additional contribution to the
+effective $\bm{A}(t)$ at each timestep.
+
+\begin{table}[ht]
+\centering
+\caption{Comparison of XC approximations for RT-TDDFT.}
+\begin{tabular}{@{}lllll@{}}
+\toprule
+Functional & Memory & Dissipation & Doubles & Cost \\
+\midrule
+Adiabatic LDA/GGA (current) & No & No & No & $O(N^3)$ \\
+Scalar memory [Eq.~(\ref{eq:memory_lda})] & Partial & No & Partial & $+O(N_h)$ \\
+Vignale-Kohn (VK) & Yes (vector) & Yes & Partial & $+O(N_h)$ + Poisson \\
+Exact TDDFT & Full & Full & Full & Exponential \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Causality and Kramers-Kronig Relations}
+
+Any physically correct memory kernel must satisfy the
+\emph{Kramers-Kronig (KK) relations}.
+These are not independent constraints imposed from outside --- they
+follow automatically from causality via \textbf{complex analysis}.
+
+\paragraph{Origin from causality and analyticity.}
+A causal kernel $\fxc(\tau)=0$ for $\tau<0$ has a one-sided Fourier
+transform (Eq.~\ref{eq:fxc_fourier}).
+The key consequence is that $\fxc(\omega)$, extended to complex $\omega$,
+is \emph{analytic in the upper half-plane} $\operatorname{Im}\omega > 0$:
+no poles or branch cuts there, because the $e^{i\omega\tau}$ factor
+is exponentially damped when $\operatorname{Im}\omega>0$ and $\tau>0$.
+
+Applying the \textbf{Cauchy integral theorem} to a contour that runs
+along the real axis and closes in the upper half-plane (where $\fxc\to 0$
+at large $|\omega|$), one obtains the \textbf{dispersion relation}:
+\begin{equation}
+  \fxc(\omega) = \frac{1}{\pi\ii}\,\mathcal{P}\!\int_{-\infty}^\infty
+  \frac{\fxc(\omega')}{\omega'-\omega}\,\dd\omega',
+\end{equation}
+where $\mathcal{P}$ denotes the Cauchy principal value.
+Separating real and imaginary parts yields the Kramers-Kronig relations
+($K_{\rm xc}(\tau) = 0$ for $\tau < 0$):
+\begin{align}
+  \operatorname{Re}\fxc(\omega)
+  &= \fxc(0) + \frac{2}{\pi}\,\mathcal{P}\!\int_0^\infty
+     \frac{\omega'\,\operatorname{Im}\fxc(\omega')}{{\omega'}^2 - \omega^2}\,\dd\omega',
+  \label{eq:kk1}\\
+  \operatorname{Im}\fxc(\omega)
+  &= -\frac{2\omega}{\pi}\,\mathcal{P}\!\int_0^\infty
+     \frac{\operatorname{Re}\fxc(\omega') - \fxc(0)}{{\omega'}^2-\omega^2}\,\dd\omega'.
+  \label{eq:kk2}
+\end{align}
+The adiabatic approximation satisfies the $\omega\to 0$ limit of
+Eq.~(\ref{eq:kk1}) trivially --- it is just the static kernel.
+But it violates Eq.~(\ref{eq:kk2}) because $\operatorname{Im}\fxc^{\rm ATDDFT} = 0$
+for all $\omega > 0$, while the right-hand side of Eq.~(\ref{eq:kk2})
+is generally nonzero.  This is another way of seeing that the adiabatic
+approximation is inconsistent with a causal memory.
+
+% ============================================================================
+\section{Summary}
+\label{sec:summary}
+% ============================================================================
+
+The four questions addressed in this tutorial are resolved as follows:
+
+\paragraph{1. What does the adiabatic approximation discard?}
+It replaces the history-dependent XC kernel $\fxc(\omega)$ --- a
+function with poles and a nonzero imaginary part --- by a frequency-independent
+constant.  This is equivalent to assuming that the XC response is
+instantaneous (zero memory time).  Time-derivative corrections improve
+this approximation perturbatively but cannot reproduce poles.
+
+\paragraph{2. Why is there no dissipation in adiabatic TDDFT?}
+The fundamental reason is that the KS Hamiltonian is Hermitian and the
+Magnus propagator is unitary, conserving the eigenvalues of $P(t)$
+(occupation numbers) exactly.  Population relaxation ($T_1$) requires
+a bath and is absent regardless of $\fxc$.  Pure dephasing ($T_2$)
+requires $\operatorname{Im}\fxc(\omega)\neq 0$, which the adiabatic
+approximation sets to zero.  Both effects are correctly attributed to
+unitarity and the absence of memory, not just one or the other.
+
+\paragraph{3. Why are double excitations missing?}
+Pure doubly excited states are dipole-dark: the matrix element
+$\mel{EE}{\hat{x}}{GG} = 0$ exactly (Eq.~\ref{eq:double_forbidden}).
+In the interacting system, Coulomb mixing creates states with mixed
+single+double character that are dipole-accessible.  Adiabatic TDDFT
+places these states at wrong energies because the Casida basis
+spans only single KS excitations.  Recovering the correct energy
+requires a pole in $\fxc$ at the double-excitation frequency
+(Eq.~\ref{eq:maitra_pole}).
+
+\paragraph{4. Why is $(\rho,\bm{J})$ needed for periodic systems?}
+$\rho(\bm{r},t)$ is gauge-invariant (Eq.~\ref{eq:rho_invariant}) and
+cannot distinguish the presence or absence of a macroscopic vector
+potential $\bm{A}(t)$ in a crystal.  $\bm{J}(\bm{r},t)$ is also
+gauge-invariant (Eq.~\ref{eq:J_invariant}) and carries the missing
+information.  The Vignale-Kohn theorem establishes $(\rho,\bm{J})$
+as the correct basic variable pair.  The resulting XC functional has a
+viscoelastic memory structure (Eq.~\ref{eq:sigma_vk}) that directly
+formalizes the intuition that the electron system's response today
+depends on the full history of its deformation.
+
+% ============================================================================
+\bibliographystyle{unsrt}
+\bibliography{rmg_tddft_theory}
+% ============================================================================
+
+\end{document}

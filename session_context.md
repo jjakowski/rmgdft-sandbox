@@ -1,5 +1,5 @@
 # Session Context — RT-TDDFT Theory, Documentation, and Tutorial
-**Date:** 2026-04-01
+**Date:** 2026-04-01 (updated 2026-04-02)
 **Branch:** `explore` (`rmgdft-sandbox-explore/`)
 **Session goal:** Deep code reading → inline annotations → LaTeX documentation → TDDFT theory tutorial
 
@@ -279,18 +279,57 @@ GTH PP complexity: ~80-100 additional lines (parameter table + projector applica
 
 ---
 
-## 8. Immediately Interrupted Question (Next to Address)
+## 8. Immediately Interrupted Question — RESOLVED
 
-Jacek asked about **functional derivatives** — specifically Eq. 51 (δV_xc/δρ) and Eq. 52 (δ²E_xc/δρδρ') in the tutorial document — before the session was interrupted.
+Jacek asked about **functional derivatives** before the prior session was interrupted.
+This was resolved in the 2026-04-02 session: §2 of `tddft_memory_tutorial.tex` was
+expanded from ~3 pages to ~12 pages and now covers all of the planned content plus more.
+The "Functional Derivatives: A Primer for Quantum Chemists" section (§2) now includes:
+- Definition, intuition, gradient analogy, Gâteaux derivative
+- Dirac delta defined (B4), notation disambiguation box (D2)
+- Four-step algorithm for computing functional derivatives (D3)
+- Three worked examples: F=∫f²dx, Hartree energy, bilinear F=∬Kff
+- Composite chain rule proved (A3)
+- Second derivative, XC kernel, LDA f_xc with chain rule invoked explicitly
+- Summary table, functional chain rule with example (B3)
+- Gaussian-basis connections throughout (C1, C3)
 
-He needs a primer on:
-- What a functional derivative is (distinction from ordinary derivative)
-- How to compute it with basic examples
-- Mental picture of δF/δf(x): "rate of change of F when f is nudged at one point x"
+---
 
-**Planned addition to tutorial document:** New subsection in Sec. 5 (or early in Sec. 2) titled "Functional Derivatives: A Primer with Examples" covering:
-1. Definition: F[f+εδ(x-x₀)] - F[f] / ε as ε→0
-2. Example 1: F[f] = ∫f(x)²dx → δF/δf(x) = 2f(x)
-3. Example 2: F[f] = ∫∫K(x,y)f(x)f(y)dxdy → δF/δf(x) = 2∫K(x,y)f(y)dy
-4. Application: E_xc[ρ] → V_xc = δE_xc/δρ, then f_xc = δV_xc/δρ = δ²E_xc/δρ²
-5. LDA explicit calculation: ε_xc(ρ) local → V_xc(r) = d[ρε_xc]/dρ (ordinary derivative)
+## 9. Lessons Learned — 2026-04-02 Session (Tutorial Gap Patching)
+
+### Strategy
+- **One gap at a time, compile after each, never attempt full rewrite.**
+  Both prior full-rewrite attempts timed out (~58 min). The one-gap-at-a-time
+  strategy completed all 39 gaps in a single session without timeout.
+- **grep → targeted read (±15 lines) → Edit.** Never re-read the full 29k-token
+  file. Grep for the exact target text, read just enough context, apply Edit.
+  This kept context usage comfortably under 50% across the full 39-gap session.
+- **Two-pass pdflatex after every edit.** New `\label` commands require a second
+  pass to resolve cross-references. Chain error check and output confirmation in
+  one bash command: `grep -E "^!|^l\." | head -5 && ... | grep "Output written"`.
+
+### Gap Dependencies
+- **Some gaps resolve others.** A4 (Hartree derivbox: dummy-variable swap +
+  Fubini named) resolved D5 before D5 was reached. Check for redundancy before
+  patching a later gap rather than duplicating work.
+- **The priority order in gap_list.md was correct.** B4 (Dirac delta) was a
+  prerequisite for A2, A3, B1. D3 (four-step algorithm) set the framework that
+  all worked examples referenced. Doing these first was right.
+
+### Content Corrections
+- **A8 was a real physics error, not just an omission.** The elastic limit
+  `G(τ)=G₀δ(τ)` in the viscoelastic derivation box was wrong — a delta-function
+  kernel gives viscous (Newton) behaviour, not elastic (Hooke). The correct
+  elastic limit is `G(τ)=G₀` (constant, infinite memory). Gap patching must
+  include catching and fixing actual errors, not only filling omissions.
+
+### Handoff Protocol
+- **`session_progress.md` is the primary handoff document.** A complete per-gap
+  log (one line per gap, ✓ status, brief description of what was inserted) at the
+  end of a session is what allows the next instance to pick up without rereading
+  large files. The 39-entry log written at session end is the right granularity.
+- **Context budget matters.** At the start of a gap-patching session, read only
+  session_context.md + session_progress.md + gap_list.md + targeted file greps.
+  Do NOT read the full tutorial file. The file grows to 40 pages (29k+ tokens)
+  and reading it in full uses ~15% of context budget before any work is done.

@@ -20,6 +20,137 @@
  *
  */
 
+/*
+ * ============================================================================
+ * RmgTddft — Real-Time TDDFT time propagation
+ * ============================================================================
+ *
+ * FORMALISM
+ * ---------
+ * Propagates the one-body density matrix P(t) in the basis of the ground-state
+ * KS orbitals {phi_j}, which are fixed throughout the simulation.  The equation
+ * of motion is the von Neumann / Liouville equation (atomic units, hbar=1):
+ *
+ *   i dP/dt = [H(t), P(t)]
+ *
+ * where P_ij(t) = sum_n f_n C_in(t) C_jn*(t) and
+ *       H_ij(t) = <phi_i | H_KS[rho(t)] | phi_j>.
+ *
+ * This is the MO-basis analogue of the AO-density-matrix Liouville equation in
+ * Gaussian-basis RT-TDDFT (e.g., NWChem, Gaussian).  Because {phi_j} are
+ * orthonormal KS orbitals, there is no overlap matrix S — the equation is
+ * identical to the orthogonal-basis limit of the AO form.
+ *
+ * At t=0:  P_ij(0) = f_i * delta_ij  (diagonal, ground-state occupations).
+ * The density change is built from:
+ *   rho(r,t) = rho_gnd(r) + sum_ij [P_ij(t) - f_i*delta_ij] phi_i(r) phi_j*(r)
+ *
+ * ALGORITHM: predictor-corrector Magnus propagator
+ * -------------------------------------------------
+ * Each step t -> t+dt:
+ *
+ *   1. PREDICTOR  H_pred(t+dt) = 2*H(t) - H(t-dt)          [linear extrap.]
+ *
+ *   2. CORRECTOR  (SCF until ||delta_H|| < 1e-7)
+ *      a. Omega  = 0.5*(H(t) + H_pred(t+dt)) * dt           [1st Magnus term]
+ *      b. P(t+dt) = exp(-i*Omega) P(t) exp(i*Omega)          [BCH series]
+ *      c. rho(t+dt) from P(t+dt)                             [GetNewRho]
+ *      d. V_H[rho], V_xc[rho]                                [Poisson + XC]
+ *      e. H(t+dt) += <phi_i | delta_V | phi_j>               [HmatrixUpdate]
+ *
+ *   3. ADVANCE    P(t) <- P(t+dt),  H(t-dt) <- H(t),  H(t) <- H(t+dt)
+ *
+ * PERTURBATION MODES
+ * ------------------
+ * Two physically distinct modes correspond to finite vs. periodic systems:
+ *
+ *   EFIELD / POINT_CHARGE  [finite molecules, ct.is_gamma = true]
+ *     External field enters as a scalar potential: V_ext = -E * r.
+ *     Applied as an instantaneous kick at t=0 by adding (1/dt)*<phi_i|V|phi_j>
+ *     to H.  The 1/dt factor converts the impulse to a Hamiltonian amplitude
+ *     consistent with the propagator framework.
+ *     Observable: dipole d(t) = integral rho(r,t) * r d^3r  [get_dipole]
+ *     Data file:  basename_spin*_dipole.dat
+ *
+ *   VECTOR_POT  [periodic solids, multiple k-points]
+ *     The position operator r is not Hermitian under PBC, so the field enters
+ *     via the vector potential in the velocity gauge (atomic units):
+ *       H(t) = H_KS + A(t) . p     [linear coupling, A^2 term neglected]
+ *     The time-independent momentum matrix P^alpha_ij = i*vel*<phi_i|(grad+ik)|phi_j>
+ *     is precomputed by VecPHmatrix + CurrentNlpp.
+ *     Observable: current J_alpha(t) = Re[Tr(P(t) * P^alpha)]
+ *     Data file:  basename_spin*_current.dat
+ *
+ * ============================================================================
+ * KNOWN LIMITATIONS AND THEORY GAPS  (as of 2026-03-30)
+ * ============================================================================
+ *
+ * [GAP-1]  VECTOR_POT implements DELTA-KICK ONLY, not a sustained field.
+ *   Theory says H(t) = H_KS + A(t).p with A(t) = A_0*cos(omega*t).
+ *   What is implemented: A(t) = A_0*delta(t) — the kick is added once at t=0
+ *   and then the system evolves freely under H_KS alone.
+ *   Evidence: the time-varying update
+ *     daxpy(A_0*cos(omega*t), Pxmatrix, Hmatrix_0)
+ *   is present but COMMENTED OUT in the extrapolation block.
+ *   ct.tddft_frequency is read from input but has no effect on the propagation.
+ *   Impact: optical spectra obtained via FT of J(t) are VALID (delta-kick
+ *   linear response is a standard approach), but simulating a specific laser
+ *   pulse or a monochromatic CW field is NOT currently possible.
+ *
+ * [GAP-2]  Diamagnetic current contribution is absent.
+ *   The full gauge-invariant current in velocity gauge is:
+ *     J_total = J_para + J_dia
+ *     J_para  = Re[Tr(P(t) * P^alpha)]          [what is computed]
+ *     J_dia   = -n(r,t) * A(t)                   [MISSING]
+ *   For the delta-kick (A -> 0 after t=0), J_dia = 0 and the code is correct.
+ *   If GAP-1 is fixed to support sustained fields, J_dia must also be added.
+ *
+ * [GAP-3]  A^2 term is dropped without documentation.
+ *   The minimal-coupling Hamiltonian is (p + A)^2/2 = p^2/2 + A.p + A^2/2.
+ *   Only the A.p term is retained.  For weak fields this is standard, but the
+ *   omission is not enforced (no amplitude check) and not stated in the input
+ *   documentation.
+ *
+ * [GAP-4]  Non-collinear spin (noncoll) is incomplete in the VECTOR_POT path.
+ *   The vtot update at STEP 2e uses only the scalar part of V_xc:
+ *     vtot = vxc[0] + vh + vh_dip - old values
+ *   For non-collinear spin, V_xc is a 2x2 matrix in spin space
+ *   (components cx, cy, cz, in addition to the scalar part).  The off-diagonal
+ *   spin components are absent from vtot.
+ *   The two "noncoll need change" comments in the code mark these locations.
+ *   Running VECTOR_POT with noncoll enabled will silently produce wrong H(t).
+ *
+ * [GAP-5]  Hmatrix_m1_cpu serves three different roles within one timestep.
+ *   Before the SCF:  H(t-dt)  [used by extrapolate_Hmatrix]
+ *   During SCF 2a:   Omega    [output of magnus(), overwrites H(t-dt)]
+ *   During SCF 2e:   <delta_V>[output of HmatrixUpdate(), overwrites Omega]
+ *   The buffer reuse is intentional but fragile: any future code that reads
+ *   Hmatrix_m1_cpu after the extrapolation step will get Omega, not H(t-dt).
+ *   H(t-dt) is correctly restored at STEP 3 via:
+ *     Hmatrix_m1_cpu <- Hmatrix_0_cpu
+ *
+ * [GAP-6]  Hmatrix_cpu is never explicitly reset to H(t) at the start of each
+ *   timestep — it carries the converged H from the previous step and the SCF
+ *   adds INCREMENTAL potential corrections delta_V on top of it.  This is
+ *   logically correct (vtot = V_new - V_old in each SCF iteration), but the
+ *   convention is fragile and not documented.  Breaking the vtot = incremental
+ *   convention in any future modification will silently corrupt H.
+ *
+ * [GAP-7]  No guard against using EFIELD mode for a periodic solid or VECTOR_POT
+ *   for a finite molecule.  The two modes are physically required by the
+ *   boundary conditions, but the code does not check or enforce this.  Using
+ *   EFIELD with k-points or VECTOR_POT at gamma-point with is_gamma=true will
+ *   compile and run without error but produce unphysical results.
+ *
+ * [GAP-8]  The EFIELD kick amplitude uses ct.efield_tddft_crds as the electric
+ *   field E_0 (length gauge), while VECTOR_POT uses it as the vector potential
+ *   amplitude A_0 (velocity gauge).  The relationship E_0 = A_0 * omega means
+ *   the two modes require different input values for the same physical field
+ *   strength, but this is not documented in the input file description.
+ *
+ * ============================================================================
+ */
+
 
 #include <float.h>
 #include <math.h>
@@ -474,25 +605,76 @@ template <typename OrbitalType, typename MatrixType> void RmgTddft ( spinobj<dou
     double tot_bp_pol = 0.0;
     if(ct.tddft_mode == VECTOR_POT)
     {
-        // vector potential will be A(t) =  ct.efield_tddft * cos(tddft_frequency * t)
-        // VecP matrix is <psi| ct.efied_tddft dot gradient | psi> 
+        // ====================================================================
+        // VELOCITY GAUGE INITIALIZATION (run once before the time loop)
         //
+        // THEORY: why velocity gauge for periodic systems
+        // -----------------------------------------------
+        // For a crystal, the position operator r is not Hermitian under PBC
+        // (Bloch states extend over all space).  The electric field therefore
+        // cannot enter as V = -e*E*r (length gauge).  Instead, the field is
+        // coupled through the vector potential A(t) in the minimal-coupling
+        // Hamiltonian (atomic units, linear-in-A approximation):
+        //
+        //   H(t) = H_KS  +  A(t) · p                 [velocity gauge]
+        //
+        // where  p = -i*grad  is the canonical momentum operator.
+        // For a monochromatic field:  A(t) = A_0 * epsilon_hat * cos(omega*t)
+        // For a delta-kick at t=0:   A(t) = A_0 * epsilon_hat * delta(t)
+        //
+        // Here ct.efield_tddft_crds[0,1,2] = A_0 * epsilon_hat  (amplitude vector).
+        //
+        // STEP A — Build the time-independent momentum matrix P^alpha_ij
+        // ----------------------------------------------------------------
+        // VecPHmatrix computes for each Cartesian direction alpha:
+        //
+        //   P^alpha_ij = i * vel * <phi_i | d/dx_alpha + i*k_alpha | phi_j>
+        //
+        // where:
+        //   - vel = Omega/N  is the real-space grid integration weight
+        //   - the +ik_alpha term is the k-correction for Bloch states
+        //   - the factor i converts grad to the momentum operator  p = -i*grad
+        //
+        // Result stored in: Pxmatrix_cpu, Pymatrix_cpu, Pzmatrix_cpu  (N×N complex)
+        //
+        // STEP B — Add the delta-kick to H at t=0
+        // -----------------------------------------
+        // For an instantaneous kick at t=0, A(t) = A_0 * delta(t), the
+        // integrated effect on the Hamiltonian over the first timestep is:
+        //
+        //   H(t=0) += A_0 · (eps_x * P^x + eps_y * P^y + eps_z * P^z)
+        //            = sum_alpha  A_0_alpha * P^alpha
+        //
+        // [cos(omega*t=0) = 1, so the time-varying field evaluates to A_0 at t=0]
+        //
+        // After the kick H contains the full velocity-gauge Hamiltonian at t=0.
+        //
+        // STEP C — Add NL-PP correction to the current operator
+        // -------------------------------------------------------
+        // CurrentNlpp adds the nonlocal pseudopotential contribution to
+        // Pxmatrix/Pymatrix/Pzmatrix (see CurrentNlpp.cpp for theory).
+        // After this, P^alpha contains the TOTAL current operator matrix.
+        // ====================================================================
         if(ct.verbose) {
             rmg::printlog("\n starting VecP matrix ");
             fflush(NULL);
         }
         for(int kpt = 0; kpt < ct.num_kpts_pe; kpt++) {
+            // STEP A: momentum matrix P^alpha_ij = i*vel*<phi_i|(grad+ik)|phi_j>
             VecPHmatrix(Kptr[kpt], ct.efield_tddft_crds, desca, ct.tddft_start_state, numst);
 
             if(pre_steps == 0)
             {
-                // at t= 0, cos(omega t) = 1.0
+                // STEP B: delta-kick at t=0 — add A_0·P to H(t=0) and H(t=-dt)
+                // H_ij(t=0) += sum_alpha  A_0_alpha * P^alpha_ij
+                // cos(omega*0) = 1, so the full A_0 amplitude is applied here.
                 daxpy ( &n2_C ,  &ct.efield_tddft_crds[0], (double *)Kptr[kpt]->Pxmatrix_cpu, &ione , (double *)Kptr[kpt]->Hmatrix_m1_cpu,  &ione) ;
                 daxpy ( &n2_C ,  &ct.efield_tddft_crds[1], (double *)Kptr[kpt]->Pymatrix_cpu, &ione , (double *)Kptr[kpt]->Hmatrix_m1_cpu,  &ione) ;
                 daxpy ( &n2_C ,  &ct.efield_tddft_crds[2], (double *)Kptr[kpt]->Pzmatrix_cpu, &ione , (double *)Kptr[kpt]->Hmatrix_m1_cpu,  &ione) ;
                 memcpy(Kptr[kpt]->Hmatrix_0_cpu, Kptr[kpt]->Hmatrix_m1_cpu, matrix_size);
             }
 
+            // STEP C: NL-PP correction — adds i[V_NL, r_alpha] to P^alpha_ij
             CurrentNlpp(Kptr[kpt], desca, ct.tddft_start_state, numst);
 
             if(0)
@@ -511,6 +693,18 @@ template <typename OrbitalType, typename MatrixType> void RmgTddft ( spinobj<dou
             fflush(NULL);
         }
 
+        // GROUND-STATE CURRENT J_0 (reference baseline)
+        // -----------------------------------------------
+        // Computes the paramagnetic current density at t=0 (before the kick).
+        // For a time-reversal-symmetric ground state this should be zero.
+        // A nonzero J_0 arises only from k-point sampling asymmetry; it is
+        // subtracted as a baseline when interpreting the time-dependent signal.
+        //
+        //   J_alpha(t=0) = sum_k  w_k * Re[ Tr_ij( P_ij(t=0) * P^alpha_ij ) ]
+        //                = sum_k  w_k * Re[ P(t=0) : P^alpha ]  (Frobenius inner product)
+        //
+        // The zdotc call contracts the full N^2 matrices element-by-element:
+        //   Re[ sum_ij  conj(P_ij(t=0)) * P^alpha_ij ]
         for(int kpt = 0; kpt < ct.num_kpts_pe; kpt++) {
             std::complex<double> tem_x = rmg_zdotc(&n2, (std::complex<double> *)Kptr[kpt]->Pn0_cpu, &ione, (std::complex<double> *)Kptr[kpt]->Pxmatrix_cpu, &ione);
             current0[0] += std::real(tem_x) * Kptr[kpt]->kp.kweight;
@@ -596,6 +790,16 @@ template <typename OrbitalType, typename MatrixType> void RmgTddft ( spinobj<dou
     spinobj<double> vxc_in;
 
     //  run rt-td-dft
+    //
+    // ========================================================================
+    // OUTER TIME LOOP  t = n*dt,  n = 0, 1, ..., tddft_steps-1
+    //   Advances the density matrix P(t) by one timestep dt using a
+    //   predictor-corrector Magnus propagator with SCF self-consistency.
+    //   State variables carried across steps:
+    //     Pn0        = P(t)       density matrix at current time
+    //     Hmatrix_0  = H(t)       KS Hamiltonian matrix at current time
+    //     Hmatrix_m1 = H(t-dt)    KS Hamiltonian matrix one step back
+    // ========================================================================
     for(tddft_steps = 0; tddft_steps < ct.tddft_steps; tddft_steps++)
     {
         //if(pct.gridpe == 0) printf("=========================================================================\n   step:  %d\n", tddft_steps);
@@ -608,6 +812,12 @@ template <typename OrbitalType, typename MatrixType> void RmgTddft ( spinobj<dou
         current[1] = 0.0;
         current[2] = 0.0;
 
+        // ----------------------------------------------------------------
+        // STEP 1 — PREDICTOR: extrapolate H(t+dt) from H(t) and H(t-dt)
+        //   H_pred(t+dt) = 2*H(t) - H(t-dt)   [linear extrapolation]
+        //   Result stored in Hmatrix_1 (= H_pred(t+dt)), used as the
+        //   initial guess for the SCF loop below.
+        // ----------------------------------------------------------------
         RT2a = new RmgTimer("2-TDDFT: extrapolate");
         for(int kpt = 0; kpt < ct.num_kpts_pe; kpt++) {
             //if(ct.tddft_mode == VECTOR_POT && tot_steps == 0)
@@ -636,7 +846,13 @@ template <typename OrbitalType, typename MatrixType> void RmgTddft ( spinobj<dou
         int     niter_bch ;
 
 
-        //-----   SCF loop  starts here: 
+        // ----------------------------------------------------------------
+        // STEP 2 — CORRECTOR: SCF loop until H(t+dt) is self-consistent
+        //   Iterates until ||H_new - H_old||_inf < thrs_dHmat (= 1e-7).
+        //   Each iteration: propagate P with current H_pred, rebuild rho,
+        //   update V_H and V_xc, recompute H(t+dt), check convergence.
+        // ----------------------------------------------------------------
+        //-----   SCF loop  starts here:
         while (err > thrs_dHmat &&  iter_scf <  Max_iter_scf)  {
 
             for(int idx = 0; idx < FP0_BASIS; idx++) rho_ksum[idx] = 0.0;
@@ -666,9 +882,20 @@ template <typename OrbitalType, typename MatrixType> void RmgTddft ( spinobj<dou
                     rmg::printlog("\n start magnus and eldyn ");
                     fflush(NULL);
                 }
-                magnus ((double *)Hmatrix_0,    (double *)Hmatrix_1 , time_step, (double *)Hmatrix_m1 , n2_C) ; 
-                /* --- C++  version:  --*/
+                // STEP 2a — MAGNUS OPERATOR: build the propagator exponent Omega
+                //   Omega = 0.5*(H(t) + H_pred(t+dt)) * dt
+                //   This is the 1st-order Magnus approximation to Int_t^{t+dt} H(tau)dtau.
+                //   Inputs:  Hmatrix_0 = H(t),  Hmatrix_1 = H_pred(t+dt)
+                //   Output:  Hmatrix_m1 = Omega  (reuses the m1 buffer)
+                magnus ((double *)Hmatrix_0,    (double *)Hmatrix_1 , time_step, (double *)Hmatrix_m1 , n2_C) ;
 
+                // STEP 2b — PROPAGATE DENSITY MATRIX via BCH expansion
+                //   P(t+dt) = exp(-i*Omega) * P(t) * exp(i*Omega)
+                //           = sum_k (1/k!) (-i)^k [Omega,[...,[Omega,P(t)]...]]
+                //   P is stored split as [S | A] with S=Re(P), A=Im(P) (size 2*N^2).
+                //   Ieldyn=1: BCH/commutator series (commutp) until convergence.
+                //   Inputs:  Hmatrix_m1=Omega, Pn0=P(t)
+                //   Output:  Pn1 = P(t+dt)
                 eldyn_ort(desca, Mdim, Ndim,  Hmatrix_m1,Pn0,Pn1,&Ieldyn, &thrs_bch,&maxiter_bch,  &errmax_bch,&niter_bch ,  &iprint, eldyn_comm) ;
                 RmgMemcpy(Kptr[kpt]->Pn1_cpu, Pn1, 2*n2*sizeof(double));
 
@@ -686,7 +913,11 @@ template <typename OrbitalType, typename MatrixType> void RmgTddft ( spinobj<dou
                 //          }
 
 
-                /////// <----- update Hamiltonian from  Pn1
+                // STEP 2c — DENSITY UPDATE: build rho(r) from P(t+dt)
+                //   rho(r,t+dt) = rho_gnd(r) + Delta_rho(r)
+                //   Delta_rho(r) = sum_ij [P_ij(t+dt) - f_i*delta_ij] * phi_i(r)*phi_j*(r)
+                //   where phi_i are the (fixed) ground-state KS orbitals.
+                //   For periodic systems: rho = sum_k w_k * rho_k (BZ sum below).
                 RT2a = new RmgTimer("2-TDDFT: Rho");
                 rmg::sync_device();
                 if(ct.verbose) {
@@ -737,6 +968,9 @@ template <typename OrbitalType, typename MatrixType> void RmgTddft ( spinobj<dou
             vh_dipole_old = vh_dipole;
             vxc_old = vxc;
 
+            // STEP 2d — UPDATE POTENTIALS from new rho(t+dt)
+            //   V_xc[rho(t+dt)] via LDA/GGA functional
+            //   V_H [rho(t+dt)] via Poisson equation (VhDriver)
             //get_vxc(rho, rho_oppo, rhocore, vxc);
             RmgTimer *RT1 = new RmgTimer("2-TDDFT: exchange/correlation");
             vxc_in = vxc;
@@ -754,6 +988,15 @@ template <typename OrbitalType, typename MatrixType> void RmgTddft ( spinobj<dou
                 DipoleCorrection(dipole_tot,  vh_dipole.data());
             }
 
+            // STEP 2e — UPDATE HAMILTONIAN MATRIX H(t+dt)
+            //   Compute the change in the effective potential:
+            //     Delta_V(r) = [V_xc + V_H + V_dip](t+dt) - [same](t)
+            //   Interpolate Delta_V from the fine grid to the wavefunction grid.
+            //   Then add its matrix elements to H:
+            //     H_ij(t+dt) = H_ij(t) + <phi_i | Delta_V | phi_j>
+            //   HmatrixUpdate computes the <phi_i|V|phi_j> overlap via GEMM:
+            //     A_ij = vel * sum_r phi_i*(r) * V(r) * phi_j(r)
+            //   where vel = Omega/N is the real-space integration weight.
             // noncoll need change
             for (int idx = 0; idx < FP0_BASIS; idx++) {
                 vtot[idx] = vxc[idx] + vh[idx] + vh_dipole[idx]
@@ -792,9 +1035,11 @@ template <typename OrbitalType, typename MatrixType> void RmgTddft ( spinobj<dou
                 double one = 1.0, mone = -1.0;
                 daxpy( &n2_C ,  &one, (double *)Kptr[kpt]->Hmatrix_m1_cpu, &ione , (double *)Kptr[kpt]->Hmatrix_cpu,  &ione) ;
 
-                //////////  < ---  end of Hamiltonian update
+                //   End of Hamiltonian update: Hmatrix_cpu now holds H(t+dt)
 
-                // check error and update Hmatrix_1:
+                // CONVERGENCE CHECK: ||H_new - H_old||_inf
+                //   Hmatrix_1 temporarily holds (H_new - H_old) for the norm test.
+                //   If converged, Hmatrix_1 is updated to H_new for the next SCF iter.
                 rmg::sync_device();
                 daxpy ( &n2_C ,  &mone, (double *)Kptr[kpt]->Hmatrix_cpu, &ione , (double *)Kptr[kpt]->Hmatrix_1_cpu ,  &ione) ;
 
@@ -848,17 +1093,41 @@ template <typename OrbitalType, typename MatrixType> void RmgTddft ( spinobj<dou
         }
 
 
+        // ----------------------------------------------------------------
+        // STEP 3 — ADVANCE: shift state variables for the next timestep
+        //   P(t)     <- P(t+dt)     [Pn0  <- Pn1]
+        //   H(t-dt)  <- H(t)        [Hmatrix_m1 <- Hmatrix_0]
+        //   H(t)     <- H(t+dt)     [Hmatrix_0  <- Hmatrix_1]
+        // ----------------------------------------------------------------
         for(int kpt = 0; kpt < ct.num_kpts_pe; kpt++) {
             memcpy(Kptr[kpt]->Pn0_cpu, Kptr[kpt]->Pn1_cpu, n22 * sizeof(double));
 
             // save current  H0, H1 for the  next step extrapolatiion
             memcpy(Kptr[kpt]->Hmatrix_m1_cpu, Kptr[kpt]->Hmatrix_0_cpu, matrix_size);
-            //dcopy(&n2, Hmatrix  , &ione, Hmatrix_1  , &ione);         // this update is already done right after scf loop 
+            //dcopy(&n2, Hmatrix  , &ione, Hmatrix_1  , &ione);         // this update is already done right after scf loop
 
             memcpy(Kptr[kpt]->Hmatrix_0_cpu, Kptr[kpt]->Hmatrix_1_cpu, matrix_size);
 
             if(ct.tddft_mode == VECTOR_POT )
             {
+                // TIME-DEPENDENT CURRENT J(t) — extracted after each propagation step
+                // -------------------------------------------------------------------
+                // The paramagnetic current density (in the orbital basis) is:
+                //
+                //   J_alpha(t) = Re[ Tr( P(t) * P^alpha ) ]
+                //              = Re[ sum_ij  P_ij(t) * P^alpha_ij ]
+                //
+                // where:
+                //   P(t)     = Pn0  (density matrix after advancing, stored as P_ij(t+dt))
+                //   P^alpha  = Pxmatrix/Pymatrix/Pzmatrix (precomputed total current operator)
+                //
+                // The zdotc computes conj(P_ij) * P^alpha_ij, summed over all i,j.
+                // Multiplied by kweight and summed over k-points for the BZ average:
+                //
+                //   J_alpha(t) = sum_k  w_k * Re[ Tr_k( P_k(t) * P^alpha_k ) ]
+                //
+                // This is the observable written to _current.dat at each step.
+                // Its Fourier transform J(omega) / E(omega) gives the optical conductivity.
                 std::complex<double> tem_x = rmg_zdotc(&n2, (std::complex<double> *)Kptr[kpt]->Pn0_cpu, &ione, (std::complex<double> *)Kptr[kpt]->Pxmatrix_cpu, &ione);
                 current[0] += std::real(tem_x) * Kptr[kpt]->kp.kweight;
                 std::complex<double> tem_y = rmg_zdotc(&n2, (std::complex<double> *)Kptr[kpt]->Pn0_cpu, &ione, (std::complex<double> *)Kptr[kpt]->Pymatrix_cpu, &ione);

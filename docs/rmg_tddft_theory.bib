@@ -1,0 +1,216 @@
+% ============================================================================
+% Bibliography for rmg_tddft_theory.tex
+% RT-TDDFT in RMG-DFT: Theory, Algorithm, and Implementation
+% ============================================================================
+
+% ---------- RT-TDDFT methodology ----------
+
+@article{Yabana1996,
+  author  = {Yabana, K. and Bertsch, G. F.},
+  title   = {Time-dependent local-density approximation in real time},
+  journal = {Phys. Rev. B},
+  volume  = {54},
+  pages   = {4484--4487},
+  year    = {1996},
+  doi     = {10.1103/PhysRevB.54.4484},
+  note    = {Foundational paper for real-space real-time TDDFT in solids;
+             establishes the velocity-gauge approach for periodic systems.}
+}
+
+@article{Castro2004,
+  author  = {Castro, A. and Marques, M. A. L. and Alonso, J. A.
+             and Bertsch, G. F. and Rubio, A.},
+  title   = {Excited states dynamics in time-dependent density functional
+             theory: High-field molecular dissociation and harmonic generation},
+  journal = {Eur. Phys. J. D},
+  volume  = {28},
+  pages   = {211--218},
+  year    = {2004},
+  doi     = {10.1140/epjd/e2003-00306-3},
+  note    = {Octopus code: real-space TDDFT implementation reference.}
+}
+
+@article{Marques2003,
+  author  = {Marques, M. A. L. and Castro, A. and Bertsch, G. F. and Rubio, A.},
+  title   = {octopus: a first-principles tool for excited electron-ion dynamics},
+  journal = {Comput. Phys. Commun.},
+  volume  = {151},
+  pages   = {60--78},
+  year    = {2003},
+  doi     = {10.1016/S0010-4655(02)00686-0}
+}
+
+% ---------- Velocity gauge and current ----------
+
+@article{IsmailBeigi1999,
+  author  = {Ismail-Beigi, S. and Chang, E. K. and Louie, S. G.},
+  title   = {Coupling of Nonlocal Potentials to Electromagnetic Fields},
+  journal = {Phys. Rev. Lett.},
+  volume  = {87},
+  pages   = {087402},
+  year    = {2001},
+  doi     = {10.1103/PhysRevLett.87.087402},
+  note    = {Derives the commutator correction $\ii[V_{\rm NL},\hat{r}]$ to the
+             current operator for nonlocal pseudopotentials in periodic systems.}
+}
+
+@article{Pickard2003,
+  author  = {Pickard, C. J. and Mauri, F.},
+  title   = {Nonlocal pseudopotentials and magnetic fields},
+  journal = {Phys. Rev. Lett.},
+  volume  = {91},
+  pages   = {196401},
+  year    = {2003},
+  doi     = {10.1103/PhysRevLett.91.196401},
+  note    = {GIPAW method: derives the same $\ii[V_{\rm NL},\hat{r}]$ commutator
+             in the context of NMR chemical shifts. Directly applicable to the
+             NL-PP current correction in RT-TDDFT.}
+}
+
+@article{Bertsch2000,
+  author  = {Bertsch, G. F. and Iwata, J.-I. and Rubio, A. and Yabana, K.},
+  title   = {Real-space, real-time method for the dielectric function},
+  journal = {Phys. Rev. B},
+  volume  = {62},
+  pages   = {7998--8002},
+  year    = {2000},
+  doi     = {10.1103/PhysRevB.62.7998},
+  note    = {Optical response of solids via RT-TDDFT with velocity gauge.}
+}
+
+% ---------- Magnus propagator ----------
+
+@article{Magnus1954,
+  author  = {Magnus, W.},
+  title   = {On the exponential solution of differential equations for a
+             linear operator},
+  journal = {Commun. Pure Appl. Math.},
+  volume  = {7},
+  pages   = {649--673},
+  year    = {1954},
+  doi     = {10.1002/cpa.3160070404},
+  note    = {Original derivation of the Magnus expansion; establishes that
+             the solution is expressible as a single exponential (Lie-algebraic).}
+}
+
+@article{Blanes2009,
+  author  = {Blanes, S. and Casas, F. and Oteo, J. A. and Ros, J.},
+  title   = {The Magnus expansion and some of its applications},
+  journal = {Phys. Rep.},
+  volume  = {470},
+  pages   = {151--238},
+  year    = {2009},
+  doi     = {10.1016/j.physrep.2008.11.001},
+  note    = {Comprehensive review of the Magnus expansion and higher-order
+             variants; includes numerical propagator comparisons.}
+}
+
+% ---------- Pseudopotentials ----------
+
+@article{Hamann1979,
+  author  = {Hamann, D. R. and Schluter, M. and Chiang, C.},
+  title   = {Norm-Conserving Pseudopotentials},
+  journal = {Phys. Rev. Lett.},
+  volume  = {43},
+  pages   = {1494--1497},
+  year    = {1979},
+  doi     = {10.1103/PhysRevLett.43.1494},
+  note    = {Original norm-conserving pseudopotential construction.
+             Establishes the norm-conservation condition that guarantees
+             correct linear response (condition 3 in Sec.~3).}
+}
+
+@article{Troullier1991,
+  author  = {Troullier, N. and Martins, J. L.},
+  title   = {Efficient pseudopotentials for plane-wave calculations},
+  journal = {Phys. Rev. B},
+  volume  = {43},
+  pages   = {1993--2006},
+  year    = {1991},
+  doi     = {10.1103/PhysRevB.43.1993},
+  note    = {Troullier-Martins pseudopotentials: optimized NCPP widely used
+             in plane-wave and real-space codes. Smaller core radii = more
+             transferable; softer cutoff = fewer grid points needed.}
+}
+
+@article{Kleinman1982,
+  author  = {Kleinman, L. and Bylander, D. M.},
+  title   = {Efficacious Form for Model Pseudopotentials},
+  journal = {Phys. Rev. Lett.},
+  volume  = {48},
+  pages   = {1425--1428},
+  year    = {1982},
+  doi     = {10.1103/PhysRevLett.48.1425},
+  note    = {Kleinman-Bylander transformation from semilocal to fully separable
+             (rank-1 per channel) form $V_{\rm NL} = \sum D_{lm}|\beta\rangle\langle\beta|$.
+             Reduces cost from $O(N^2)$ to $O(N)$ per grid point.}
+}
+
+@article{Vanderbilt1990,
+  author  = {Vanderbilt, D.},
+  title   = {Soft self-consistent pseudopotentials in a generalized eigenvalue
+             formalism},
+  journal = {Phys. Rev. B},
+  volume  = {41},
+  pages   = {7892--7895},
+  year    = {1990},
+  doi     = {10.1103/PhysRevB.41.7892},
+  note    = {Ultrasoft pseudopotentials (USPP): relaxes norm conservation,
+             introduces augmentation charges $Q_{ij}$ and overlap matrix $S\neq\mathbf{1}$.
+             Analogous to the AO-basis overlap in Gaussian DFT. Not used in RMG.}
+}
+
+@article{Blochl1994,
+  author  = {Bl{\"o}chl, P. E.},
+  title   = {Projector augmented-wave method},
+  journal = {Phys. Rev. B},
+  volume  = {50},
+  pages   = {17953--17979},
+  year    = {1994},
+  doi     = {10.1103/PhysRevB.50.17953},
+  note    = {PAW method: all-electron quality with PP efficiency.
+             Current operator acquires on-site AE reconstruction terms.
+             Not used in RMG.}
+}
+
+% ---------- Berry phase / polarization ----------
+
+@article{KingSmith1993,
+  author  = {King-Smith, R. D. and Vanderbilt, D.},
+  title   = {Theory of polarization of crystalline solids},
+  journal = {Phys. Rev. B},
+  volume  = {47},
+  pages   = {1651--1654},
+  year    = {1993},
+  doi     = {10.1103/PhysRevB.47.1651},
+  note    = {Modern theory of polarization via Berry phase.  Establishes why
+             the position operator $\hat{r}$ is ill-defined under PBC, requiring
+             the velocity gauge for periodic solids.}
+}
+
+% ---------- RMG-DFT ----------
+
+@article{Briggs1995,
+  author  = {Briggs, E. L. and Sullivan, D. J. and Bernholc, J.},
+  title   = {Large-scale electronic-structure calculations with multigrid
+             acceleration},
+  journal = {Phys. Rev. B},
+  volume  = {52},
+  pages   = {R5471--R5474},
+  year    = {1995},
+  doi     = {10.1103/PhysRevB.52.R5471},
+  note    = {Original RMG-DFT paper: real-space multigrid DFT.}
+}
+
+@article{Bernholc2008,
+  author  = {Bernholc, J. and Boerna, M. and Briggs, E. L. and
+             Fattebert, J.-L. and Hodak, M. and Kim, W. and
+             Osei-Kuffuor, D. and Rogero, C. and Wu, W.},
+  title   = {Large-scale first-principles molecular dynamics and excited
+             state properties with the RMG code},
+  journal = {J. Phys.: Conf. Ser.},
+  volume  = {125},
+  pages   = {012036},
+  year    = {2008},
+  doi     = {10.1088/1742-6596/125/1/012036}
+}
