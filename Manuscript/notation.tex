@@ -1,0 +1,232 @@
+%% notation.tex
+%% Symbol definitions and conventions for RMG Periodic RT-TDDFT paper (paper 2)
+%% This file is \input{} into paper2_main.tex preamble area.
+%% It defines macros AND documents the convention choices.
+%% Never change a convention without updating DECISIONS.md first.
+
+%% ============================================================
+%% UNIT SYSTEM
+%% ============================================================
+%% Atomic units throughout (hbar=1, m_e=1, e=1, 4*pi*epsilon_0=1).
+%% Stated explicitly at start of Section 2.
+%% Exception: SI when quoting experimental values.
+
+%% ============================================================
+%% IMAGINARY UNIT
+%% ============================================================
+%% Use \imath (dotless i) consistent with paper 1.
+%% Already provided by LaTeX. No new command needed.
+%% Convention: paper 1 uses \imath throughout.
+
+%% ============================================================
+%% ELECTRON CHARGE SIGN CONVENTION
+%% ============================================================
+%% Electron charge = -e, where e > 0.
+%% Current: \vb{J} = -e \vb{v} \rho  (explicit minus sign)
+%% Stated at first use of J in text.
+
+%% ============================================================
+%% OPERATORS (hat notation, consistent with paper 1)
+%% ============================================================
+
+% Hamiltonian
+\newcommand{\Hhat}{\hat{H}}
+
+% Kohn-Sham Hamiltonian
+\newcommand{\HKS}{\hat{H}_{\mathrm{KS}}}
+
+% Time-evolution operator  U(t) = exp(Omega)
+\newcommand{\Uop}{\mathcal{U}}
+
+% Magnus superoperator
+\newcommand{\Wop}{\hat{\mathcal{W}}}
+
+% Momentum operator (canonical)  p = -i hbar grad
+\newcommand{\phat}{\hat{\mathbf{p}}}
+
+% Mechanical momentum  pi = p + (e/c) A
+\newcommand{\pihat}{\hat{\boldsymbol{\pi}}}
+
+% Velocity operator  v = pi / m_e  (includes [r, V^nl] correction)
+\newcommand{\vhat}{\hat{\mathbf{v}}}
+
+% Position operator
+\newcommand{\rhat}{\hat{\mathbf{r}}}
+
+% Current density operator
+\newcommand{\Jhat}{\hat{\mathbf{J}}}
+
+% Nonlocal pseudopotential operator
+\newcommand{\Vnl}{V^{\mathrm{nl}}}
+
+% Commutator shorthand  [A, B]
+% Use standard \left[ \right] or physics package \comm{A}{B}
+% physics package is loaded in paper2_main.tex
+
+%% ============================================================
+%% FIELDS AND POTENTIALS
+%% ============================================================
+
+% Vector potential
+\newcommand{\Avec}{\mathbf{A}}
+
+% Electric field
+\newcommand{\Evec}{\mathbf{E}}
+
+% Magnetic field
+\newcommand{\Bvec}{\mathbf{B}}
+
+% Scalar (electrostatic) potential
+\newcommand{\Phi}{\phi}
+
+% Effective KS potential
+\newcommand{\Veff}{V_{\mathrm{eff}}}
+
+% Hartree potential
+\newcommand{\VH}{V_{\mathrm{H}}}
+
+% Exchange-correlation potential
+\newcommand{\Vxc}{V_{\mathrm{xc}}}
+
+% External (ionic) potential -- local part
+\newcommand{\Vloc}{V^{\mathrm{loc}}}
+
+%% ============================================================
+%% DENSITY MATRIX AND PROPAGATION
+%% ============================================================
+
+% One-particle density matrix (consistent with paper 1: bold P)
+% Paper 1 uses \vb{P} from physics package
+% Use same convention here: \vb{P}, \vb{H}, etc. for matrices
+
+% Density matrix at time t
+%   P(t)  ->  \vb{P}(t)
+
+% Initial density matrix
+%   P^0 = P(0)  ->  \vb{P}^0
+
+% Propagated density matrix
+%   P(t+dt) = P^1  ->  \vb{P}^1
+
+% Average Hamiltonian
+%   Hbar = 1/2 (H0 + H1)  ->  \vb{\bar{H}}
+\newcommand{\Hbar}{\bar{\mathbf{H}}}
+
+% Magnus operator (first order)
+%   Omega_1 = -i/hbar * Hbar * dt  ->  \Omega_1
+% Use standard \Omega_1
+
+% Curly bracket anti-commutator used in BCH expansion
+%   {A,B} = AB + B^dag A  ->  defined in paper 1 notation
+%   Keep same definition: \{A,B\} = AB + BA^\dag
+
+%% ============================================================
+%% BLOCH STATES AND K-POINTS
+%% ============================================================
+
+% Bloch wavefunction
+%   psi_{n,k}(r,t)  ->  \psi_{n,\mathbf{k}}(\mathbf{r},t)
+
+% Crystal momentum vector
+%   k  ->  \mathbf{k}
+
+% Lattice constant
+%   L  (same as paper 1)
+
+% Reciprocal lattice vector
+%   G  ->  \mathbf{G}
+
+% k-point weight
+%   w_k  ->  w_{\mathbf{k}}
+
+%% ============================================================
+%% CURRENT AND OBSERVABLES
+%% ============================================================
+
+% Paramagnetic current density
+\newcommand{\Jpara}{\mathbf{J}_{\mathrm{para}}}
+
+% Diamagnetic current density
+\newcommand{\Jdia}{\mathbf{J}_{\mathrm{dia}}}
+
+% Total current density
+\newcommand{\Jtot}{\mathbf{J}}
+
+% Macroscopic current (volume-averaged, time-dependent observable)
+%   J(t)  ->  \mathbf{J}(t)
+
+% Optical conductivity tensor
+%   sigma(omega)  ->  \boldsymbol{\sigma}(\omega)
+\newcommand{\sigmaop}{\boldsymbol{\sigma}}
+
+% Dielectric function
+%   epsilon(omega)  ->  \boldsymbol{\varepsilon}(\omega)
+\newcommand{\epsop}{\boldsymbol{\varepsilon}}
+
+% Berry phase polarization
+%   P_BP  ->  \mathbf{P}_{\mathrm{BP}}
+\newcommand{\PBP}{\mathbf{P}_{\mathrm{BP}}}
+
+%% ============================================================
+%% MOMENTUM MATRIX ELEMENTS (current operator in KS basis)
+%% ============================================================
+
+% Momentum matrix element (paramagnetic part)
+%   p^alpha_{ab} = <psi_a | (-i hbar grad_alpha + hbar k_alpha) | psi_b>
+%   ->  p^{\alpha}_{ab}  (no special macro, use standard notation)
+
+% Nonlocal PP correction to momentum matrix
+%   [r_alpha, V^nl]_{ab} = <psi_a | [r_alpha, V^nl] | psi_b>
+
+% Full current operator matrix (stored in code as Pxmatrix, Pymatrix, Pzmatrix)
+%   J^alpha_{ab} = p^alpha_{ab} + [r_alpha, V^nl]_{ab}
+\newcommand{\Jmat}[1]{\mathcal{J}^{#1}}
+%   Usage: \Jmat{x}_{ab} for x-component matrix element
+
+%% ============================================================
+%% SPIN NOTATION
+%% ============================================================
+
+% Spin-up density matrix
+\newcommand{\Pup}{P^{\uparrow}}
+
+% Spin-down density matrix
+\newcommand{\Pdn}{P^{\downarrow}}
+
+% Spin-up electron density
+\newcommand{\rhoup}{\rho^{\uparrow}}
+
+% Spin-down electron density
+\newcommand{\rhodn}{\rho^{\downarrow}}
+
+% Spin magnetization density
+\newcommand{\rhomag}{m_s}
+
+%% ============================================================
+%% PSEUDOPOTENTIAL PROJECTORS (Kleinman-Bylander)
+%% ============================================================
+
+% KB projector function at atom I, angular momentum lm
+%   beta^{lm}_I(r)  ->  \beta^{lm}_{I}(\mathbf{r})
+
+% KB projector overlap
+%   <beta^{lm}_I | psi_n>  ->  standard bra-ket notation
+
+%% ============================================================
+%% GAUGE FUNCTION
+%% ============================================================
+
+% Gauge function (scalar field)
+%   chi(r,t)  ->  \chi(\mathbf{r},t)
+%   (standard \chi, no new command needed)
+
+%% ============================================================
+%% INHERITED FROM PAPER 1 (do not redefine)
+%% ============================================================
+%% These are already defined in paper 1 and must remain consistent:
+%%   \vb{P}, \vb{H}  -- bold matrices (from physics package \vb{})
+%%   \imath           -- imaginary unit
+%%   \myred, \myblue, \mygrey, \mygreen  -- annotation colors
+%%   \hbar            -- reduced Planck constant (standard LaTeX)
+%%   All equation labels from paper 1 are cited as \cite{paper1}
+%%   not cross-referenced (separate documents)

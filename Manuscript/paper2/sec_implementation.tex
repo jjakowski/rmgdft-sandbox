@@ -1,0 +1,231 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% sec_implementation.tex
+%% Section 3: Implementation
+%% RMG Periodic RT-TDDFT — Paper 2
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Implementation}
+\label{sec:implementation}
+
+The implementation of the periodic and spin-polarized RT-TDDFT
+presented in this work is built on the existing finite-system
+RT-TDDFT module of \texttt{RMG},\cite{jakowski-rmg-tddft-2025}
+which is described in detail in the accompanying paper.
+Here we focus on the extensions required for periodic boundary
+conditions and spin-polarized calculations, the key approximations
+and their physical justification, and the computational organization
+of the velocity gauge propagation.
+
+%--------------------------------------------------------------------
+\subsection{Algorithm}
+\label{sec:algorithm}
+%--------------------------------------------------------------------
+
+The computational scheme for periodic RT-TDDFT in \texttt{RMG}
+is summarized in Algorithm~\ref{alg:tddft-periodic}.
+It follows the same density matrix propagation framework as the
+finite-system implementation~\cite{jakowski-rmg-tddft-2025} but
+with three key modifications: (1) the perturbation is applied as
+a momentum kick via the vector potential $\mathbf{A}$ rather than
+an electric field dipole kick; (2) the current operator matrix
+replaces the dipole matrix as the primary observable; and (3)
+the Hamiltonian matrix is evaluated at each k-point over the
+Brillouin zone.
+
+\begin{algorithm}[h!]
+\caption{Periodic RT-TDDFT Algorithm (VECTOR\_POT mode)}
+\label{alg:tddft-periodic}
+\begin{algorithmic}[1]
+\scriptsize
+
+\item[{\bf /* Ground state DFT calculations: */}]
+\State Generate Bloch orbitals $|\psi_{n,\mathbf{k}}\rangle$,
+       Kohn-Sham Hamiltonian $\vb{H}^\sigma_{0,\mathbf{k}}$
+       for each k-point $\mathbf{k}$ and spin $\sigma$
+\State Select active space: $N_{\mathrm{occ}}$ occupied +
+       $N_{\mathrm{virt}}$ virtual orbitals
+\item[]
+
+\item[{\bf /* Build current operator matrices (once, before time loop): */}]
+\State For each k-point $\mathbf{k}$ and spin $\sigma$:
+\State \quad Build paramagnetic current matrix:
+\item[] \quad $J^\alpha_{ab} \leftarrow
+         \langle\psi_a|(-\imath\nabla_\alpha + k_\alpha)|\psi_b\rangle$
+       \quad [VecPHmatrix()]
+\State \quad Add nonlocal PP correction:
+\item[] \quad $J^\alpha_{ab} \leftarrow J^\alpha_{ab} +
+         \langle\psi_a|[\hat{r}_\alpha, \Vnl]|\psi_b\rangle$
+       \quad [CurrentNlpp()]
+\State \quad Add $\mathbf{A}(t_0)\cdot\mathbf{J}$ to $\vb{H}_{-1,\mathbf{k}}$
+       to encode the perturbation kick at $t=0$
+\item[]
+
+\item[{\bf /* Initialize density matrix: */}]
+\State $\vb{P}^0_{\mathbf{k}} \leftarrow \mathrm{diag}(f_{n,\mathbf{k}})$
+       \quad (occupation numbers on diagonal)
+\State $\vb{H}_{-1,\mathbf{k}} \leftarrow \vb{H}_{0,\mathbf{k}}$
+       (extrapolation seed)
+\item[]
+
+\item[{\bf /* Time loop: */}]
+\For{$j = 1$ to $N_{\mathrm{steps}}$}
+  \State $t \leftarrow t_0 + j \cdot \Delta t$
+  \State \textbf{Extrapolate:}
+         $\vb{H}_{1,\mathbf{k}} \leftarrow 2\vb{H}_{0,\mathbf{k}}
+          - \vb{H}_{-1,\mathbf{k}}$ \quad [extrapolate\_Hmatrix()]
+  \item[]
+  \item[{\bf /* Self-consistent Hamiltonian loop: */}]
+  \While{$\|\vb{H}_{1}^{\mathrm{new}} - \vb{H}_{1}^{\mathrm{old}}\|_\infty
+          > H_{\mathrm{thrs}}$}
+    \State \textbf{Magnus operator:}
+           $\vb{\Omega}_\mathbf{k} \leftarrow
+            -\imath\cdot\tfrac{1}{2}(\vb{H}_{0,\mathbf{k}}
+            + \vb{H}_{1,\mathbf{k}})\Delta t$
+           \quad [magnus()]
+    \State \textbf{Propagate density matrix:}
+           $\vb{P}^1_\mathbf{k} \leftarrow
+            \vb{P}^0_\mathbf{k} + [\vb{\Omega}_\mathbf{k}, \vb{P}^0_\mathbf{k}]
+            + \ldots$ \quad [eldyn\_ort() / commutp()]
+    \State \textbf{Update density:}
+           $\rho^\sigma(\mathbf{r}) \leftarrow \rho^\sigma_{\mathrm{gs}}(\mathbf{r})
+            + \sum_\mathbf{k} w_\mathbf{k}
+              \sum_{n} P^1_{nn,\mathbf{k}} |\psi_{n,\mathbf{k}}(\mathbf{r})|^2$
+           \quad [GetNewRho\_rmgtddft()]
+    \State \textbf{Update potentials:}
+           $V_{\mathrm{H}}[\rho]$, $V^\sigma_{\mathrm{xc}}[\rho^\uparrow,\rho^\downarrow]$
+    \State \textbf{Update Hamiltonian:}
+           $\vb{H}_{1,\mathbf{k}}^{\mathrm{new}} \leftarrow
+            \langle\psi_a|\hat{H}[\rho]|\psi_b\rangle$
+           \quad [HmatrixUpdate()]
+  \EndWhile
+  \item[]
+  \State \textbf{Extract current:}
+         $J_\alpha(t) \leftarrow
+          \mathrm{Re}\sum_{\mathbf{k}} w_\mathbf{k}\,
+          \mathrm{Tr}[\vb{P}^1_\mathbf{k}\cdot\vb{J}^\alpha_\mathbf{k}]$
+  \State (Optional) \textbf{Berry phase polarization:}
+         $P_{\mathrm{BP},\alpha}(t) \leftarrow
+          \mathrm{Tr}[\vb{P}^1_\mathbf{k}\cdot\vb{X}^\alpha_\mathbf{k}]$
+  \State \textbf{Advance:}
+         $\vb{P}^0 \leftarrow \vb{P}^1$;\;
+         $\vb{H}_{-1} \leftarrow \vb{H}_{0}$;\;
+         $\vb{H}_{0} \leftarrow \vb{H}_{1}$
+\EndFor
+\item[]
+\item[{\bf /* Postprocessing: */}]
+\State Fourier transform $J_\alpha(t)$ for each Cartesian direction $\alpha$
+\State Compute $\sigma_{\alpha\beta}(\omega)$,
+       $\varepsilon_{\alpha\beta}(\omega)$
+
+\end{algorithmic}
+\end{algorithm}
+
+
+%--------------------------------------------------------------------
+\subsection{Key Approximations and Their Justification}
+\label{sec:approximations}
+%--------------------------------------------------------------------
+
+The implementation described in Algorithm~\ref{alg:tddft-periodic}
+embodies several approximations with respect to the full theory
+presented in Section~\ref{sec:theory}.
+We discuss each in turn.
+
+\paragraph{Perturbative momentum kick.}
+The full velocity gauge Hamiltonian (eq.~\ref{eq:tdks-velocity})
+contains the vector potential $\mathbf{A}(t)$ at every time step,
+requiring the $\mathbf{A}(t)\cdot\hat{\mathbf{p}}$ term to be
+re-evaluated throughout the propagation.
+In the present implementation, we instead apply $\mathbf{A}(t)$
+as a delta-function kick at $t=0$ only: the momentum kick is encoded
+in the initial Hamiltonian $\vb{H}_{-1}$ by adding the
+$\mathbf{A}(t_0)\cdot\vb{J}^\alpha$ matrix (step 6 in
+Algorithm~\ref{alg:tddft-periodic}), after which $\mathbf{A}=0$
+for all $t>0$.
+This approach is equivalent to first-order perturbation theory in
+$|\mathbf{A}_0|$, and it provides the full linear optical response
+of the system through the free oscillations of the current density
+$\mathbf{J}(t)$ following the kick.
+The linear response regime is valid as long as the kick amplitude
+is small enough that the system does not leave the linear regime,
+which is straightforwardly verified by checking that the response
+is proportional to $|\mathbf{A}_0|$.
+
+\paragraph{Diamagnetic current term.}
+The full current density contains both paramagnetic and diamagnetic
+contributions (Section~\ref{sec:current}).
+In the present implementation, the diamagnetic term
+$\mathbf{J}_{\mathrm{dia}} \propto \mathbf{A}(t)|\psi|^2$
+is identically zero for all $t>0$ because $\mathbf{A}(t>0)=0$
+in the perturbative kick scheme.
+This is consistent with the linear response regime: the diamagnetic
+contribution to the linear response function is implicitly accounted
+for by the sum rule, and the paramagnetic current alone gives the
+correct optical conductivity.\cite{yabana-bertsch-1996,Mattiat-Luber-2022}
+Simulations with a continuously applied driving field
+(e.g., a CW laser or a Gaussian pulse) would require retaining
+$\mathbf{A}(t)$ throughout the propagation and are beyond the scope
+of the present work.
+
+\paragraph{First-order Magnus expansion.}
+As in the finite-system implementation,\cite{jakowski-rmg-tddft-2025}
+the Magnus operator is truncated to first order:
+\begin{equation}
+  \vb{\Omega} \approx \vb{\Omega}_1
+  = -\imath \cdot \tfrac{1}{2}(\vb{H}_0 + \vb{H}_1)\Delta t.
+  \label{eq:magnus-1st}
+\end{equation}
+The second-order correction $\vb{\Omega}_2 = \frac{1}{12}\Delta t^2
+[\vb{H}_0, \vb{H}_1]$ is not included.
+The accuracy and stability of this scheme for the time steps used
+here was validated in paper~1 through energy conservation tests,
+and we demonstrate analogous stability for the periodic case in
+Section~\ref{sec:results}.
+
+\paragraph{Norm-conserving pseudopotentials only.}
+The current implementation supports only norm-conserving
+pseudopotentials (NCPP).\cite{kleinman-bylander-1982,hamann-1989}
+Ultrasoft pseudopotentials (USPP)\cite{vanderbilt-1990} introduce
+a non-trivial overlap matrix $\mathbf{S} \neq \mathbf{I}$ into
+the density matrix propagation (the nonorthogonal basis path),
+which requires the generalized propagation scheme described in
+Appendix A of paper~1.
+This extension is planned for future work.
+
+\paragraph{BCH propagator for complex Hamiltonians.}
+For k-points away from the $\Gamma$ point, the Hamiltonian matrix
+$\vb{H}_\mathbf{k}$ is complex Hermitian.
+In this case, the BCH commutator expansion propagator (Ieldyn=1)
+is used throughout; the diagonalization-based propagator (Ieldyn=2)
+is not currently supported for complex matrices.
+The BCH expansion is unconditionally stable and has been shown to
+give results equivalent to exact diagonalization within the
+convergence threshold,\cite{jakowski-rmg-tddft-2025} and we find
+no practical limitation from this choice.
+
+%--------------------------------------------------------------------
+\subsection{Software Optimization and Parallelization}
+\label{sec:optimization}
+%--------------------------------------------------------------------
+
+\myred{[Content outline -- adapt from paper 1 Section 3.2 with
+additions for the periodic case:
+- Same MPI + OpenMP + GPU parallelization as paper 1
+- k-point parallelization: each MPI group handles a subset of k-points
+  (pct.kpsub\_comm); current is summed over k-points with weights
+  (MPI\_Allreduce over kpsub\_comm, lines 828-829 in RmgTddft.cpp)
+- Spin parallelization: separate MPI communicator groups per spin channel
+  (pct.spin\_comm); spin channels communicate only for XC update
+  (MPI\_Allreduce over spin\_comm, line 767)
+- The density matrix P and Hamiltonian H are distributed using
+  ScaLAPACK layout (Sp object); size is numst x numst where
+  numst = N\_occ + N\_virt
+- For VECTOR\_POT mode: momentum matrix J\_alpha is complex even at
+  Gamma point (stored as complex<double> in Pxmatrix\_cpu etc.)
+- The BCH commutator [Omega, P] dominates O(N^3); same optimization
+  as paper 1 (real/imaginary decomposition, BLAS ZGEMM/DGEMM)
+- Timing data for benchmark systems: \myred{[add when available]}]}
+
+\myred{[Note: include a brief timing comparison table analogous to
+Table 1 in paper 1, but for one or more periodic benchmark systems
+(e.g., Si supercells of increasing size) to demonstrate scaling.]}

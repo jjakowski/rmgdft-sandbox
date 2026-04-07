@@ -1,0 +1,212 @@
+ 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% paper2_main.tex
+%% RMG Periodic RT-TDDFT — Paper 2
+%%
+%% Title (working): "Real-Time Time-Dependent Density Functional Theory
+%%   for Periodic and Spin-Polarized Systems with the Real-Space
+%%   Multigrids (RMG)"
+%%
+%% This is the master file. Content lives in the \input{} files below.
+%% Paper 1 (finite systems): Jakowski et al. JCTC 2025
+%% Template: Manuscript/source/paper1_main.tex
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\documentclass[journal=jctcce,manuscript=article,etalmode=truncate,maxauthors=10,layout=twocolumn,9pt]{achemso}
+%\documentclass[journal=jctcce,manuscript=article,etalmode=truncate,maxauthors=10,layout=onecolumn]{achemso}
+
+\setkeys{acs}{etalmode=truncate,maxauthors=10}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Packages
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\usepackage{chemformula}        % \ch{} formula subscripts
+\usepackage[T1]{fontenc}        % modern font encodings
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{wrapfig}
+\usepackage{xcolor}
+\usepackage{balance}            % even out references on last page
+\usepackage[colorlinks=true, allcolors=blue]{hyperref}
+\usepackage{physics}            % \vb{}, \comm{}{}, bra-ket notation
+\usepackage[makeroom]{cancel}
+\usepackage{algorithm}
+\usepackage{algpseudocode}      % loads algorithmicx
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Annotation color commands (consistent with paper 1)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\newcommand{\myred}[1]{\textcolor{red}{#1}}
+\newcommand{\myblue}[1]{\textcolor{blue}{#1}}
+\newcommand{\mygrey}[1]{\textcolor{gray}{#1}}
+\newcommand{\mygreen}[1]{\textcolor{green}{#1}}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Notation macros (from notation.tex)
+%% Keep this \input here so notation is available to all section files
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\input{../notation}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Authors
+%% NOTE: Author list to be confirmed. Shown here as paper 1 + Jacek
+%% as corresponding. Update when full author list is agreed.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\author{Jacek Jakowski}
+\affiliation{Center For Nanophase Materials Sciences,
+  Oak Ridge National Laboratory, Oak Ridge, TN 37831, USA}
+\alsoaffiliation{Computational Sciences and Engineering Division,
+  Oak Ridge National Laboratory, Oak Ridge, TN 37831, USA}
+\email{jakowskij@ornl.gov}
+\phone{+1 865 574 6174}
+
+\author{Wenchang Lu}
+\affiliation{Department of Physics, North Carolina State University,
+  Raleigh, NC 27695-8202, USA}
+
+\author{Emil Briggs}
+\affiliation{Department of Physics, North Carolina State University,
+  Raleigh, NC 27695-8202, USA}
+
+\author{Jerzy Bernholc}
+\affiliation{Department of Physics, North Carolina State University,
+  Raleigh, NC 27695-8202, USA}
+
+\author{Panchapakesan Ganesh}
+\affiliation{Center For Nanophase Materials Sciences,
+  Oak Ridge National Laboratory, Oak Ridge, TN 37831, USA}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Title
+%% Working title — to be finalized. Several candidates listed.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\title{\large
+%%----- Candidate 1:
+Real-Time Time-Dependent Density Functional Theory for Periodic and
+Spin-Polarized Systems with the Real-Space Multigrids (RMG)%
+%%
+%%----- Candidate 2:
+%% Optical Response of Periodic and Magnetic Systems from Scalable
+%% Real-Time TDDFT with the Real-Space Multigrids (RMG)%
+%%
+%%----- Candidate 3:
+%% Real-Time TDDFT Beyond Finite Systems: Periodic Boundaries,
+%% Spin Polarization, and Large-Scale Applications with RMG%
+\footnote{NOTICE OF COPYRIGHT: This manuscript has been authored by
+UT-Battelle, LLC under Contract No.\ DE-AC05-00OR22725 with the
+U.S.\ Department of Energy. The United States Government retains and
+the publisher, by accepting the article for publication, acknowledges
+that the United States Government retains a non-exclusive, paid-up,
+irrevocable, worldwide license to publish or reproduce the published
+form of this manuscript, or allow others to do so, for United States
+Government purposes. The Department of Energy will provide public
+access to these results of federally sponsored research in accordance
+with the DOE Public Access Plan
+(http://energy.gov/downloads/doe-public-access-plan).}}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Keywords and abbreviations
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\abbreviations{DFT, RT-TDDFT, RMG}
+\keywords{density functional theory, real-time TDDFT, periodic systems,
+  velocity gauge, current operator, spin polarization, optical conductivity,
+  Berry phase, NV center, real-space multigrid}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Document begins
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{document}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Abstract — to be written last, after all sections are complete
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{abstract}
+\myblue{[Abstract: to be written last, after all sections are complete.
+Approximately 200 words. Should mirror paper 1 abstract structure:
+(1) what we present, (2) what problem it solves, (3) key methodological
+contribution, (4) validation/benchmarking, (5) scalability demonstration
+and outlook.]}
+\end{abstract}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Section files
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\input{sec_intro}
+
+\input{sec_theory}
+
+\input{sec_implementation}
+
+\input{sec_benchmarks}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Summary and Outlook
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Summary and Outlook}
+\label{sec:summary}
+
+\myblue{[To be written after all other sections are complete. Should
+summarize the key contributions, state the validated capabilities,
+and outline planned extensions: (1) continuous driving field / nonlinear
+response, (2) non-collinear spin RT-TDDFT, (3) Ehrenfest dynamics
+combined with spin, (4) ultrasoft pseudopotentials.]}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Acknowledgements
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Acknowledgements}
+\label{sec:acknowledgements}
+
+This research was conducted at the Center for Nanophase Materials
+Sciences (CNMS), which is a US Department of Energy, Office of Science
+User Facility at Oak Ridge National Laboratory.
+This research used resources of the Oak Ridge Leadership Computing
+Facility at the Oak Ridge National Laboratory, which is supported by
+the Office of Science of the U.S.\ Department of Energy under
+Contract No.\ DE-AC05-00OR22725.
+\myblue{[Additional funding sources to be added: confirm current grants
+with Jacek, Wenchang, and Jerzy Bernholc.]}
+Computing resources were provided through the Innovative and Novel
+Computational Impact on Theory and Experiment (INCITE) program
+and computational resources of the ACCESS (Advanced Cyberinfrastructure
+Coordination Ecosystem: Services \& Support) program through allocation
+TG-DMR110037.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Appendices
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\appendix
+
+\section{Gauge Transformation of the Nonlocal Pseudopotential Term}
+\label{app:gauge_nlpp}
+
+\myblue{[Full derivation of the gauge transformation of V\^{}nl from
+length to velocity gauge, following the structure of Mattiat \& Luber
+(2022) Appendix B but adapted to the Kleinman-Bylander form used in
+RMG. This is the extended algebra supporting section~\ref{sec:theory}
+subsection on current operator and nonlocal pseudopotentials.]}
+
+\section{Equivalence of Current-Based and Berry Phase Polarization}
+\label{app:berry}
+
+\myblue{[Proof that the velocity gauge current J(t), when integrated,
+gives the same polarization as the King-Smith/Vanderbilt Berry phase
+formula. This supports the comparison presented in
+section~\ref{sec:benchmarks}.]}
+
+\section{\myblue{[Additional appendix if needed]}}
+\label{app:additional}
+
+\myblue{[Placeholder. May be used for: spin-collinear extension of the
+BCH scheme; extended orthogonalization proofs if needed beyond paper 1
+appendix; or can be removed if not needed.]}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Bibliography
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\balance
+\bibliography{../source/references}
+\balance
+
+\end{document}
