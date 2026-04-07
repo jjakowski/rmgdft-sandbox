@@ -31,14 +31,14 @@ All equations in this section are given in atomic units
 \label{sec:rmg-overview}
 %--------------------------------------------------------------------
 
-\myred{[Brief overview of RMG: real-space grid, multigrid acceleration,
+\myblue{[Brief overview of RMG: real-space grid, multigrid acceleration,
 GPU scalability. Refer heavily to paper 1~\cite{jakowski-rmg-tddft-2025}
 and the RMG code paper~\cite{rmg-dft-2024} rather than repeating.
 Keep to 1--2 paragraphs. Focus on what is new or relevant for the
 periodic case: k-point sampling, Bloch states, periodic boundary
 conditions. Mention norm-conserving pseudopotentials (NCPP only).]}
 
-\myred{[Note from CONTEXT.md: the code uses norm-conserving PP only
+\myblue{[Note from CONTEXT.md: the code uses norm-conserving PP only
 (asserted in RmgTddft.cpp line 287). Ultrasoft PP requires S$\neq$1
 in the propagation (eldyn\_nonort.cpp path) and is not yet implemented.
 State this as an explicit scope limitation here.]}
@@ -49,7 +49,7 @@ State this as an explicit scope limitation here.]}
 \label{sec:em-interaction}
 %--------------------------------------------------------------------
 
-\myred{[DERIVATION NEEDED from Jacek's LaTeX files.
+\myblue{[DERIVATION NEEDED from Jacek's LaTeX files.
 Content outline:
 - Start from the full minimal-coupling Hamiltonian with EM field
   treated as a plane wave: $\exp(\imath\omega t - \imath\mathbf{q}\cdot\mathbf{r})$
@@ -76,7 +76,7 @@ dynamics under an external electromagnetic perturbation take the form
 \end{equation}
 where $\hat{H}_{\mathrm{KS}}(t)$ is the time-dependent Kohn-Sham
 Hamiltonian.
-\myred{[Expand: write out $\hat{H}_{\mathrm{KS}}(t)$ with all terms
+\myblue{[Expand: write out $\hat{H}_{\mathrm{KS}}(t)$ with all terms
 including the EM coupling, then derive the long-wavelength limit.]}
 
 
@@ -85,7 +85,7 @@ including the EM coupling, then derive the long-wavelength limit.]}
 \label{sec:gauge}
 %--------------------------------------------------------------------
 
-\myred{[DERIVATION NEEDED from Jacek's LaTeX files.
+\myblue{[DERIVATION NEEDED from Jacek's LaTeX files.
 Content outline:
 - State clearly why length gauge fails for periodic systems:
   the position operator $\hat{\mathbf{r}}$ is not translationally
@@ -128,7 +128,7 @@ the velocity gauge TDKS equations take the form
 \end{equation}
 where $\tilde{V}^{\mathrm{nl}}$ denotes the gauge-transformed nonlocal
 pseudopotential.\cite{Mattiat-Luber-2022,pickard-mauri-2001}
-\myred{[Expand: write out all terms of $\tilde{V}^{\mathrm{nl}}$
+\myblue{[Expand: write out all terms of $\tilde{V}^{\mathrm{nl}}$
 explicitly. Derive the linearization in A(t) that gives the
 perturbative coupling term. Connect to Appendix~\ref{app:gauge_nlpp}.]}
 
@@ -138,7 +138,7 @@ perturbative coupling term. Connect to Appendix~\ref{app:gauge_nlpp}.]}
 \label{sec:vector-potential}
 %--------------------------------------------------------------------
 
-\myred{[DERIVATION NEEDED from Jacek's LaTeX files.
+\myblue{[DERIVATION NEEDED from Jacek's LaTeX files.
 Content outline:
 - Show that the velocity gauge framework with $\mathbf{A}(t)$
   naturally accommodates both electric and magnetic perturbations
@@ -154,7 +154,7 @@ Content outline:
 - Reference: Mattiat \& Luber (2022) Section 2.3.2;
   Pickard \& Mauri (2001)]}
 
-\myred{[Note: This subsection establishes the theoretical foundation
+\myblue{[Note: This subsection establishes the theoretical foundation
 for magnetic perturbations. The current paper implements only electric
 perturbations (A(t) uniform). ECD/MCD calculations are future work.
 State this explicitly at the end of the subsection.]}
@@ -165,7 +165,7 @@ State this explicitly at the end of the subsection.]}
 \label{sec:current}
 %--------------------------------------------------------------------
 
-\myred{[DERIVATION NEEDED from Jacek's LaTeX files.
+\myblue{[DERIVATION NEEDED from Jacek's LaTeX files.]}
 This is the most important new subsection. Full derivation required.
 Content outline:
 
@@ -195,7 +195,7 @@ Content outline:
       (the $k_\alpha$ term comes from the Bloch theorem: see eq.XX)
     - This is what VecPHmatrix() + CurrentNlpp() compute in the code
 
-(e) Nonlocal PP contribution [r, V^nl]:
+(e) Nonlocal PP contribution $[r, V^nl]$:
     - For Kleinman-Bylander separable pseudopotentials:
       $V^{\mathrm{nl}} = \sum_{I,lm} |\beta^{lm}_I\rangle h^l_{ij} \langle\beta^{lm}_I|$
     - Compute $[\hat{r}_\alpha, V^{\mathrm{nl}}]$ explicitly:
@@ -214,7 +214,7 @@ CurrentNlpp() adds I\_t * block\_matrix.
 Current extracted as Re(zdotc(P, Px)).
 The -i from the gradient operator + i from storage = real observable.
 Verify this chain explicitly in the derivation.
-See Gap 1 in CONTEXT.md.]}
+See Gap 1 in CONTEXT.md. %]}
 
 %% Placeholder content (to be replaced by full derivation):
 
@@ -229,7 +229,7 @@ Heisenberg equation of motion,
 where the second term on the right-hand side arises because
 $[\hat{r}_\alpha, \Vnl] \neq 0$ for a nonlocal
 operator.\cite{starace-1971,Mattiat-Luber-2022}
-\myred{[Expand into full derivation of current operator, paramagnetic
+\myblue{[Expand into full derivation of current operator, paramagnetic
 and diamagnetic decomposition, density matrix formulation, and explicit
 KB pseudopotential commutator. Follow derivation philosophy: complete
 first, then decide what moves to appendix.]}
@@ -250,7 +250,7 @@ in the Kohn-Sham orbital basis,
   |\psi_b\rangle.
   \label{eq:current-matrix}
 \end{equation}
-\myred{[The $k_\alpha$ term in eq.~\ref{eq:current-matrix} arises from
+\myblue{[The $k_\alpha$ term in eq.~\ref{eq:current-matrix} arises from
 the Bloch theorem: for a periodic orbital
 $\psi_{n,\mathbf{k}}(\mathbf{r}) = e^{\imath\mathbf{k}\cdot\mathbf{r}}
 u_{n,\mathbf{k}}(\mathbf{r})$,
@@ -265,13 +265,13 @@ Derive this step explicitly.]}
 \label{sec:propagation}
 %--------------------------------------------------------------------
 
-\myred{[Adapt from paper 1 (Jakowski et al. 2025, Section 2.2).
+\myblue{[Adapt from paper 1 (Jakowski et al. 2025, Section 2.2). ]}
 The derivation is identical to paper 1 for the case S=1 (orthogonal
-basis at Gamma point). For k \neq Gamma, H is complex-valued (Hermitian
+basis at Gamma point). For $k \neq Gamma$, H is complex-valued (Hermitian
 but not real-symmetric) and Omega is also complex. The BCH expansion
 is the same but with complex matrix arithmetic.
 Key additions vs paper 1:
-- Note explicitly that for k \neq Gamma the Hamiltonian matrix
+- Note explicitly that for $k \neq Gamma$ the Hamiltonian matrix
   $\mathbf{H}_\mathbf{k} = \langle\psi_a|\hat{H}|\psi_b\rangle$
   is complex Hermitian
 - The BCH propagator (Ieldyn=1) handles complex matrices;
@@ -279,10 +279,10 @@ Key additions vs paper 1:
 - The self-consistency loop (predictor-corrector) is unchanged
 - The Hamiltonian at each time step includes the A(t)*p coupling
   term (for VECTOR\_POT mode); in the perturbative kick scheme
-  A appears only in the initial H\_0 setup
+  A appears only in the initial $H\_0$ setup
 Reference sections from paper 1: Magnus expansion and density matrix
 propagation subsections.
-Cite: Jakowski \& Morokuma (2009); Jakowski et al. JCTC 2025.]}
+Cite: Jakowski \& Morokuma (2009); Jakowski et al. JCTC 2025. %]}
 
 The time evolution of the one-particle density matrix $\vb{P}(t)$
 is governed by the Liouville-von Neumann equation
@@ -293,11 +293,11 @@ is governed by the Liouville-von Neumann equation
 \end{equation}
 where $\vb{H}(t)$ is the Kohn-Sham Hamiltonian matrix in the basis
 of ground-state Kohn-Sham orbitals.
-\myred{[Continue with Magnus expansion (refer to paper 1 eqs. and
+\myblue{[Continue with Magnus expansion (refer to paper 1 eqs. and
 cite), then commutator expansion for P(t+dt), self-consistency loop.
 For complex H: add note about BCH-only path.]}
 
-\myred{[Note from code inspection (CONTEXT.md Gap 4): magnus() in the
+\myblue{[Note from code inspection (CONTEXT.md Gap 4): magnus() in the
 code is documented as real-only, but for k$\neq\Gamma$ the call site
 casts to double*. This is mathematically correct since the Magnus
 operation $\Omega = -\imath\cdot\frac{1}{2}(H_0+H_1)\Delta t$ is
@@ -310,7 +310,7 @@ stated explicitly in the text.]}
 \label{sec:spin}
 %--------------------------------------------------------------------
 
-\myred{[DERIVATION NEEDED from Jacek's LaTeX files.
+\myblue{[DERIVATION NEEDED from Jacek's LaTeX files.
 Content outline:
 - Collinear spin-polarized DFT: two independent sets of KS orbitals
   $\{\psi^\uparrow_n\}$ and $\{\psi^\downarrow_n\}$, each with its
@@ -350,7 +350,7 @@ where the spin-dependent Hamiltonian $\vb{H}^\sigma(t)$ contains the
 spin-resolved exchange-correlation potential
 $V^\sigma_{\mathrm{xc}}[\rho^\uparrow(\mathbf{r},t),
 \rho^\downarrow(\mathbf{r},t)]$.
-\myred{[Continue: derive spin-resolved current, define total and spin
+\myblue{[Continue: derive spin-resolved current, define total and spin
 currents, note that J\_spin = J\_up - J\_down is available as a
 low-cost observable.]}
 
@@ -360,7 +360,7 @@ low-cost observable.]}
 \label{sec:postproc}
 %--------------------------------------------------------------------
 
-\myred{[Content outline:
+\myblue{[Content outline:]}
 (a) From J(t) to optical conductivity:
     - Fourier transform: $\tilde{J}_\alpha(\omega) = \int J_\alpha(t) e^{\imath\omega t} dt$
     - Optical conductivity tensor:
@@ -392,7 +392,7 @@ low-cost observable.]}
     - Implementation in RMG: BP\_Xml matrix computed by
       Rmg\_BP->tddft\_Xml() (see code, RmgTddft.cpp lines 514,517)
     - Reference: King-Smith \& Vanderbilt (1993); Resta (1998);
-      Mattiat \& Luber (2022) Section 2.5]}
+      Mattiat \& Luber (2022) Section 2.5 %]}
 
 The macroscopic current density $\mathbf{J}(t)$ obtained from
 eq.~(\ref{eq:current-dm}) provides direct access to the optical
@@ -407,11 +407,11 @@ from the Fourier transform of the current density as
   \label{eq:conductivity}
 \end{equation}
 where $\gamma$ is a broadening parameter.\cite{yabana-bertsch-1996}
-\myred{[Expand: relate $\sigma$ to $\varepsilon$; describe how three
+\myblue{[Expand: relate $\sigma$ to $\varepsilon$; describe how three
 independent kick simulations (x, y, z) give the full tensor; note
 crystal symmetry reduces the number of independent components.]}
 
-\myred{[Add: Berry phase derivation and density matrix form.
+\myblue{[Add: Berry phase derivation and density matrix form.
 Show equivalence with current integration.
 Note that both observables are computed in the present implementation
 and their agreement serves as an internal consistency check.]}

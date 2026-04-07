@@ -208,7 +208,7 @@ no practical limitation from this choice.
 \label{sec:optimization}
 %--------------------------------------------------------------------
 
-\myred{[Content outline -- adapt from paper 1 Section 3.2 with
+\myblue{[Content outline -- adapt from paper 1 Section 3.2 with ]} 
 additions for the periodic case:
 - Same MPI + OpenMP + GPU parallelization as paper 1
 - k-point parallelization: each MPI group handles a subset of k-points
@@ -222,10 +222,10 @@ additions for the periodic case:
   numst = N\_occ + N\_virt
 - For VECTOR\_POT mode: momentum matrix J\_alpha is complex even at
   Gamma point (stored as complex<double> in Pxmatrix\_cpu etc.)
-- The BCH commutator [Omega, P] dominates O(N^3); same optimization
+- The BCH commutator $[\Omega, P]$ dominates $O(N^3)$; same optimization
   as paper 1 (real/imaginary decomposition, BLAS ZGEMM/DGEMM)
-- Timing data for benchmark systems: \myred{[add when available]}]}
+- Timing data for benchmark systems: \myblue{[add when available]}%]}
 
-\myred{[Note: include a brief timing comparison table analogous to
+\myblue{[Note: include a brief timing comparison table analogous to
 Table 1 in paper 1, but for one or more periodic benchmark systems
 (e.g., Si supercells of increasing size) to demonstrate scaling.]}
