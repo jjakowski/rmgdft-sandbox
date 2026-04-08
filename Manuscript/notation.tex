@@ -9,7 +9,37 @@
 %% ============================================================
 %% Atomic units throughout (hbar=1, m_e=1, e=1, 4*pi*epsilon_0=1).
 %% Stated explicitly at start of Section 2.
-%% Exception: SI when quoting experimental values.
+%%
+%% Convention: hbar, m_e, e, and c are retained as explicit symbols
+%% in all equations even though their numerical values are unity (or
+%% 137.036 for c). This aids dimensional tracking and makes the
+%% physical origin of each term transparent. Do NOT substitute
+%% numerical values mid-derivation.
+%%
+%% Reference values in atomic units:
+%%   hbar  = 1          (unit of action)
+%%   m_e   = 1          (unit of mass)
+%%   e     = 1          (unit of charge)
+%%   a_0   = 1  bohr    (unit of length)
+%%   E_h   = 1  Hartree (unit of energy = 27.211 eV)
+%%   t_0   = 1  a.u. of time = hbar/E_h ~ 24.19 as
+%%   c     ~ 137.036    (speed of light; kept explicit for
+%%                       relativistic/spin-orbit terms)
+%%
+%% Rationale for keeping constants explicit:
+%%   (1) Spin-orbit coupling carries 1/c^2 -- visible without
+%%       absorbing c into the unit system.
+%%   (2) Magnus propagator U = exp(-i*Omega/hbar) -- hbar sets
+%%       the action scale and connects Omega to physical time.
+%%   (3) Von Neumann equation i*hbar*dP/dt = [H,P] -- hbar on
+%%       the left makes the time scale (t_0 = hbar/E_h) explicit.
+%%   (4) Dimensional checks: a term missing hbar^2/2m in T is
+%%       immediately visible; would be silent in strict a.u.
+%%
+%% Exception: SI units when quoting experimental values.
+%% Exception: CGS-Gaussian when citing older spectroscopy literature.
+
+
 
 %% ============================================================
 %% IMAGINARY UNIT
