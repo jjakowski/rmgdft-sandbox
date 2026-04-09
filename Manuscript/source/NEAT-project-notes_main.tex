@@ -1,0 +1,1058 @@
+
+
+%\documentclass{article}
+\documentclass[11pt]{article}
+
+%\documentclass[journal=jctcce,manuscript=article,etalmode=truncate,maxauthors=10]{achemso}
+%\documentclass[journal=jctcce,manuscript=article,etalmode=truncate,maxauthors=12,layout=twocolumn]{achemso}
+
+%\documentclass[journal=jctcce,manuscript=article,etalmode=truncate,maxauthors=12]{achemso}
+%\setkeys{acs}{etalmode=truncate,maxauthors=10}  % this is\textit needed to truncate Qchem' authors list to 10.
+
+%\usepackage[style=authoryear-icomp,maxbibnames=9,maxcitenames=2,backend=biber]{biblatex}
+%\usepackage[style=authoryear,minbibnames=3,natbib=true]{biblatex}
+%\bibliography{References}
+
+\usepackage{graphicx} % Required for inserting images
+\usepackage{physics}
+\usepackage[utf8]{inputenc}
+
+\usepackage[letterpaper,margin=1.0in]{geometry}
+
+\usepackage[makeroom]{cancel}  % math  stuff, usefull in  derivation to show cancelation of terms
+
+% Language setting
+% Replace `english' with e.g. `spanish' to change the document language
+\usepackage[english]{babel}
+
+% Set page size and margins
+% Replace `letterpaper' with `a4paper' for UK/EU standard size
+%\usepackage[letterpaper,top=2cm,bottom=2cm,left=3cm,right=3cm,marginparwidth=1.75cm]{geometry} 
+% Useful packages
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage[colorlinks=true, allcolors=blue]{hyperref}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\usepackage{pgfplots}
+\usepgfplotslibrary{external}
+%\tikzexternalize
+
+%\usepackage{tikz}
+\usepackage{pgfplots}
+\usetikzlibrary{arrows.meta}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  Useful shortcuts. Comments on making commantds for math mode
+% 1) Include "\ensuremath", otherwise  latex will complain abou missing "$" math  mode  
+%     for example:
+%      \newcommand{\grst}{\Gamma^{rs}_t}   
+% 2) dont use numbers  and special characters  in the "name" of you commnad, 
+%       for example \inti0 or \int_i0 will not work
+% 3) you can use  #1, #2 etc as a "variable" inside you command. For example
+%    \newcommand{\grst}[3]{\Gamma^{#1#2}_#3}     
+% but 
+%
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\FFT}{\ensuremath{\cal F}} 
+\newcommand{\gijk}{\ensuremath{\Gamma^{ij}_k}}
+
+%\newcommand{\intii0}{\ensuremath{\Gamma^{ij}_k}}
+\newcommand{\intii}{\ensuremath{\int_{-\infty}^{+\infty}}}
+%\newcommand{\intio}{\ensuremath{\int_{-\infty}^{+\infty}}}  
+\newcommand{\intio} {\ensuremath{\int_{-\infty}^{0}}}
+\newcommand{\intoi} {\ensuremath{\int_{0}^{+\infty}}}
+% \newcommand{\grst}[3]{\Gamma^{#1#2}_#3}    
+%\newcommand{\myint}[2]{\ensuremath \int_{}}
+
+%\newcommad{\mylim}[2][tau]{\ensuremath{\lim_{#1 \to #2}}}
+\newcommand{\christoffel}[3][i]{\ensuremath{\Gamma^{#1#2}_{#3}}}
+\newcommand{\mylim}[2][\tau]{\ensuremath{\lim_{{#1} \to {#2}} }}
+\newcommand{\limtau}{\ensuremath{\lim_{\tau\to 0}}} 
+\newcommand{\limintii}{\ensuremath{\lim_{\tau\to 0} \int_{-\infty}^{+\infty} }}
+\newcommand{\limintio}{\ensuremath{\lim_{\tau\to 0} \int_{-\infty}^{0 }}}
+\newcommand{\limintoi}{\ensuremath{\lim_{\tau\to 0} \int_{0}^{+\infty} }}
+\newcommand{\limint}[2]{\ensuremath{\lim_{\tau\to 0} \int_{#1}^{#2 }}}
+\newcommand{\fftnorm}{\ensuremath{\frac{1}{\sqrt{2\pi}}}}
+%\newcommand{\boxf}[1]{\ensuremath{\text{Box}\left(#1\right)}}
+\newcommand{\boxf}{\ensuremath{\text{Box}}}
+                                        
+%\newcommand{\Res}[2][ ]{\ensuremath{\mathrm{Res}_{#1}\left[  #2 \right]}}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+
+
+
+
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\title{NEAT-project-notes}
+\author{Jacek Jakowski}
+\date{November 2024}
+
+\begin{document}
+
+\maketitle
+
+\maketitle
+
+\setcounter{tocdepth}{5}
+\tableofcontents
+%\newpage
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Introduction}
+
+Here are my notes and derivation for NEAT project.
+
+Overall the notes cover several topics:
+ \begin{description}
+     
+\item[ Milestone 1: ]   velocity gauge 
+
+ velocity gauge as an extension of rt-TDDFT to allow simulation of optical response  in periodic system  
+ We want to use velocity gauge as replacement of length  gauge. 
+ In this approach the external potential is treated via vector potential, but there is no general vector potential. 
+ We follow  the implementaion  by Wong \cite{rt-DFTB-Wong-2023}
+ %requires some rudimentary entry of
+ 
+
+\item[ Milestone 2: ]  Vector potential  
+
+ For dynamic systems under magnetic  fields  we want to use vector  potential, not just  treat the external potential through framework of vector potential
+
+
+\item[ Milestone 3:]   Nonrelativisticc  spin dynamics in external magnetic field
+
+ This is based on  \cite{spin-rt-tddft-Li-2014}
+
+   
+
+\item[ Milestone 4:]  Two Component relativistic spin dynamics
+
+ This is based on  Two Component\cite{spin-rt-tddft-Li-2016}
+
+\item[ Milestone 5:]  Ehrenfest  dynamics 
+  
+   
+\item[ Additional  5:] Floquet Theory [ see Kutz notes on PDE ] 
+ \end{description}
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\newpage
+%%%%%%%%%%%%%%%
+\section {  Magnetostatics and various notes}
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Momentum operator and Hamiltonian for particle in electromagnetic field}
+
+\url{https://physics.stackexchange.com/questions/72166/what-is-canonical-momentum}
+
+According  to Sakurai \cite{Sakurai-2nd_ed}, Chapter 2 \emph{Potentialas and gauge transformations}  the  {\bf canonical momentum}, defined as  the generator of translations, is \emph{gauge dependent} in the sense that its expectation value depend on the particular gauge chose, while the  {\bf kinematic momentum}  and probability flux are  \emph{gauge invariant}.
+
+ 
+Canonical vs kinetic momentum operator:
+\begin{align*}
+    &\boxed{\hat p \equiv \pdv{L}{\dot r} \qquad} =-\imath  \hbar \nabla    & \text{  canonical}  \\
+    &\boxed{ \hat P \equiv  \hat p - q \Vec{A} \ }=-\imath  \hbar \nabla -q \vec A & \mbox{ kinetic}
+\end{align*}
+where $\vec A$ and $\phi$  are  a vector potential and scalar potentials.
+
+The {\bf canonical momentum} $p$ is a conjugate variable of position in classical mechanics, in which we have the relation 
+$p=\pdv{L}{\dot r}$
+. When making the transition to quantum mechanics, we substitute p
+ with an operator $p \to -\imath \hbar \nabla_r$
+ in the Hamiltonian; similarly, we substitute $r$  by $r \to +\imath \hbar \nabla_p$  in momentum representation.
+
+The {\bf kinetic momentum} is named "kinetic" because it represents the velocity of the particle in classical mechanics. When we are talking about the quantum mechanical expectation values, kinetic momentum $\vec P$   should satisfy.
+
+
+The canonical momenta $p_i=\pdv{L}{\dot x_i}$ are {\bf NOT gauge invariant} and are {\bf NOT physically measurable}.  However, the kinetic momenta 
+\begin{align*}
+    P_i \equiv m\dot{x_i} = p_i - q A_i      
+\end{align*}
+{\bf are gauge invariant} and  {\bf are physically measurable}.
+
+
+ The Hamitlonian for a particle in electromagnetic field  
+\begin{align}\boxed{
+\hat H =  \frac{1}{2m}  (p - q \vec A)^2  + q\phi}
+\label{eq:H_EM}
+\end{align}
+
+
+Magnetic field and vector potential Feynmann lectues::
+
+\url{https://www.feynmanlectures.caltech.edu/II_14.html }
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection{Derivation of Hamiltonian for particle in electromagnetic field}
+\label{sec:gauge_classical} 
+
+We  now show derivation of above  expression following  \emph{Minimal Coupling} article in  Wikipedia (\url{https://en.wikipedia.org/wiki/Minimal_coupling})
+
+The Lagrangian of a non-relativisitc  particle in an electromagnetic field
+is
+\begin{align*}
+    \mathcal{ L } = \sum_i  \frac{1}{2}  m_i |\dot{ x}_i|^2 + \sum_i q \dot{ x_i} A_i -q \phi
+\end{align*}
+where $q$ is an electric charge, $\phi$ electric scalar potential and $A_i$ (i=1,2,3) are components of magnetic vector potential.  The second sum is a dot product of velocity vector and vector potential ($q\vb v \cdot \vb A$). 
+
+The canonical momenta $p_i$  are  obtained from Lagrangian $\mathcal{L}$ according  
+\begin{align}
+    p_i = & \pdv{\mathcal{ L}}{ \dot{x}_i}  \nonumber \\
+       = &  \pdv{\mathcal{ }}{ \dot{x}_i}  \Big(  \sum_i  \frac{1}{2}  m_i \dot{ x_i}^2 + \sum_i q \dot{x_i} A_i -q \phi  \Big) \nonumber \\
+        = & \boxed{ m\dot{x_i} +q A_i \equiv p_i}
+        \label{eq:p_canonical}
+\end{align}
+Here we notice that the canonical momentum operator, 
+$\vb p =m  \vb{ \dot x} +q \vb A $,  include the usual velocity term $m \vb{ \dot x}$, ($\equiv \vb P$, called {\bf kinetic momentum}) plus additional "magnetic" term $q \vb A$ .   
+
+Now the Hamiltonian  for a (single) charged particle is obtained from  Lagrangian using Legendre transformation and is given as:
+\begin{align}
+    H =  & \sum_i \dot{x_i} p_i - \mathcal{L} \nonumber  \\ 
+      =  & \sum_i \dot{x_i} p_i - \Big(  \sum_i {\color{blue} \frac{1}{2}  m|\dot{x_i}|^2 } + \sum_i  {\color{blue} q\dot{x_i}A } -q \phi \Big) \nonumber \\
+       =& \sum_i   \Big( \dot{ x_i}   {\color{olive} p_i } -{\color{blue} \frac{1}{2} m |\dot x_i |^2} -  {\color{blue} q \dot x_i  A} \Big) + q \phi  \nonumber \\
+       \stackrel{\text{Eq.} \ref{eq:p_canonical}}{=}& 
+       \sum_i   \Big( \dot{ x_i}   ({\color{olive} m \dot x_i +}  \cancel{ \color{olive} q  A_i } )  -{\color{blue} \frac{1}{2} m |\dot x_i |^2}   - \cancel{ {\color{blue} q \dot x_i  A} } \Big) + q \phi    \nonumber  \\
+       =&  \sum_i   \Big(  m  |\dot{ x_i}|^2   -{\color{blue} \frac{1}{2} m |\dot x_i |^2}    \Big)  +q \phi  \nonumber \\       
+      =&  \sum_i \frac{1}{2} m |\dot x_i |^2 +q \phi   \nonumber \\ %=  \sum_i \frac{1}{2} m {\color{blue} P_i}^2 +q \phi  \nonumber \\ 
+      =&  \sum_i \frac{1}{2m} | {\color{blue} m \dot x_i} |^2 +q \phi   \nonumber \\
+       = &\boxed{ \sum_i \frac{1}{2m } ({\color{blue}p_i - qA_i})^2  +q \phi }
+       \label{eq:H_EM_derivations}
+\end{align}
+where we notice that  the final expression for Hamiltonian depends on $m\dot x$, rather on  the canonical momentum. 
+Thus, in the last equality  we  inserted expression for  $m\dot x$  obtained from  the Eq. \ref{eq:p_canonical}:
+ \begin{align}
+       &\boxed{ P_i \equiv m\dot{x_i} = p_i - q A_i }     
+\label{eq:P_kinetic}
+\end{align}
+which we will call / define  as  a kinetic momentum operator.
+The last result in Eq. \ref{eq:H_EM_derivations} (in the box) is identical with Eq. \ref{eq:H_EM} for the Hamiltonian of particle in electromagnetic field.
+
+Notice: The canonical momenta are {\bf NOT gauge invariant} and are {\bf NOT physically measurable}.  However, the kinetic momenta {\bf are gauge invariant} and  {\bf are physically measurable}.
+
+According  to Sakurai \cite{Sakurai-2nd_ed}, Chapter 2 \emph{Potentialas and gauge transformations}  the  {\bf canonical momentum}, defined as  the generator of translations, is \emph{gauge dependent} in the sense that its expectation value depend on the particular gauge chose, while the  {\bf kinetmatic moemntum}  and probability flux are  \emph{gauge invariant}.
+
+
+
+%\subsection{ Gaussian integrals}
+
+
+
+
+%%%%%%%%%%%%%%%%%
+\subsection{ General Hamiltonian  for rt-TDDFT }
+
+
+Following  Vanderbilt book \cite{Vanderbilt-book} (sec 2.1.2, p.44) we can  write the Hamiltonian for    
+the  crystal  under the influence of electric $\vb E = -\nabla \phi  -c^{-1} d \vb A/dt$ and magnetic field  $\vb B = \nabla \cross \vb A$, where $\phi(r,t)$ and $\vb A(r,t)$ are scalar and vector potentials as 
+\begin{align*}
+    H = \frac{1}{2m} \left( \vb p  + \frac{e}{c} \vb{ A(r)} \right) ^2  - e \phi(r)  + \frac{\hbar e }{2mc}  \vb{B(r) \cdot \sigma} 
+\end{align*}
+
+where we (1) added the electrostatic potential term   $-e \phi(r)$, (2) replaced momentum  operator $\vb p \to \vb p + e \vb{A(r)} /c $,  (3) added Zeeman term
+$ -\gamma \vb{B(r) \cdot S }$, where  gyromagnetic   ratio $\gamma = -g_e e /mc = -e/mc $ since for electron $g_e=2$. 
+
+%Following   (see \cite{Vanderbilt-book,Vanderbilt-PythTB}  we can  write the Hamiltonian  
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{ General gauge transformation of TDSE }
+
+The TDSE of a particle with charge $q$ in the external electromagnetic (EM) field and the potential $V(r)$  in Gaussian system of units (GSU) is given by
+\begin{align}
+\imath \hbar \pdv{\Psi(r,t)}{t} = \left[  \frac{1}{2m} \left(\hat p -\frac{q}{c} \vb A(r,t) \right)^2 + q\phi +V(r,t)  \right]\Psi(r,t)
+\label{eq:EM_gauge}
+\end{align}
+where, $\hat p=-\imath \hbar\nabla_r$, is canonical momentum operator, $q$ is a charge of our particle, $V(r,t)$ is  some kind of constraining potential (for example coulomb potential from ions), $\vb A(r,t)$ and $\phi$ are respectively,    vector  and scalar potential   of the external  EM field.
+
+The  gauge transformation in Gaussian system of units  (GSU) is defined by a scalar function $\chi(r,t)$  with  the electromagnetic potentials transforming under the gauge function according to:
+\begin{align}
+    &\label{eq:gauge_rule_vector_pot} 
+    \boxed{ \vb A \to \vb A'(r,t)= \vb A(r,t) + \nabla \chi(r,t) } \\
+    &\label{eq:gauge_rule_scalar_pot} 
+    \boxed{ \phi \to \phi'(r,t) = \phi(r,t) -\frac{1}{c} \pdv{\chi(r,t)}{t} }
+\end{align}
+If we were to use SI units, then in the above  we would use replacement: $c\to 1$.
+We now show how the  physical quantities  transform under gauge transformation. The guiding principle is to choose is  that the gauge transformation does not change any physical  observable such us charge density and electric current, expectation value of position, momentum, energy.
+
+
+
+
+For length gauge (LG) and velocity gauge (VG) we  have (see Xiaosong Li \cite{Xiaosong-Li-2011-gauge}, Eqs. 25-26;   Luber \cite{Luber-rt-tddft}, Eqs. 21, 24, 28, A6; Wong   \cite{rt-DFTB-Wong-2023} Eq. 3 )
+\begin{align*}
+    \vb  A^{LG} = &  0 \\
+    \phi^{LG}   = & \vec{ \vb r} \cdot \vec{\vb E} \\
+    \vb  A^{VG} = &  -c \int_{-\infty}^{t}  \vb E(t') dt' \\
+    \phi^{VG}   = & 0
+\end{align*}
+
+
+And the gauge function for transformatin from LG to VG is (see  Luber \cite{Luber-rt-tddft}, Eq. 21 and Eq. A6)
+\begin{align*}
+\chi(r,t) = -  \vec{ \vb r} \cdot \vec{\vb A} \\
+e
+\end{align*}
+(Notice: check the sign,  them  "minus" sign in from of A,E often comes from assumption  the we talk about electrons so  q=-1)     
+
+
+
+
+%\begin{itemize}
+%\item %----------------------------------------
+\subsubsection{Electric $\vb E$ and magnetic $\vb B$ fields}. 
+ Electric $\vb E$ and magnetic $\vb B$ fields are invariant as shown here:
+\begin{align}
+    \vb E  =&  - \nabla \phi  - \frac{1}{c} \pdv{\vb A}{t} \label{eq:Psi_gauge_transf}\\
+    \vb E' =&  - \nabla {\color{blue} \phi'} -  \frac{1}{c} \pdv{ \color{olive} \vb A'}{t} \nonumber \\
+           =&  -\nabla \left({ \color{blue} \phi(r,t)   -   \frac{1}{c} \pdv{\chi(r,t)}{t} } \right) 
+              -   \frac{1}{c}  \pdv{}{t} \Big( {\color{olive}    \vb A(r,t)  +  \nabla  \chi(r,t)   }\Big)   \nonumber \\
+      =&  { \color{blue}  - \nabla \phi  +  \cancel{  \frac{1}{c}  \nabla \pdv{\chi}{t} } }
+        {\color{olive}  -  \frac{1}{c} \pdv{\vb A}{t}  -  \cancel{ \frac{1}{c}  \pdv{}{t} \nabla \chi } }  \nonumber \\
+           = & - \nabla \phi  -  \frac{1}{c} \pdv{\vb A}{t} \nonumber
+\end{align}
+and 
+\begin{align*}
+    \vb  B =&   \nabla \cross \vb A \\
+    \vb  B' =&   \nabla \cross \vb A' \\
+            =&  \nabla \cross \Big( \vb A(r,t)  +  \nabla  \chi(r,t) \Big)\\
+            =&   \nabla \cross \vb A  + \cancelto{0}{ \nabla \cross \nabla \chi } \\
+            = & \nabla \cross \vb A 
+\end{align*}
+If we were using  SI  system of units (instead $\vb E$.
+
+
+%\item %-------------------------------------------
+\subsubsection{The wavefunction $\Psi(r,t)$.}
+
+We know that  charge density and wavefunction normalization cannot change  under gauge transformation. Thus we deduce that  must be  unitary function of the $\chi(r,t)$. We guess is  that the transformed  $\Psi(r,t)$  and corresponding charge density  $\rho(r,t)$ are of the form:
+\begin{align*}
+    \Psi'(r,t) = & e^{+\imath \beta \chi(r,t) } \Psi(r,t) \\
+    \rho'(r,t) = &   \bar \Psi'(r,t) \Psi'(r,t)  =   \big( e^{-\imath \beta \chi(r,t) } \bar \Psi(r,t)\big) \cdot \big(e^{+\imath \beta \chi(r,t) }\Psi(r,t) \big) \\
+    =&   \bar \Psi(r,t) \Psi(r,t)  =   \rho(r,t)
+\end{align*}
+where the exponent factor just adds phase  ensuring the unitarity and $\beta$ and  we are guessing its simplest possible form. We will  test is selecting  $\beta$ as scalar is sufficient.
+
+We will show  while deriving  gauge transformation of momentum that  in GSU  the  transformation function is  $e^{+\imath  \frac{q}{c \hbar} \chi(r,t) }$   of wavefunction is given by
+\begin{align*}
+    \Psi'(r,t) = e^{+\imath  \frac{q}{c \hbar} \chi(r,t) } \Psi(r,t)
+\end{align*}
+    where  the phase factor $e^{+\imath  \frac{q}{c \hbar} \cdot \chi(r,t) }$ ensures that  probability density $\rho(r,t)= |\Psi(r,t)|^2$ remain unchanged  under the gauge transformation. Again, for SI we would set $c \to 1$.
+
+
+%\item %-------------------------------------------
+
+\subsubsection{Kinetic and canonical momentum}
+Here we discuss gauge transformation of the {\bf kinetic momentum} and   {\bf canonical momentum}.
+Kinetic momentum (denoted here as  $\hat  \pi$) is a physically measurable quantity and as such should be gauge invariant. Canonical momentum (denoted here as $\hat p$) in general is not a physical quantity and not invariant under gauge  transformation. 
+We will start from   classical electrodynamics  expressions  for gauge transformation of vector and scalar potential to derived  transformation  formulas for kinetic and canonical momentum.  We will enforce the gauge invariance of the kinetic momentum operator  by adjusting parameter $\beta$ and then we will deduct how does the canonical momentum operator transform.
+
+We will start from  Eqs. \ref{eq:EM_gauge}  and \ref{eq:Psi_gauge_transf} and we will use what we learned in Sec. \ref{sec:gauge_classical} about  gauge  transformation of  classical kinetic momentum  
+\begin{align*}
+    \ket{\Psi'} =& \exp\big(+\imath \beta  \chi(r) \big) \ket{\Psi} )\\
+    \pi        =& p  - \frac{q}{c} A(r,t) \\ 
+    \pi '       =& p' - \frac{q}{c} {\color{blue} \vb A'(r,t) }
+       = p' - \frac{q}{c} \big({\color{blue} \vb A(r,t) + \nabla \chi(r,t)}\big)
+\end{align*}
+where $\beta$ is a constant (unknown).  We know from EM how to transform  $\vb A(r,t)$, but we don't know yet  how to transform quantum mechanical momentum operator $\hat p \to \hat p'$. Condition of gauge invariance of kinetic momentum is equivalent  to 
+\begin{align}
+L =\bra{\Psi} \pi \ket{\Psi} \equiv \bra{\Psi'} \pi' \ket{\Psi'}= R
+\label{eq:momentum_gauge}
+\end{align}
+The (LHS) expectation value of the untransformed   momentum operator is
+\begin{align*}
+    L = &\bra{\Psi} \pi \ket{\Psi}  = \bra{\Psi} \left( \hat p - \frac{q}{c} \vb A(r,t) \right) \ket{\Psi} \\
+    =& \bra{\Psi} \hat p\ket{\Psi} -  \frac{q}{c} \bra{\Psi} \vb A(r,t) \ket{\Psi} \\
+    =& (-\imath \hbar) \bra{\Psi} \hat \nabla \ket{\Psi} -  \frac{q}{c} \bra{\Psi} \vb A(r,t) \ket{\Psi} \\
+\end{align*}
+The (RHS)  expectation of  gauge transformed   momentum operator is:
+\begin{align*}
+    R=   &\bra{\Psi'} \pi' \ket{\Psi'}  = \bra{\Psi'} \left( \hat p' - \frac{q}{c} \vb A' \right) \ket{\Psi'} \\
+    =&  \bra{\Psi'} \left( \hat p' - \frac{q}{c} \vb A  - \frac{q}{c} \vb \nabla \chi \right) \ket{\Psi'} =  I_p + I_A + I_\chi
+\end{align*}
+we dont know yet how to do $I_p$ (we will find it later), but  $I_A$ and $I_\chi$ are
+\begin{align*}
+I_A =& \bra{\color{blue} \Psi'} \left(-\frac{q}{c} \vb A\right) \ket{{\color{olive} \Psi'}} =   
+   {\bra{\Psi} \cancel{ \color{blue} \exp(-\imath \beta \chi)} }
+    \left(-\frac{q}{c} \vb A \right)  {  \cancel{\color{olive} \exp(+\imath \beta \chi)}}   \ket{\Psi}  \\ 
+    =& \bra{ \Psi} \left(-\frac{q}{c} \vb A\right) \ket{ \Psi} \\
+I_\chi =& \bra{\color{blue} \Psi'} \left(-\frac{q}{c} \nabla \chi(r,t) \right) \ket{{\color{olive} \Psi'}} =  
+ {\bra{\Psi} \cancel{ \color{blue} \exp(-\imath \beta \chi)} }
+\left(-\frac{q}{c} \nabla \chi \right) 
+{  \cancel{\color{olive} \exp(+\imath \beta \chi)}}   \ket{\Psi}  \\ 
+=&  \bra{ \Psi} \left(-\frac{q}{c} \nabla \chi (r,t) \right) \ket{ \Psi} 
+\end{align*}
+Now, for the canonical momentum component we have
+\begin{align*}
+I_p=\bra{\Psi'} \hat p ' \ket{\Psi'}  = \bra{\Psi}  \exp(-\imath \beta \chi) \cdot {\hat p ' } \cdot \exp(+\imath \beta \chi)\ket{\Psi} 
+\end{align*}
+where we don't know yet what is the exact form of $\hat p'$  operator. Putting L and R together give
+\begin{align*}
+  L =& R \\
+  (-\imath \hbar) \bra{\Psi}\nabla \ket{\Psi} -  \frac{q}{c} \bra{\Psi} \vb A \ket{\Psi} =&
+  I_p +I_A+ I_\chi \\
+   (-\imath \hbar) {\color{olive} \bra{\Psi}  \nabla \ket{\Psi}} - \cancel{ \frac{q}{c} \bra{\Psi} \vb A \ket{\Psi} }=& \bra{\Psi}  e^{-\imath \beta \chi} \cdot {\hat p ' } \cdot e^{+\imath \beta  + \chi}\ket{\Psi} -\cancel{ \frac{q}{c}  \bra{\Psi}  \vb A \ket{\Psi} }  -\frac{q}{c} {\color{blue} \bra{\Psi}  \nabla\chi (r,t) \ket{\Psi} }
+ %\bra{\Psi} (-\imath \hbar) \nabla \ket{\Psi}  =&
+ %\bra{\Psi}  e^{-\imath \beta \chi} \cdot {\hat p ' } \cdot e^{+\imath \beta  + \chi}\ket{\Psi}
+ % -\frac{q}{c} \bra{\Psi}  \nabla\chi(r,t) \ket{\Psi}
+\end{align*}
+Adding $+\frac{q}{c} \bra{\Psi}  \nabla\chi (r,t) \ket{\Psi}$ on  both sides of the last expression gives
+\begin{align*}
+    \bra{\Psi}  e^{-\imath \beta \chi} \cdot {\hat p ' } \cdot e^{+\imath \beta\chi} \ket{\Psi}  
+    =   (-\imath \hbar)  {\color{olive} \bra{\Psi} \nabla \ket{\Psi}}  + \frac{q}{c} {\color{blue} \bra{\Psi}  \nabla\chi (r,t) \ket{\Psi} }
+\end{align*}
+Now all  operators act on the function $\Psi(r,t)$ thus we can operator equality
+\begin{align*}
+      e^{-\imath \beta \chi} \cdot {\hat p ' } \cdot e^{+\imath \beta \chi}
+      =& -\imath \hbar \nabla +\frac{q}{c} \nabla \chi(r,t) \\
+      \color{blue} \hat p' = & e^{+\imath \beta \chi}\big[ -\imath \hbar \nabla  +\frac{q}{c} \nabla \chi(r,t)     \big] e^{- \imath \beta\chi}  \\
+      =& e^{+\imath \beta \chi}\big( -\imath \hbar \nabla  \big) e^{- \imath \beta\chi}   + 
+      \cancel{ e^{+\imath \beta \chi}} \Big[ \frac{q}{c} \nabla \chi(r,t)  \Big] \cancel{ e^{- \imath \beta\chi}}  \\
+      =& e^{+\imath \beta \chi} \cdot {\color{blue}(-\imath \hbar \nabla  )} e^{- \imath \beta \chi} 
+      +  \frac{q}{c} \nabla \chi(r,t) \\
+      =& e^{+\imath \beta \chi} \cdot {\color{blue} \hat p} \cdot e^{- \imath \beta \chi} 
+      +  {\color{olive} \frac{q}{c} \nabla \chi(r,t) } 
+\end{align*}
+Let us  now see how does transform the first component  (canonical momentum) in the last expression acting on arbitrary function $g(x,t)$
+\begin{align*}
+    {\color{blue} \hat p'} \cdot g(r,t) =& 
+    e^{+\imath \beta \chi} \cdot (-\imath \hbar) \nabla \left[ \color{blue} e^{- \imath \beta \chi}  g(r,t)   \right]  + {\color{olive} \frac{q}{c} \nabla \chi(r,t) } \cdot g(r,t)\\
+    =&   \cancel{e^{+\imath \beta \chi}}  \cdot (-\imath \hbar) \left[\color{blue} \left(-\imath \beta \nabla \chi \right) \cancel{ e^{- \imath \beta \chi}} g(r,t)    + \cancel {e^{- \imath \beta \chi} }\cdot  \nabla g(r,t)  \right]  + {\color{olive} \frac{q}{c} \nabla \chi(r,t) } \cdot g(r,t)\\
+    =& (-\imath \hbar) \left[\color{blue}  -\imath \beta \nabla \chi  + \nabla \right] \cdot g(r,t) + {\color{olive} \frac{q}{c} \nabla \chi(r,t) } \cdot g(r,t)\\
+    =& (-\imath \hbar {\color{blue} \nabla }) \cdot  g(r,t) + \left[ {\color{blue} -\hbar \beta \nabla \chi }   +{\color{olive} \frac{q}{c} \nabla \chi }\right] \cdot g(r,t) \\
+    =& (-\imath \hbar {\color{blue} \nabla }) \cdot  g(r,t) + 
+    \cancelto{=0}{\left[ {\color{blue} -\hbar \beta }   +{\color{olive} \frac{q}{c} }\right] } 
+    \cdot \nabla \chi(r,t) \cdot g(r,t) \\
+    =& -\imath \hbar \nabla \cdot g(r,t) 
+\end{align*}
+We want the terms proportional to $\nabla \chi(r,t)$  in square bracket to disappear, $[{\color{blue}-\hbar \beta} + {\color{olive}\frac{q}{c}}] =0$, so that $L=R$. This can only be achieved when $\beta= +\frac{q}{\hbar c}$
+Thus the final result is
+\begin{align}
+&\boxed{\beta= +\frac{q}{\hbar c}} \nonumber \\
+\label{eq:gauge_rule_psi}
+    \Psi\to &\boxed{ \Psi'(r,t)=  \exp( +\imath \frac{q}{\hbar c}  \chi(r,t) )\cdot \Psi(r,t)    } \\
+\label{eq:gauge_rule_Operator}
+    \hat O \to & \boxed{\hat O' = \exp( +\imath \frac{q}{\hbar c} \chi )\cdot \hat O \cdot \exp( -\imath \frac{q}{\hbar c}  \chi )}\\
+\label{eq:gauge_rule_momentum_canonical}
+    \hat p = -\imath \hbar \nabla  \to &\boxed{  \hat p' = -\imath \hbar \nabla  } \\
+\label{eq:gauge_rule_momentum_kinetical}
+    \hat \pi    = \left( \hat p- \frac{q}{c} \vb A(r,t) \right) \to&  \boxed{ \hat \pi'  =\left( \hat p'  - \frac{q}{c} \vb A' \right) = -\imath \hbar \nabla - \frac{q}{c} (\vb A + \nabla \chi(r,t) )}
+\end{align}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsubsection*{Examples}
+To show that the gauge transformation  works  we will now  use the above rules and verify that:  (1) Gauge transformed   kinetic/mechanical momentum operator has the same expectation  value   as the untransformed one. (2) We will verify that  momentum operator transformed  according to  Eq. \ref{eq:gauge_rule_Operator} leads to the same  expression as given by Eq. \ref{eq:gauge_rule_momentum_kinetical}. This will allow to use the same procedure to  be applied to kinetic energy operator  $\hat T$ and to the Hamiltonian.
+
+\paragraph{Example 1: Expectation value of gauge transformed kinetic momentum.}
+From  Sec. \ref{sec:gauge_classical} and from above discussion we know that  gauge transformed   kinetic momentum operator should  give the same expectation value of momentum 
+\begin{align*}
+    L=\bra{\Psi} \hat \pi \ket{\Psi} =    \bra{\Psi'} \hat \pi' \ket{\Psi'} =R
+\end{align*}
+We want  to verify that LHS of Eq.  \ref{eq:gauge_rule_momentum_kinetical} gives the same results regardless of  whether  we use transformed  expression or  not.
+For un-transformed expression we have
+\begin{align}
+\nonumber    L= \bra{\Psi} \hat \pi \ket{\Psi} =& \bra{\Psi} (\hat p - \frac{q}{c} \vb A) \ket{\Psi} 
+    = \bra{\Psi} (-\imath \hbar \nabla - \frac{q}{c} \vb A) \ket{\Psi} \\
+\label{eq:ex_1}    =&-\imath \hbar   \bra{\Psi} \nabla\ket{\Psi}  - \frac{q}{c} \bra{\Psi}\vb A \ket{\Psi} 
+\end{align}
+For transformed  we apply the RHS of  \ref{eq:gauge_rule_momentum_kinetical} and we  have
+\begin{align*}
+ R= \bra{\Psi'} \hat \pi' \ket{\Psi'}  =&  \bra{\Psi'} (\hat p' - \frac{q}{c} \vb A') \ket{\Psi'}  = \bra{\Psi'} (-\imath \hbar \nabla - \frac{q}{c} \vb A -\frac{q}{c} \nabla \chi ) \ket{\Psi'} \\
+  \stackrel{ (Eq. \ref{eq:gauge_rule_psi}) }{=} &  
+  \bra{\Psi}e^{ -\imath \frac{q}{\hbar c} \chi} \left( {\color{blue} -\imath \hbar \nabla } {\color{olive}  - \frac{q}{c} \vb A -\frac{q}{c} \nabla \chi } \right)  e^{+\imath \frac{q}{\hbar c} \chi}  \ket{\Psi} \\
+  = &  
+   \bra{\Psi}e^{-\imath \frac{q}{\hbar c} \chi} \left( {\color{blue} -\imath \hbar \nabla } \right)  e^{+\imath \frac{q}{\hbar c} \chi}  \ket{\Psi} 
+   +
+    \bra{\Psi} \cancel{e^{-\imath \frac{q}{\hbar c} \chi} }\left( {\color{olive}   - \frac{q}{c} \vb A -\frac{q}{c} \nabla \chi} \right) \cancel{ e^{+\imath \frac{q}{\hbar c} \chi} } \ket{\Psi} \\
+=&  {\color{blue} -\imath \hbar }\bra{\Psi}e^{-\imath \frac{q}{\hbar c} \chi} 
+    \cdot    \left[ \left(  {\color{blue} \nabla}   e^{+\imath \frac{q}{\hbar c} \chi}  \right)  +   e^{+\imath \frac{q}{\hbar c} \chi} {\color{blue} \nabla}  \right]\ket{\Psi} 
+    {\color{olive} 
+    - \frac{q}{c} \bra{\Psi} \vb A  \ket{\Psi} 
+    - \frac{q}{c} \bra{\Psi} \nabla \chi  \ket{\Psi}}  \\
+=&   {\color{blue}   -\imath \hbar }
+    \bra{\Psi}   \cancel{ e^{-\imath \frac{q}{\hbar c} \chi}} 
+        \cdot    \left[ \left({\color{blue} +\imath \frac{q}{\hbar c} \nabla \chi } \right) \cancel{ e^{+\imath \frac{q}{\hbar c} \chi} } +  
+    \cancel{  e^{+\imath \frac{q}{\hbar c} \chi} }\cdot {\color{blue} \nabla}     \right] \ket{\Psi}
+     {\color{olive} 
+    - \frac{q}{c} \big(\bra{\Psi} \vb A  \ket{\Psi}  + \bra{\Psi} \nabla \chi  \ket{\Psi} \big)}  \\     
+=&  {\color{blue}   -\imath \hbar } \bra {\Psi} \left({\color{blue} +\imath \frac{q}{\hbar c} \nabla \chi } \right) \ket{\Psi}  
+ {\color{blue}   -\imath \hbar } \bra {\Psi} { \nabla}  \ket{\Psi} 
+      {\color{olive} 
+    - \frac{q}{c} \big(\bra{\Psi} \vb A  \ket{\Psi}  + \bra{\Psi} \nabla \chi  \ket{\Psi} \big)}  \\  
+=&   \cancel{  {\color{blue} + \frac{q}{c} }\bra{\Psi} \nabla \chi \ket{\Psi} }
+ -    {\color{blue}   \imath \hbar } \bra {\Psi} { \nabla}  \ket{\Psi} 
+ - {\color{olive} 
+     \frac{q}{c} \big(\bra{\Psi} \vb A  \ket{\Psi}  + \cancel{\bra{\Psi} \nabla \chi  \ket{\Psi} }\big)} \\
+=&   -  {\color{blue}   \imath \hbar } \bra {\Psi} { \nabla}  \ket{\Psi} 
+     -  {\color{olive}  \frac{q}{c} \bra{\Psi} \vb A  \ket{\Psi} }
+\end{align*}
+which is identical with final result Eq. \ref{eq:ex_1}. (QED)
+
+%------------------------------------------------------------------
+\paragraph{Example 2: Explicit transformation of kinetic momentum  }
+
+Here we will verify that one can  derive  operator  $\hat \pi'=\left(\hat p' -\frac{q}{c}(A+ \nabla \chi\right)$ in Eq. \ref{eq:gauge_rule_momentum_kinetical} by directly  applying Eq.  \ref{eq:gauge_rule_Operator} on  kinetic momentum operator $\hat \pi$.
+Following  Eq.\ref{eq:gauge_rule_Operator} we can  write action of the operator $\hat \pi$ on an arbitrary state $\ket{\Psi'}$ as 
+\begin{align*}
+\pi' \ket{\Psi'} =& e^{+\imath \frac{q}{\hbar c} \chi} \pi  e^{-\imath \frac{q}{\hbar c} \chi} \cdot\ \ket{ \Psi'}\\
+=& e^{+\imath \frac{q}{\hbar c} \chi} \left( -\imath  \hbar \nabla -\frac{q}{c} 
+    \vb A \right)  e^{-\imath \frac{q}{\hbar c} \chi}\ket{ \Psi'}\\
+=&e^{+\imath \frac{q}{\hbar c} \chi} \left( -\imath  \hbar \nabla \right)  
+    e^{\imath \frac{q}{\hbar c} \chi}\ket{ \Psi'}
+    - \cancel{e^{+\imath \frac{q}{\hbar c} \chi}} \left(\frac{q}{c} \vb A \right) \cancel{  e^{-\imath \frac{q}{\hbar c} \chi} }\ket{ \Psi'}\\
+=& (-\imath \hbar) \cdot e^{+\imath \frac{q}{\hbar c} \chi}\cdot 
+    {\color{blue} \nabla} \left[ e^{-\imath \frac{q}{\hbar c} \chi}\ket{ \Psi'} \right] 
+    -\frac{q}{c}\vb A \ket{\Psi'} \\
+=&  (-\imath \hbar) \cdot \cancel { e^{+\imath \frac{q}{\hbar c} \chi}}\cdot 
+    \left[  \cancel{ e^{-\imath \frac{q}{\hbar c} \chi} } \left({\color{blue} -\imath \frac{q}{\hbar c} \nabla \chi + \nabla } \right) \ket{\Psi'} \right]   -\frac{q}{c}\vb A \ket{\Psi'} \\
+=& \left({ \color{blue} -\frac{q}{c} \nabla \chi -\imath \hbar \nabla  } \right)
+    \ket{\Psi'} -\frac{q}{c}\vb A \ket{\Psi'} \\
+=&  {\color{blue}   -\imath \hbar \nabla } \ket{\Psi'}   -\frac{q}{c} (\vb  A + {\color{blue} \nabla \chi }) \ket{\Psi'} \\
+=&  \left[ \hat p' - \frac{q}{c} (\vb A +\nabla \chi ) \right] \cdot \ket{\Psi'}
+\end{align*}
+where  $\hat p=\hat p'=-\imath \hbar \nabla$. 
+The final operator in the square bracket is the same  as the RHS of Eq. \ref{eq:gauge_rule_momentum_kinetical}. (QED)
+%------------------------------------------------------------
+\paragraph{Example 3: Explicit transformation of time-derivative operator}
+
+Here we want to perform an explicit transformation of time derivative operator $\imath \hbar \pdv{}{r}$ , which shows up  in time-dependent  Schroedinger equation.
+ Following the     transformation rule for the operators given in Eq. \ref{eq:gauge_rule_Operator} we can write  the action of the time derivative operators and its gauge transformed  on the arbitrary state  $\ket{\Psi}$as 
+\begin{align}
+ \label{eq:td_psi_gauge}  \imath \hbar \pdv{}{t} \ket{\Psi} \to \quad&
+    %\imath \hbar \cdot  \exp{+\imath \frac{q}{\hbar c} \chi} \pdv{}{t} \exp{-\imath \frac{q}{\hbar c} \chi}  \ket{\bar \Psi}  \\
+       \imath \hbar \cdot  \left( e^{+\imath \frac{q}{\hbar c} \chi(r,t)} \right) {\color{blue} \pdv{}{t} } \left( e^{-\imath \frac{q}{\hbar c} \chi(r,t)}  \right)  \ket{\Psi'}\\ \nonumber
+=& \imath \hbar\left( \cancel{ e^{+\imath \frac{q}{\hbar c} \chi }} \right) \cdot
+       \left[ \left({\color{blue} -\imath \frac{q}{\hbar c} \dot \chi(r,t)  }\right) \cancel{ e^{-\imath \frac{q}{\hbar c} \chi}}  + \cancel{e^{+\imath \frac{q}{\hbar c} \chi}} {\color{blue} \pdv{}{t} }  \right] \ket{\Psi'} \\ \nonumber
+=& \imath \hbar\left({\color{blue} -\imath \frac{q}{\hbar c} \dot \chi +\pdv{}{t} }   \right) \ket{\Psi'}  \\ \nonumber 
+=& \left( +\frac{q}{c} \dot \chi + \imath \hbar \pdv{}{t} \right) \ket{ \Psi'}
+\end{align}
+
+Alternatively we can arrive with the same result by directly transforming  time-dependent wavefunction, $\imath \hbar\pdv{}{t}\ket{\Psi}$, using Eq. \ref{eq:gauge_rule_psi} as follows:
+\begin{align*}
+   \imath \hbar \pdv{}{t} \ket{\Psi} \to \quad&
+ \exp{+\imath \frac{q}{\hbar c} \chi(r,t)}  \cdot \ket{ \imath \hbar \pdv{}{t} \Psi }  \\ 
+ & =\exp{+\imath \frac{q}{\hbar c} \chi(r,t)} \cdot (\imath \hbar) \pdv{}{t} \ket{\color{blue}\Psi} 
+\\&  =  %\imath \hbar \cdot  \exp{+\imath \frac{q}{\hbar c} \chi} \pdv{}{t} \exp{-\imath \frac{q}{\hbar c} \chi}  \ket{\bar \Psi}  \\
+       \imath \hbar \cdot  \left( e^{+\imath \frac{q}{\hbar c} \chi(r,t)} \right)  \pdv{}{t}  \color{blue}  \left( e^{-\imath \frac{q}{\hbar c} \chi(r,t)}  \right)  \ket{\Psi'}\\
+&= \left( +\frac{q}{c} \dot \chi + \imath \hbar \pdv{}{t} \right) \ket{ \Psi'}      
+\end{align*}   
+where we used "back" transformation $\ket{\Psi}=\left( e^{-\imath \frac{q}{\hbar c} \chi(r,t)}  \right) \cdot \ket{\Psi'}$.
+The final result in the above expression is identical with the first expression in   Eq.~\ref{eq:td_psi_gauge}.
+%\end{itemize}`
+%------------------------------------------------------------
+\paragraph{Example 4: Time dependent Schroedinger equation}
+
+We will  show  how does the  TDSE, 
+\begin{equation} 
+    \imath \hbar \pdv{}{t} \ket{\Psi}  = H \ket{\Psi} \label{eq:tdse}
+\end{equation} 
+transforms  under the  gauge transformation to 
+\begin{equation} 
+    \imath \hbar \pdv{}{t} \ket{\Psi'}  = H' \ket{\Psi'} \label{eq:tdse_gauge}
+\end{equation}
+where $\ket{\Psi'}$  and $H'$ represent  gauge trsnsformed  wave function and Hamiltonian.
+
+Following Eq. \ref{eq:gauge_rule_psi}  we  can write  $\ket{\Psi'}= U \ket{\Psi}$ 
+and  $\ket{\Psi}= U^\dag \ket{\Psi'}$ 
+where  $U(r,t) = \exp{ +\imath \frac{q}{\hbar c} \chi(r,t}$ is  unitary gauge transformation  operator, and $U^\dag(r,t) = \exp{ -\imath \frac{q}{\hbar c} \chi(r,t}$, and $U^\dag U U= I$ is an identity operator.  
+The Hamiltonian for a particle with charge $q$ in an EM filed is
+\begin{align}
+    H = \frac{1}{2m}(p- \frac{q}{c} \vb A)^2 +q \phi +V(r)
+    \label{eq:hamiltonian_EM}
+\end{align}
+where $\vb A(r,t)$, $\phi(r,t)$, $V(r)$ are, respectively  vector potential, electrostatic potential,  confining potential (ions +pseudopotentials).
+
+Starting from the TDSE, Eq. \ref{eq:td_psi_gauge} and using  $\ket{\Psi}=U^\dag\ket{\Psi'}$  we write 
+\begin{align*}
+%  \imath \hbar\pdv{}{t}\ket{\Psi}        = & H \ket{\Psi} \\
+  \imath \hbar{\pdv{}{t}} \left(U^\dag \ket{\Psi'}\right) = & H \big(U^\dag \ket{\Psi'}\big) 
+\end{align*}
+Multiplying the last expression by $U$ on the left we get 
+\begin{align*}
+\imath \hbar \cdot U {\pdv{}{t}} U^\dag \cdot  \ket{\Psi'} = & \left( UH U^\dag\right) \ket{\Psi'} \\
+\imath \hbar \cdot U \left[  {\color{blue} \pdv{U^\dag}{t} } \cdot\ket{\Psi'}   + U^\dag \pdv{}{t}
+    \ket{\Psi'}\right] =& \left( UH U^\dag\right) \ket{\Psi'} \\
+\imath \hbar \cdot U \left[ {\color{blue} \left(- \imath \frac{q}{\hbar c} \dot \chi \right) U^\dag }\ket{\Psi'} 
+    + U^\dag \pdv{}{t}  \ket{\Psi'}\right] =& \left( UH U^\dag\right) \ket{\Psi'} \\
+\left[   \left({\color{blue} +\frac{q}{ c} \dot \chi} \right) U U^\dag + \imath \hbar (UU^\dag )   \pdv{}{t}\right] \cdot \ket{\Psi'} =   & \left( UH U^\dag\right) \ket{\Psi'} \\
+\left[   \left({\color{blue} +\frac{q}{ c} \dot \chi} \right) + \imath \hbar \pdv{}{t}\right] \cdot  \ket{\Psi'} =   & \left( UH U^\dag\right) \ket{\Psi'} 
+\end{align*}
+where $\dot \chi$ is a time derivative of gauge function $\chi$. Moving the  time-derivative of gauge funtion from LHS to the RHS of the last equation gives
+\begin{equation} 
+\boxed{
+    \imath \hbar \pdv{}{t} \ket{\Psi'}  =  \left( U H  U^\dag  - \frac{q}{c} \dot \chi \right) \ket{\Psi'} }
+\end{equation}
+Comparing it  with  the Eq. \ref{eq:tdse_gauge}   gives the expression for the gauge transformed hamiltonian
+\begin{equation}
+\boxed{    H' =  UHU^\dag -\frac{q}{c} \dot\chi }
+\end{equation} 
+We now  use the above transformation rule  to  transform the hamiltonian given by Eq. \ref{eq:hamiltonian_EM}:
+\begin{align*}
+    H =&  H_p + H_\phi + H_V \\
+    &H_p =  \frac{1}{2m} \left(p -\frac{a}{c} \vb A\right)^2 \\ 
+    &H_\phi =   +q\phi  \\
+    &H_V =   V(r,t) 
+\end{align*}
+And the tranformed hamiltonian is
+\begin{align*}
+H' =&  H'_p + H'_\phi + H'_V  - \frac{q}{c} \dot \chi 
+\end{align*}
+\begin{align*}
+ H'_p =  U H_pU^\dag =& \frac{1}{2m}  U \left(p -\frac{q}{c} \vb A\right)^2 U^\dag\\ 
+=&  \frac{1}{2m}U \left(p -\frac{q}{c} \vb A\right) \left(p -\frac{q}{c} \vb A\right)U^\dag \\
+=&  \frac{1}{2m}U \left(p -\frac{q}{c} \vb A\right)(U^\dag U )\left(p -\frac{q}{c} \vb A\right)U^\dag \\
+=&  \frac{1}{2m} \left[ U \left(p -\frac{q}{c} \vb A\right)U^\dag \right]\cdot \left[ U \left(p -\frac{q}{c} \vb A\right)U^\dag \right] \\
+=&  \frac{1}{2m} \left[ p -\frac{q}{c} \vb A'  \right]\cdot \left[ p -\frac{q}{c} \vb A'  \right]  \\
+=&  \frac{1}{2m} \left( p -\frac{q}{c} \vb A'  \right)^2
+\end{align*}
+where we used Eq. \ref{eq:gauge_rule_momentum_kinetical}. See also Example 2 for  derivations of relation $\left(p-\frac{q}{c}\vb A'\right) =U\cdot \left(p-\frac{q}{c}\vb A\right)\cdot U^\dag$
+\begin{align*}
+    H'_\phi =&  U H_\phi U^\dag =  U \cdot(+q\phi ) \cdot U^\dag =  +q\phi  \\
+    H'_V  =&  U H_V U^\dag =   U \cdot V(r,t)  \cdot  U^\dag 
+\end{align*}
+Here we note that $V(r,t)$   might consists both local and non-local potentials.  Local potentials are unchanged under the transformation (invariant). Non-local potentials require a careful treatment.
+Putting this together gives:
+\begin{align*}
+    H' =& H'_p +H'_\phi + H'_V -\frac{q}{c} \dot \chi \\
+       =& \frac{1}{2m} \left(p-\frac{q}{c}\vb A' \right)^2  + q\phi +UVU^\dag -\frac{q}{c} \dot \chi \\ 
+       =&  \frac{1}{2m} \left(p-\frac{q}{c}\vb A' \right)^2  + q\left( \phi  - \frac{1}{c} \dot \chi \right)   +  UVU^\dag  %\\
+%       =&  \frac{1}{2m} \left(p-\frac{q}{c}(\vb A -\nabla \chi) \right)^2  + q\left( \phi  - \frac{1}{c} \dot \chi \right)   +  UVU^\dag       
+\end{align*}
+where $\vb A' = (\vb A+ \nabla \chi)$
+Note that the above Hamiltonian is  identical with applying gauge transformation rules for  the  vector and scalar potential  (Eqs.  \ref{eq:gauge_rule_vector_pot} and  \ref{eq:gauge_rule_scalar_pot})  and  transformation rule for operators (Eq. \ref{eq:gauge_rule_Operator}) to $V(r,t)$  potential term.  
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{ Length vs Velocity gauge for periodic rt-TDDFT }
+
+The general expression for gauge function $\chi$ transformed Hamiltonian of particle with charge $q$ in  the EM field given by vector and scalar potentials  $\vb A$ and $\phi$
+\begin{equation}
+    H'=  \frac{1}{2m} \left(p-\frac{q}{c}(\vb A +\nabla \chi) \right)^2  + q\left( \phi  - \frac{1}{c} \dot \chi \right)   +  \exp(+\imath \frac{q}{c\hbar}\chi)  V \exp(-\imath \frac{q}{c\hbar}\chi)    
+    \label{eq:hamiltonian_general_gauge}
+\end{equation}
+and corresponding  TDSE is
+\begin{equation}
+\imath \hbar \pdv{}{t} \ket{\Psi'} = H'  \ket{\Psi'} 
+\end{equation}
+\begin{itemize}
+\item In {\bf length gauge} we use:
+\begin{align}
+    \nonumber \vb A(r,t)  =& 0\\
+    \nonumber \phi(r,t)   =& \vec {\vb r} \cdot \vec {\vb E} \\
+    \label{eq:chi_lg} \chi        =&0 
+\end{align}
+which, upon inserting in Eq. \ref{eq:hamiltonian_general_gauge}, gives
+\begin{align*}
+    H^{LG} =& \frac{1}{2m} \left(p-\frac{q}{c}(\vb A +\nabla \chi) \right)^2  + q\left( \phi  - \frac{1}{c} \dot \chi \right)   +  \exp(+\imath \frac{q}{c\hbar}\chi)  V(r,t) \exp(-\imath \frac{q}{c\hbar}\chi)\\
+      =& \frac{1}{2m} \left(p-\frac{q}{c}(0 +0) \right)^2  + q\left( \vec {\vb r} \cdot \vec {\vb E}  -  0 \right)   +  \exp(+0 )  V(r,t)  \exp(-0)\\
+      =&\frac{1}{2m} p^2   - \vec {\vb r} \cdot \vec {\vb E}  + V(r,t)
+\end{align*}
+Inserting  momentum operator $p = -\imath \hbar \nabla$, and charge $q=-1$ fro electrons gives the final expression 
+\begin{equation}
+\boxed{
+     H^{LG} = \frac{-\hbar^2}{2m} \nabla^2 + V(r,t) - \vec {\vb r} \cdot \vec {\vb E}  } 
+     \label{eq:H_lg}
+\end{equation}
+where the first two terms describe a usual electronic structure  Hamiltonian without EM field, and $\vec {\vb r} \cdot \vec {\vb E}$ describes coupling of  electrons  with external EM field through dipolar electric field. Note that $\vec {vb r}$ evaluated over  basis set  leads to dipole matrix that couples occupied  and virtual states.
+%--------------------------------------------
+\item In {\bf velocity gauge} we use  the sam $ \vb A(r,t)$  and $\phi(r,t)$ and in length gauge case, but we use  different  gauge transformation  function
+\begin{align}
+ \nonumber    \vb A(r,t)  =& 0 \\
+  \nonumber  \phi(r,t)   =& \vec {\vb r} \cdot \vec {\vb E} \\
+    \chi(r,t)   =& -\vec{\vb r}\cdot \vb A_0(r,t)
+    \label{eq:chi_vg}
+\end{align}
+where  $A_0(r,t)$ is chosen to be:
+\begin{equation}
+\vb A_0(r,t) = -c \int_0^t \vb E(t') dt' \label{eq:A0_vg}
+\end{equation}
+Inserting these into  Eq. \ref{eq:hamiltonian_general_gauge} leads to
+\begin{align*}
+H^{VG} =& \frac{1}{2m} \left(p-\frac{q}{c}(\vb A +\nabla \chi) 
+    \right)^2  + q\left( \phi  - \frac{1}{c} \dot \chi \right) + \exp(+\imath \frac{q}{c\hbar}\chi)  V(r,t) \exp(-\imath \frac{q}{c\hbar}\chi)\\
+=& \frac{1}{2m} \left(p -\frac{q}{c}(0 +\nabla  (-\vec{\vb r}\cdot \vb A_0)
+    \right)^2  + q\left( \vec {\vb r} \cdot \vec {\vb E}  
+      -\frac{1}{c} \pdv{}{t} \left[  -\vec{\vb r}\cdot \vb A_0(r,t)  \right]\right) +V'(r,t)\\
+=& \frac{1}{2m} \left(p+\frac{q}{c}  \vb A_0 \right)^2
+    + q\left( \vec {\vb r} \cdot \vec {\vb E} +\frac{\vec{\vb r}}{c} \pdv{}{t}   \vb A_0(r,t) \right) +V'(r,t) \\
+= &\frac{1}{2m} \left(p+\frac{q}{c}  \vb A_0 \right)^2 
+    + q\left( \vec {\vb r} \cdot \vec {\vb E} +\frac{\vec{\vb r}}{c} \pdv{}{t}  \left[ -c \int_0^t \vb E(t') dt' \right]  \right) +V'(r,t) \\
+=& \frac{1}{2m} \left(p+\frac{q}{c}  \vb A_0 \right)^2 
+  + q\left( \vec {\vb r} \cdot \vec {\vb E} - \vec{\vb r}  \cdot \left( \vb E(t) - \vb E(0)\right)  \right) +V'(r,t)
+%    & + \exp(+\imath \frac{q}{c\hbar}\chi)  V(r,t) \exp(-\imath \frac{q}{c\hbar}\chi)\\
+\end{align*}
+where $\vb E(t)$ is chosen such that  $\vb E(0)=0$ and
+ $V'(r,t) =  \exp(+\imath \frac{q}{c\hbar}\chi)  V(r,t) \exp(-\imath \frac{q}{c\hbar}\chi)$.
+Then the scalar field term in the Hamiltonian disappears  with the coupling  electrons to EM entering Hamiltonian through a vector potential:
+\begin{align*}
+H^{VG} =& \frac{1}{2m} \left(p+\frac{q}{c}  \vb A_0 \right)^2 + V'(r,t)\\
+=&  \frac{1}{2m} \left(-\imath \hbar \nabla +\frac{q}{c}  \vb A_0 \right)^2 + V(r,t)\\
+=&  \frac{1}{2m} \left( -\hbar^2 \nabla^2  \right)
+\end{align*}
+
+%-------
+%Then the scalar field term in the Hamiltonian disappears  with the coupling  %electrons to EM entering Hamiltonian through a vector potential:
+%\begin{align*}
+%H^{VG} =& \frac{1}{2m} \left(p+\frac{q}{c}  \vb A_0 \right)^2 + V'(r,t)\\
+%=&  \frac{1}{2m} \left(-\imath \hbar \nabla +\frac{q}{c}  \vb A_0 \right)^2 + V'(r,t)
+%%\\=&  \frac{1}{2m} \left( -\hbar^2 \nabla^2  \right)
+%\end{align*}
+%------------
+The final expression for velocity gauge  hamiltonian is
+\begin{equation}
+  \boxed{
+H^{VG} = \frac{1}{2m} \left(-\imath \hbar \nabla +\frac{q}{c}  \vb A_0 \right)^2 + U V(r,t) U^\dag
+\label{eq:H_vg}
+}  
+\end{equation}
+
+\end{itemize}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\paragraph{ Derivation of velocity gauge.}
+We will now  show how the velocity gauge condition is derived.
+Looking at the Eq. \ref{eq:H_lg} we recognize that the electric filed interaction term $\phi= \vec{\vb  r}\cdot \vec{vb E}$ that couples external electric field with electronic structure through a dipolar field includes a position operator which  is ill defined for periodic systems.  Luckily we can remove as follows.
+
+From the   gauge transformation of electric potential we have
+\begin{align*}
+    \phi' = \phi -\frac{1}{c} \pdv{\chi}{t}  =0
+\end{align*}
+where  setting $\phi'=0$  denotes  that we want  find a function $\chi(r,t)$ such that  it would efffectively remove  the electrostatic potential from our rt-TDDFT equations.
+Solving above equation leads to
+\begin{align*}
+\pdv{\chi(r,t)}{t}  =& c \phi(r,t) \\
+\chi(r,t)  =& c \int_0^t \phi(r,t')  dt' \\
+           =& c \int_0^t  \vec{\vb  r}\cdot \vec{\vb E}(r,t') dt' \\
+           =&   c \int_0^t (x E_x(t) +  y E_y(t) +z E_z(t)) dt' \\
+            =& c \cdot \vec{\vb  r} \int_0^t \vec{\vb E}(r,t') dt' +f(r)%\\
+\end{align*}
+where $f(r)$ is an arbitrary spatial function that does not depend on $t$  [Let assume for simplicity that  $f(t)=0$].
+Last  equation  is identical  with  expression for $\chi(r,t)$ in Eq \ref{eq:chi_vg} and \ref{eq:A0_vg}. QED
+
+
+
+
+
+This also shows   how to perform a gauge transformation in general:  One selects  a term  in the equation that depends on  a vector  or scalar potentials $\vb A(r,t)$,  $\phi(r,t)$  that you want to disapper or change a form and then solve the specific equation  for gauge transformation Eqs, \ref{eq:gauge_rule_vector_pot}  or \ref{eq:gauge_rule_scalar_pot} to find the gauge function $\chi(r,t)$  that fulfills this condition.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{ tmp-Velocity gauge for periodic rt-TDDFT }
+
+
+{\bf Length-gauge rt-TDDFT Hamiltonian}  in   electric field:
+\begin{align}
+ \hat H  &=  \frac{1}{2m} p^2  + V_{e}(x)  +  x E_o\delta(t) 
+\end{align}
+where  $p= -\imath  \hbar \nabla$.
+And the matrix elements:
+
+\begin{align}
+ \vb{H_{i,j}} =& \langle \phi_i| \hat H| \phi_j \rangle  \\  \nonumber
+        = & \langle \phi_i| \left( \frac{1}{2m} p^2  + V_{e}(x)  \right)  |\phi_j\rangle  + 
+           \langle \phi_i|   x   |\phi_j\rangle E_o\delta(t)   \\ \nonumber
+         =&   \vb{  H_{i,j}^0 }  + \vb{ \mu}_{i,j}  \cdot E_0\delta(t)
+\end{align}
+
+{\bf Velocity-gauge rt-TDDFT Hamiltonian}  in electric field (impulse)
+\begin{align}
+ \hat H  =&  \frac{1}{2m} \left(\vb p +  \frac{e \vb A}{c}\right)^2  + V_{e}(x)   \\
+    = &  \frac{1}{2m} \left(\vb p^2  + \frac{e}{c} \vb{ p \cdot A}  +   \frac{e}{c} \vb{ A \cdot p} +  \frac{\vb A^2}{c^2}  \right)  + V_e(x)  \\
+    =&   \left( \frac{1}{2m} \vb p^2   + V_e(x)  \right)  + 
+    \frac{e}{2m c} (\vb{  p \cdot A + A \cdot p}) +  \frac{\vb A^2}{c^2} 
+\end{align}
+where   $A(t)   = -c \int_0^t E(t)dt$.  Here we identify the second term, ($\vb{  p  \cdot A  +A \cdot p}$) as {\bf paramagnetic}, and third  term, ($  \frac{\vb A^2}{c^2}$),  as   {\bf diamagnetic}.
+
+And the matrix elements for up to first power in A  ({\bf linear response)}:
+\begin{align}
+ \vb{H_{i,j}} =& \langle \phi_i| \hat H| \phi_j \rangle  \\  \nonumber
+        = & \langle \phi_i| \left( \frac{1}{2m} p^2  + V_{e}(x)  \right)  |\phi_j\rangle  + 
+           \langle \phi_i|  \left( p \frac{A}{c}  +  \cancel{\frac{A^2}{c^2} } \right)  |\phi_j\rangle \\ \nonumber
+     =&     \langle \phi_i| \left( \frac{1}{2m} p^2  + V_{e}(x)  \right)  |\phi_j\rangle  - \imath \hbar    \langle \phi_i|  \nabla |\phi_j \rangle 
+%        =&   \vb{  H_{i,j}^0 }  + 
+%         \vb{ \mu}_{i,j}  \cdot E_0\delta(t)
+\end{align}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{Length and Velocity Formulas in approximate  Oscillator strengths calcs}
+
+These are notes from  A. Starace paper [PRA. (1971) 3, 1242].
+which discusses local vs nonlocal potentials 
+
+
+Local potential are diagonal on coordinate representation:
+\begin{align*}
+   \bra{\vb r}V\ket{ \vb r'} =V(\vb r) \delta(\vb r- \vb r')
+\end{align*}
+whereas for non-local potentials $\bra{\vb r}V\ket{ \vb r'}$  we have 
+\begin{align*}
+   \bra{\vb r}V\ket{ \Psi} = \int  \bra{\vb r} V\ket{ \vb r'}   \bra{\vb r'}\ket{ \Psi} d^3r' = \int      \bra{\vb r} V\ket{ \vb r'} \cdot \Psi(\vb r') d^3r' 
+\end{align*}
+where  $ \bra{\vb r'}\ket{ \Psi}$ is just $ \Psi(\vb r')$ (see Sakurai)
+For Hamiltonians containing non-local potential  the expression for {\bf length}  and {\bf velocity}  formulas are no  longer equivalent.
+Using Heisenberg interaction picture we can write  time derivative of operator $A(t)$  using Taylor expansion around $t=0$  to first order terms:
+\begin{align*}
+    A(t) = & \exp{+\imath H t}A(0)  \exp{-\imath H t}   \\
+          =& A(0) + t \cdot  \left. 
+           \left(\exp{+\imath H t} \Big[ (+\imath H ) A(t) +\pdv{A(t)}{t} + A(0)(-\imath H
+           ) \Big]\exp{-\imath H t} \right)\right|_{t=0} \\
+    =& A(0) +t \cdot    \Big[ (+\imath H ) A(0)  +\left.\pdv{A(t)}{t}\right|_{t=0} + A(0)(-\imath H ) \Big] \\ 
+    =&     A(0) +t \cdot \left(  \imath [H(0), A(0)]  +\pdv{A(0)}{t} \right) \\
+    =&   A(0)  +  t \frac{dA(t)}{dt} 
+\end{align*}
+Thus   we obtained
+\begin{align*}
+ \dot A(t) = \pdv{A(t)}{t} + \imath [H(t),A(t)]
+\end{align*}
+which specifically for velocity operator  leads to:
+\begin{align*}
+ \dot r(t)  =& \cancel{\pdv{ r}{t }} + \imath [H(t),r(t)] \\
+\end{align*}
+where we noticed that operator $r$  (position) does not depend on $t$.
+
+Using  the Eq. \ref{eq:P_kinetic}  for the relation between {\bf kinetic  momentum} and velocity ($\vb P=m\cdot\dot{\vb r}$), and taking  $m=1$ for electron we  can derive matrix elements of operator $\dot r$  between $\ket{a}\equiv \ket{ \psi_a}$ and  $\ket{b}\equiv \ket{ \psi_b}$:
+%Calculating matrix elements of operator $\dot r$  between $\ket{a}\equiv \ket{ \psi_a}$ and  $\ket{b}\equiv \ket{ \psi_b}$ gives 
+\begin{align*}
+ \bra{a} \dot r(t) \ket{b}  =&\imath  \bra{a} [H(t),r(t)] \ket{b} \\
+   =& \imath  \bra{a} \Big(  H \cdot r - r \cdot H \Big) \ket{b}  \\
+   =& \imath  \Big(  \bra{a} H \cdot r \ket{b} - \bra{a} r \cdot H  \ket{b} \Big)  \\
+   =&  \imath \Big(\varepsilon_a \bra{a} r\ket{b} -  \bra{a} r\ket{b} \varepsilon_b    \Big) \\
+   =&   \imath (\varepsilon_a -\varepsilon_b) \bra{a} r\ket{b}
+\end{align*} 
+On the other hand, we have 
+\begin{align*}
+ \bra{a} \dot r(t) \ket{b}   = &  \imath  \bra{a} [H,r] \ket{b} \\ 
+ =& \imath  \bra{a} [T + V(r) , r] \ket{b}  \\
+  =& \imath \bra{a} [T  , r] \ket{b}   +  \imath \bra{a} [V(r), r] \ket{b}    \\
+  = &   \bra{a} \hat p \ket{b}  +  \imath \bra{a} [V(r), r] \ket{b}
+\end{align*}  
+where we used $\imath [T,r] = \hat p = - \imath  \hbar \nabla_r$
+
+We consider translational  symmetry (solid state)  of  wave function:
+\begin{align*}
+    \Psi(r') = [  e^{ \imath (r-r') \cdot p } ] \Psi(r) 
+\end{align*}
+Then the effect of  nonlocal potential transitionally symmetric wave function is
+\begin{align*}
+    \int \bra{r} V \ket{r'} \Psi(r') d^3r' = & 
+      \int \bra{r} V \ket{r'}  [ e^{ \imath (r-r') \cdot p } ] d^3r'  \cdot \Psi(r) \\
+      \equiv & V(r,p) \cdot  \Psi(r)
+\end{align*}
+
+To include interaction with electromagnetic field  we  use  the standard substituion:
+$p \to p -e A(r)/c$.  We use this not only $T$ operator but also in $V(r,p)$ non-local opertor
+
+%%%%%%%%%%%%
+\subsection{ Polarization for Gamma point from Berry phase }
+
+Two papers of Rubio  on Octopus implementaiotn of TDDFT show good description on how to propagate TD-DFT equationjs for periodic systems \cite{octopus-rt-tddft-PCCP-2015,octopus-rt-tddft-JCP-2020}.
+According to  \cite{octopus-rt-tddft-PCCP-2015}  (see Eq. 22 therein, p. 1375 in Sec 3), the macroscopic polarization (dipole moment)   of periodic system can be calculated   performing large supercell calculations (the the  Brilllouin zone is very small) with  Gamma point sampling only. Then  the single-point Berry phase expression  is sufficient to use. "For cell sizes $L_i$ in each direction ($i=\{x, y, z \}$), the dipole moment is derived from the {\bf determinant of a matrix} whose basis is the occupied KS orbitals:"
+\begin{align*}
+   \langle  \mu_i \rangle  = -  f_{ occ}\frac{e L_i}{2\pi} \Im \ln \det \bra{\phi_n} e^{-2\pi \imath \hat x_i/L_i}\ket {\phi_m}
+\end{align*}
+where $f_{occ}$ is an occupation number.
+This is a special case of Berry phase calculations. See also Eq. 48-49 in  Sec. 2.5 \emph{Periodic systems} in \cite{Luber-rt-tddft}.
+
+In numerical implementations, the gauge freedom in choosing the vector potential might lead to poor convergence with the quality of the discretization, and to a dependence of the magnetic response on the origin of the simulation cell. In other words, an arbitrary translation of the molecule could introduce an nonphysical change in the calculated observables. This broken gauge-invariance is well known in molecular calculations with all-electron methods that make use of localized basis sets. In this case, the error can be traced to the finite-basis-set representation of the wave-functions.[66,67]  A simple measure of the error is to check for the fulfillment of the hyper-virial relation: 
+\begin{align*}
+    \imath \bra{\phi_j} \hat p \ket{\phi_n} = (\varepsilon_n -\varepsilon_j)  \bra{\phi_j} \hat r \ket{\phi_n}
+\end{align*}
+
+See  same paper (\cite{octopus-rt-tddft-PCCP-2015}, Sec 4, Eq. 30)
+When working with a real-space mesh, this problem also
+appears, though it is milder, because the standard operator representation in the grid is not gauge-invariant. In this case the error can be controlled by reducing the spacing of the mesh. On the other hand, real-space grids usually require the use of the pseudo-potential approximation, where the electron-ion interaction is described by a non-local potential
+
+For example, an extra term has to be included in the hyper-virial expression, eqn (30).
+\begin{align*}
+    \imath \bra{\phi_j} \hat p \ket{\phi_n} = (\varepsilon_n -\varepsilon_j)  \bra{\phi_j} \hat r \ket{\phi_n}
+    +  \bra{\phi_j} [\hat r, \hat v_{nl} ]   \ket{\phi_n}
+\end{align*}
+where $\hat v_{nl}$ is non-local pseudopotential.
+
+Then  Sec.2.3.1 \emph{Electric Field Perturbation. } in \cite{Luber-rt-tddft}  describes how TDKS are transformed  from {\bf length} to \emph{ velocity } gauge  (see also {\bf Appendix A}) 
+
+%%%%%%%
+\newpage
+\subsection{ Velocity gauge rt-tddft}
+This part is based  on \cite{Luber-rt-tddft}
+
+-  
+We want  transform  the floowing  TDDFT  equation   from length gauge to  velocity gauge 
+\begin{align*}
+    \imath \hbar \pdv{}{t}\Psi_i (r,t)  =& \Big[-\frac{\hat p^2}{2m_e}  +V(r,t)  +e \hat r_\alpha  E_\alpha(t) \Big] \Psi_i(r,t) %\\
+    % =&  \Big[-\frac{\hat p^2}{2m_e}  +V(r,t)_{local} +  V(r,t)_{non-local} +   +e \hat r_\alpha  E_\alpha(t) \Big] \Psi_i(r,t) 
+\end{align*}
+where 
+\begin{align*}
+    V(r,t) = V(r,t)_{local} +  V(r,t)_{non-local} 
+\end{align*}
+and interaction with the ecternal field is described through \emph{positin operator}  contribution $e \hat r_\alpha  E_\alpha(t)$
+
+- First we replace a canonical momentum with kinetic one $p \to p +\frac{q}{c} A(r,t)$
+ \begin{align*}
+    \imath \hbar \pdv{}{t}\Psi_i (r,t)  =& \Big[-\frac{1}{2m_e}  \Big( p - \frac{e}{c}A(r,t) \Big)^2  +V(r,t)  +e \hat r_\alpha  E_\alpha(t) \Big] \Psi_i(r,t) %\\
+    % =&  \Big[-\frac{\hat p^2}{2m_e}  +V(r,t)_{local} +  V(r,t)_{non-local} +   +e \hat r_\alpha  E_\alpha(t) \Big] \Psi_i(r,t) 
+\end{align*}
+
+-  We use the gauge function:
+\begin{align*}
+    \chi(r,t) =  - r_\alpha A_\alpha(t) 
+\end{align*}
+Then the  thansformation of TDKS  is given  through $\exp(- \frac{\imath e}{c \hbar} \chi(r,t) )$
+
+ \begin{align*}
+    \imath \hbar \pdv{}{t}\Psi_i (r,t)  =&  H \Psi_i (r,t) \\
+    \imath \hbar \cdot  \left[ e^{\left( + \frac{\imath e}{c \hbar} \chi \right) }  \pdv{}{t}   
+   e^{\left( - \frac{\imath e}{c \hbar} \chi \right) }  \right] \bar \Psi_i (r,t)  =& 
+   \left[e^{\left(+\frac{\imath e}{c \hbar} \chi \right)} \cdot H \cdot e^{\left( -\frac{\imath e}{c \hbar} \chi \right)}  \right]    
+\bar \Psi_i (r,t) \\
+\end{align*}    
+where  $\Psi_i (r,t)$  and $\bar \Psi_i (r,t)$ correspond to wave function (state vector)   of the orginal (posiotoin gauge) and  velocity gauge tarntransfmre equaiton.
+Then  the
+
+-  gauge transformation from  lenght to  velocty 
+-  non-local potential
+
+%%%%%%%%%%%%%%%%%
+\subsection{Maxwell+ Schroedinger  TDKS equaitions}
+
+See 2020 octopus paper \cite{octopus-rt-tddft-JCP-2020}.
+
+A comprehensive macroscopic Maxwell-TDDFT scheme is desctibed in  \cite{prb-2018-Yabana}.
+
+
+According to  Yabana \cite{prb-2018-Yabana}, see Sec. B, the propagation of the electromagnetic  microscopic Maxwell  equation  the vector $A(r,t)$ and scalar  potential $\phi(r,t)$ satisfy the equation:
+\begin{align*}
+    \left( \frac{1}{c^2} \pdv{^2}{t^2} -\nabla^2 \right) \vb{A}(r,t)  + \frac{1}{c} \pdv{}{t} \nabla \phi(r,t) = \frac{4\pi}{c} \vb j(r,t)
+\end{align*}
+where $\vb j(r,t)$ is the electric current density. The scalar potential also satisfies Poisson equation:
+\begin{align*}
+    \nabla^2 \phi(r,t) = - 4\pi \rho(r,t)
+\end{align*}
+ where $\rho(r,t)$ is  the charge density.
+
+ For periodic systems   we use time-dependent Kohn-Sham orbitals $\{ \Psi_{n,k}(r,t)\}$  represented as
+\begin{align}
+    \Psi_{n,k} (r,t) = e^{\imath  kr} u_{n,k}(r,t) 
+    \label{eq:periodic-KS-orbital}
+\end{align}
+where  $u_{n,k}(r,t)$ is so called Bloch orbital (KS orbital with  Bloch phase removed (??), but retaining the translations symmetry)\footnote{ See also \cite{Springborg-book-2000}  in Sec ???  on Bloch state}
+The time evolution of the KS equaiotn is given by:
+\begin{align}
+    \imath \hbar \pdv{}{t} \Psi(r,t)  = & 
+    \left[ \frac{1}{2m} \left( \hat p +\frac{e}{c} \vb A(r,t)\right)^2   -e \cdot \phi (r,t) + V(r,t) \right] \cdot \Psi(r,t)  \\
+    =&  \left[ \frac{1}{2m} \left(  -\imath \hbar \nabla +\frac{e}{c} \vb A(r,t)\right)^2   -e \cdot \phi (r,t) + V(r,t) \right] \cdot \Psi(r,t)
+    \label{eq:TD-KS0}
+\end{align}
+where $V(r,t)$ includes electron-ion,  electron-electron  interactions (including all standard DFT terms: Coulomb, hartree, exchange correlation, local and non-local terms),
+
+Inserting  the  Eq.\ref{eq:periodic-KS-orbital}  into Eq. \ref{eq:TD-KS} and multiplying on the left  by Bloch phase factor $e^{-\imath k r }$   gives  the equation for the evolution of Bloch orbital $u_{k,n}(r,t)$:
+
+\begin{align}
+    \imath \hbar \pdv{ u_{k,n}(r,t)}{t} 
+    =&  \left[ \frac{1}{2m} {\color{blue}  \left( -\imath \hbar \nabla + \hbar \vb k + \frac{e}{c} \vb A(r,t)\right)}^2   -e \cdot \phi (r,t) + V(r,t) \right] \cdot  u_{k,n}(r,t)
+    \label{eq:TD-KS}
+\end{align}
+The electron density  if current  can be obtained from  Bloch orbitals according to:
+
+\begin{align}
+ n_e(r,t) =& \sum_{n,k}^{occ}  |u_{n,k}(r,t)|^2 \\
+  \vb j(r,t) =&   \frac{1}{m} \Re \sum_{n,k}^{occ}  u_{n,k}^*(r,t) \cdot  \left( {\color{blue}  -\imath \hbar \nabla + \hbar \vb k + \frac{e}{c} \vb A(r,t) } \right)  u_{n,k}(r,t) \\
+  =&  \frac{1}{m} \Re \sum_{n,k}^{occ}  u_{n,k}^*(r,t) \cdot  {\color{blue}  \hat {\vb p}_{kin} } \cdot u_{n,k}(r,t)  \nonumber
+\end{align}
+where we used kinetic  momentum operator  $ {\color{blue}  \hat {\vb p}_{kin} =  [-\imath \hbar \nabla + \hbar \vb k + \frac{e}{c} \vb A(r,t) ] } $
+
+Now, Octopus  paper \cite{octopus-rt-tddft-JCP-2020} (Sec. 2 \emph{Coupled Maxwell-Kohn Sham Equations}) exploits the fact that Maxwell  equations can be formulated  in Schoredigner form based on {\bf  Riemann-Silbersteing vector } which is a combination of  Electric $\vb E(r,t)$ and magnetic fields $\vb B(r,t)$ to benefit from the efficient time-evolution   in the code
+\begin{align*}
+    F_ \pm =  \sqrt{\frac{\epsilon_0}{2}}  \vb E(r,t) \pm \imath   \sqrt{\frac{1}{2\mu_0}}  \vb B(r,t) 
+\end{align*}
+ See Eqs -1-7 in \cite{octopus-rt-tddft-JCP-2020}.
+
+ Then starting  from {\bf microscopic Maxwell } equations:
+\begin{align*}
+    \nabla \cdot \vb E  =& \frac{\rho}{\epsilon_0} \\
+    \nabla \cdot \vb B  =& 0 \\ 
+    \nabla \cross \vb B =& \frac{1}{c^2} \pdv{\vb E}{t} +\mu_0 \vb J \\
+    \nabla \cross \vb E = & -\pdv{\vb B}{t}
+\end{align*} 
+where $\vb E$, $\vb B$ are classical electric and magnetic fields, $\rho$ and $\vb J$  are charge and current densities, $\varepsilon_0$  and $\mu_0$ are vacuum permittivity and permeability, $c = (\epsilon_0 \mu_0)^{-1/2}$ is a speed of light. Using the {\bf Riemman -Silbesten vector }  the electric annd magnetic Gauss law may be combined into one: 
+\begin{align}
+    \nabla \cdot \vb F = \frac{1}{\sqrt{ 2\pi}} \rho
+\end{align}
+ Similarly the Faraday and Ampere law can be combined into one:
+\begin{align}
+   \imath \hbar  \pdv{ \vb F}{t}  
+   = &  c \left(\vb S \cdot \frac{\hbar}{\imath} \nabla  \right)  \vb F - \frac{\imath \hbar}{\sqrt{ 2\epsilon_0}} \vb J
+\end{align}
+ where $\vb S=\{S_x, S_y, S_z \}$ are vector of spin one (bosons ? )matrices: \newline
+ $S_x = \begin{bmatrix}
+0&0&0\\
+0&0&-i\\
+0&i&0\\
+\end{bmatrix} $, 
+ $S_x = \begin{bmatrix}
+0&0&i\\
+0&0&0\\
+-i&0&0\\
+\end{bmatrix} $,
+ $S_x = \begin{bmatrix}
+0&-i&0\\
+i&0&0\\
+0&0&0\\
+\end{bmatrix} $.
+
+\section{Density current in  rt-TDDFT}
+
+Derivation of density current/flux  $\vec {\vb J}(r,t)$   starts with  continuity  equation:
+\begin{align}
+%\color{blue}
+\pdv{\rho(r,t)}{t} +  \nabla \cdot \vec {\vb J }(r) = S(r,t)
+\end{align}
+which says that the change of density  $\rho$ at $r$  is  due to the difference  between density flux flowing  in and out of voxel $r$ and the  production rate $S(r,t)$ of    quantity with density $\rho$.
+Here $ \vec{ \vb J}(r,t) $ is  a vector flux (current)  at $r$ and time $t$,  and source $S=0$ (we don't produce electrons) we have the relation between divergence of density flux and time
+\begin{align}
+%\color{blue}
+\nabla \cdot \vec {\vb J }(r) =&  -\pdv{\rho(t)}{t}= - \pdv{\Psi^\dag(r,t)
+\Psi(r,t)}{t}  \\
+= & -\pdv{\Psi^\dag(r,t)}{t} \Psi(r,t)    -\Psi^\dag(r,t) \pdv{\Psi(r,t)}{t} \\
+= &- \left(+\frac{\imath}{ \hbar} \Psi^\dag H^\dag \Psi -\frac{\imath}{\hbar} \Psi^\dag \hat H  \Psi \right) \\
+= & \frac{\imath}{\hbar} \left(\right)
+\end{align}
+where we inserted  TSDE,  $\pdv{\Psi(r,t)}{t} = -\frac{\imath}{\hbar} \hat H \Psi$,  and  its  hermitian conjugation  $\pdv{\Psi^\dag}{t}  = +\frac{\imath}{\hbar} \Psi^\dag \hat H^\dag $. Inserting the expression for hermitian Hamiltonian:
+$H(r,t) =H(r,t)^\dag = \frac{1}{2m}$ %\left( -\imath \hbar \nabla  +eA(r,t)\right)$
+hermicity of Hamiltonian: $H^\dag = H= \frac{1}{2m}  \big(-\imath \hbar \nabla +e {\vb A}(r,t)\big)^2 + V_{local} +V_{nl}$
+
+
+
+%where we inserted  TSDE,  $\pdv{\Psi(r,t)}{t} = -\frac{\imath}{\hbar} H(r,t)\Psi(r,t)$,  and  its  hermitian conjugation  $\pdv{\Psi(r,t)^\dag}{t}  = +\frac{\imath}{\hbar} \Psi(r,t)^\dag H(r,t)^\dag $  
+
+%%%%%%%%%%%%%%%%%%%%%
+\section{Light Matter interactions}
+
+http://staff.ustc.edu.cn/~zqj/posts/Light-Matter-Interaction-and-Dipole-Transition-Matrix/
+
+- Coulomb gauge 
+
+- velocity gauge 
+
+-  length gauge 
+
+    
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%\bibliographystyle{unsrtnat}
+\bibliographystyle{unsrt}
+
+\newpage
+\bibliography{References}
+
+%\bibliography{references}
+%\printbibliography
+\end{document}
