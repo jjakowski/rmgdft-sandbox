@@ -128,6 +128,16 @@ When in doubt about any style question, check paper 1 first.
 Rationale: Consistency between paper 1 and paper 2 is important since they
 form a series and will often be read together.
 
+### 2026-04-07 -- Annotation color: use \myblue{} not \myred{}
+Decision: All draft annotations, placeholders, and review flags use
+\myblue{} instead of \myred{}.
+Rationale: Jacek is color blind and cannot distinguish red from black
+on screen. Blue is clearly visible. Both commands are defined in
+notation.tex so no LaTeX changes are needed -- only the convention changes.
+Rule: never use \myred{} for annotations in paper 2 drafts.
+\myred{} may still appear in paper 1 (source/paper1_main.tex) -- do not
+edit that file.
+
 ## Open decisions (not yet resolved)
 
 ### OPEN — Exact title of merged subsection 2d+2e

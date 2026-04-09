@@ -157,18 +157,73 @@ narrative flow of the main text move to appendices. Expected content:
 
 ## Derivation philosophy (IMPORTANT -- applies to all drafting)
 
-- COMPLETE: Every derivation step shown. No "it can be shown that."
-- UNITS: Atomic units stated at start of Section 2. Never mix.
+The manuscript aims to be a self-contained reference that can be used to
+reproduce all derivation steps and logic years from now. Concretely:
+
+1. DERIVE COMPLETELY FIRST. Write the full derivation including all
+   intermediate steps. Decide where each piece lives (main text, appendix,
+   SI) only after the derivation is complete. Never omit a step because
+   "it is obvious" -- obvious to whom depends on background.
+
+2. PLACEMENT HIERARCHY:
+   - Main text: physical argument, key steps, final result. A reader should
+     be able to follow the logic without pencil and paper.
+   - Appendix: intermediate algebra needed to verify but not to understand.
+     Examples: full gauge transformation of V^nl, orthogonalization proofs.
+   - SI: numerical validation, extended data, convergence tests.
+
+3. SHORTEN LAST. Start with the complete derivation and compress to fit
+   journal constraints if necessary. Never start with a compressed derivation
+   and try to expand it later.
+
+4. COMPLETENESS OVER BREVITY in the derivation sections. Terseness is
+   appropriate in the introduction and implementation sections but not in
+   the theory section where completeness is the primary goal.
+
+Paper 1 already follows this pattern: orthogonalization and nonorthogonal
+basis propagation proofs are in the appendix, not the main theory section.
+Follow the same pattern here.
+
+---
+
+## Writing style notes
+
+### Source of truth
+Paper 1 (Manuscript/source/paper1_main.tex) is the primary style reference.
+All prose style decisions should be consistent with paper 1.
+
+### Observed style characteristics from paper 1
+- EQUATION-DENSE: Nearly every equation gets a \label{}. Equations are
+  numbered and cross-referenced throughout.
+- EXPLANATORY: Full sentences before and after every equation explaining
+  what is being computed and what the symbols mean. No bare equation dumps.
+- VOICE: Passive for methodology ("the propagation is performed using"),
+  active for decisions and findings ("we will now show", "this allows for").
+- ANNOTATION: Color commands \myred{}, \myblue{} used for tracked changes
+  and revision notes during drafting. Use the same commands in paper 2.
+- MACROS: \vb{} from physics package for bold matrix quantities (P, H, etc.).
+  \imath for imaginary unit. Must be consistent with paper 1.
 - STRUCTURE: Subsubsections used freely within theory section.
 - CROSS-REFERENCES: Equations cross-referenced by \ref{}, not by "above/below."
 - CITATIONS: \cite{} placed immediately after the claim, before the period.
   Multiple citations grouped: \cite{ref1,ref2,ref3}.
 
+### Style target for paper 2
+The derivation sections (sec_theory.tex) should match paper 1's completeness
+and equation density. The surrounding narrative prose -- connective sentences
+between derivation steps -- can be slightly tighter than paper 1: cut
+redundant restatements of what an equation just showed, but keep all
+physical interpretation sentences. The introduction and implementation
+sections can be more concise than the theory section.
+See DECISIONS.md for the formal decision on terseness level.
+
 ### What Claude should do when drafting
 - Match paper 1 equation density and labeling style exactly.
 - Write full explanatory sentences around equations.
-- Use \myblue{} for content needing Jacek's review. NEVER \myred{} (color blind).
-- Flag skipped derivation steps: % TODO: expand this step
+- Use \myblue{} for all draft annotations, placeholders, and review flags.
+  NEVER use \myred{} -- Jacek is color blind and cannot see red on screen.
+- Flag any place where a derivation step is being skipped with a comment:
+  % TODO: expand this step
 - Never omit a derivation step silently.
 
 ---
@@ -205,31 +260,45 @@ narrative flow of the main text move to appendices. Expected content:
 
 ## Identified gaps (from code inspection)
 
-### Gap 1 -- i-factor sign consistency [RESOLVED in sec_theory_current.tex]
-VecPHmatrix() stores I_t*J_matrix (I_t=i). CurrentNlpp() adds same.
-Current extracted as Re(zdotc(P, Px)) = Re Tr[P*(i*J)].
-For anti-Hermitian J: Re Tr[P*(i*J)] = correct physical current.
-Full derivation in sec_theory_current.tex Section 2.5.8.
+### Gap 1 -- i-factor sign consistency [RESOLVED in sec_theory_current.tex] 
+VecPHmatrix() stores I_t*block_matrix (I_t=i) into Pxyz.
+CurrentNlpp() also adds I_t*block_matrix.
+Current extracted as Re(zdotc(P, Px)).
+Physics: J_a = Re Tr[P * (-ihbar*grad + hbar*k + [r,V^nl])_ab]
+Must trace sign and i-factor explicitly in derivation (section 2d).
+Source of contentious discussion with Wenchang.
 
 ### Gap 2 -- CurrentOperator.cpp is dead code
-Never called. Document in paper. Flag to Wenchang as cleanup item.
+Never called. Complex version computes wrong quantity (eigenvalue*r*psi).
+Document in paper that current uses VecPHmatrix+CurrentNlpp.
+Flag to Wenchang as cleanup item.
 
-### Gap 3 -- Diamagnetic term [RESOLVED in sec_theory_current.tex]
-J_dia = A(t)*rho = 0 after t=0 in kick scheme. Stated explicitly.
+### Gap 3 -- Diamagnetic term absent, not documented
+J_dia = (e/mc)*A(t)*rho = 0 after t=0. Valid for linear response.
+Must state explicitly in sec_implementation. Limitation: no CW driving field.
 
-### Gap 4 -- magnus() real-only comment with complex data cast
-Element-wise 1/2*(H0+H1)*dt correct for complex Hermitian H, but
-documentation missing. Note in implementation section.
+### Gap 4 -- magnus() is real-only, complex path casts to double*
+Element-wise 1/2*(H0+H1)*dt is mathematically correct for complex Hermitian
+matrices, but the real-only comment and double* cast need documentation.
 
 ---
 
-## Low-hanging fruit
+## Low-hanging fruit (from code inspection, session 1)
 
-- Berry phase vs current comparison [zero extra compute] -- Fig candidate
-- Ground-state current -> 0 with k-points [zero extra compute] -- sanity check
-- Crystal symmetry of sigma(w) for Si [zero extra compute]
-- Spin current J_spin = J_up - J_dn for CrI3 [trivial postprocessing]
-- Energy conservation periodic case [small extra compute] -- Fig like paper 1
+### Fruit 1 -- Berry phase vs current comparison [zero extra compute]
+Infrastructure in code (BP_Xml, tddft_Xml). Add comparison figure.
+
+### Fruit 2 -- Ground-state current -> 0 with k-points [zero extra compute]
+Already printed by code (RmgTddft.cpp L503-509). Free sanity check.
+
+### Fruit 3 -- Crystal symmetry of sigma(w) [zero extra compute]
+Code applies Rmg_Symm->symm_vec(). Show sigma_xx=sigma_yy=sigma_zz for Si.
+
+### Fruit 4 -- Spin current for CrI3 [trivial postprocessing]
+J_spin = J_up - J_down trivially available from existing data.
+
+### Fruit 5 -- Energy conservation periodic case [small extra compute]
+Run longer Si simulation. Analogous to paper 1 Fig. 3c.
 
 ---
 
