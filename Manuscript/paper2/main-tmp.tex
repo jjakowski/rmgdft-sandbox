@@ -1,0 +1,231 @@
+%% main_current.tex
+%% Standalone document for reading sec_theory_current.tex + app_gauge_nlpp.tex
+%% independently of the full paper2 manuscript.
+%%
+%% Compile with:
+%%   pdflatex main_current.tex
+%%   bibtex   main_current
+%%   pdflatex main_current.tex
+%%   pdflatex main_current.tex
+%%
+%% Or, for a quick draft without references:
+%%   pdflatex main_current.tex   (twice; references show as ?? on first pass)
+
+\documentclass[11pt]{article}
+
+%% ---- Page geometry (1-column, generous margins, 1.5x line spacing) --------
+\usepackage[letterpaper, margin=1.2in]{geometry}
+\usepackage{setspace}
+\onehalfspacing
+
+%% ---- Essential math packages -----------------------------------------------
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage{physics}          % \vb{}, \pdv{}, \nabla etc.
+
+%% ---- Typography and input --------------------------------------------------
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[english]{babel}
+%% ---- Cross-referencing and hyperlinks -------------------------------------
+\usepackage[colorlinks=true,
+            linkcolor=blue,
+            citecolor=blue,
+            urlcolor=blue]{hyperref}
+
+%% ---- Cancel marks for derivations -----------------------------------------
+\usepackage[makeroom]{cancel}
+
+%% ---- Bibliography ---------------------------------------------------------
+
+
+
+%% ---- Verbatim code blocks -------------------------------------------------
+\usepackage{verbatim}
+
+%% ---- Section numbering (appendix behaves like a normal section) -----------
+\usepackage{appendix}
+
+%% ===========================================================================
+%% NOTATION MACROS  (copied from notation.tex; keep in sync)
+%% ===========================================================================
+
+%% Operators
+\newcommand{\Hhat}{\hat{H}}
+\newcommand{\HKS}{\hat{H}_{\mathrm{KS}}}
+\newcommand{\Uop}{\mathcal{U}}
+\newcommand{\Wop}{\hat{\mathcal{W}}}
+\newcommand{\phat}{\hat{\mathbf{p}}}
+\newcommand{\pihat}{\hat{\boldsymbol{\pi}}}
+\newcommand{\vhat}{\hat{\mathbf{v}}}
+\newcommand{\rhat}{\hat{\mathbf{r}}}
+\newcommand{\Jhat}{\hat{\mathbf{J}}}
+
+%% Potentials
+\newcommand{\Vnl}{V^{\mathrm{nl}}}
+\newcommand{\Vloc}{V^{\mathrm{loc}}}
+\newcommand{\Veff}{V_{\mathrm{eff}}}
+\newcommand{\VH}{V_{\mathrm{H}}}
+\newcommand{\Vxc}{V_{\mathrm{xc}}}
+
+%% Fields and vectors
+\newcommand{\Avec}{\mathbf{A}}
+\newcommand{\Evec}{\mathbf{E}}
+\newcommand{\Bvec}{\mathbf{B}}
+
+%% Hamiltonian
+\newcommand{\Hbar}{\bar{\mathbf{H}}}
+
+%% Current components
+\newcommand{\Jpara}{\mathbf{J}_{\mathrm{para}}}
+\newcommand{\Jdia}{\mathbf{J}_{\mathrm{dia}}}
+\newcommand{\Jtot}{\mathbf{J}}
+
+%% Spin operators
+\newcommand{\sigmaop}{\boldsymbol{\sigma}}
+\newcommand{\epsop}{\boldsymbol{\varepsilon}}
+
+%% Berry phase
+\newcommand{\PBP}{\mathbf{P}_{\mathrm{BP}}}
+
+%% Current matrix element: \Jmat{x} -> \mathcal{J}^{x}
+\newcommand{\Jmat}[1]{\mathcal{J}^{#1}}
+
+%% Spin density matrices
+\newcommand{\Pup}{P^{\uparrow}}
+\newcommand{\Pdn}{P^{\downarrow}}
+\newcommand{\rhoup}{\rho^{\uparrow}}
+\newcommand{\rhodn}{\rho^{\downarrow}}
+\newcommand{\rhomag}{m_s}
+
+%% ===========================================================================
+%% STUB LABELS for cross-references to other parts of the manuscript.
+%% These exist so \ref{} does not produce errors.
+%% They will resolve to "??" or section numbers below.
+%% ===========================================================================
+\newcommand{\stubsec}[1]{%
+  \subsection*{\small\textit{[Stub: #1 (defined elsewhere in full manuscript)]}}%
+  \label{#1}%
+}
+
+%% ===========================================================================
+%% TITLE BLOCK
+%% ===========================================================================
+\title{%
+  \large\textbf{RMG Periodic RT-TDDFT — Paper 2}\\[4pt]
+  \normalsize Section 2.5 and Appendix A (Standalone Draft):\\
+  \emph{Current Operator and Nonlocal Pseudopotential Contributions}
+}
+\author{Jacek Jakowski}
+\date{\today}
+
+%% ===========================================================================
+\begin{document}
+\maketitle
+\tableofcontents
+\bigskip\hrule\bigskip
+
+%% ---------------------------------------------------------------------------
+%% CONTEXT NOTE
+%% ---------------------------------------------------------------------------
+\section*{Note on this document}
+
+This file is a self-contained reading copy of Section~2.5
+(\textit{Current Operator and Nonlocal Pseudopotential Contributions})
+and the corresponding Appendix~A of the RMG periodic RT-TDDFT
+manuscript (Paper 2).
+All macros, equation numbers, and cross-references are active.
+References to other sections of the manuscript that are not included
+here (Sections 2.1--2.4, 2.6--2.8, Section~3, etc.) are stubs and
+resolve to ``\textbf{??}'' — this is expected and harmless.
+
+Units: atomic units ($\hbar = m_e = e = 4\pi\varepsilon_0 = 1$),
+electron charge $= -1$ throughout.
+Imaginary unit: $\imath$ (dotless i).
+
+%% ---------------------------------------------------------------------------
+%% STUB LABELS for external cross-references
+%% These keep LaTeX happy without producing visible output.
+%% ---------------------------------------------------------------------------
+\phantom{x}\label{sec:postprocessing}
+\phantom{x}\label{sec:EM-coupling}
+\phantom{x}\label{sec:propagation}
+\phantom{x}\label{sec:implementation}
+\phantom{x}\label{sec:approximations}
+\phantom{x}\label{sec:rmg-overview}
+
+%% ===========================================================================
+%% SECTION 2.5  (the main derivation)
+%% ===========================================================================
+\section{Theory}
+
+\input{sec_theory_current}
+
+%% ===========================================================================
+%% APPENDIX A  (KB commutator algebra)
+%% ===========================================================================
+\appendix
+\renewcommand{\thesection}{A}
+
+\input{app_gauge_nlpp}
+
+%% ===========================================================================
+%% BIBLIOGRAPHY
+%% ===========================================================================
+\begin{thebibliography}{99}
+
+\bibitem{resta-1998}
+R.~Resta,
+\textit{Rev.\ Mod.\ Phys.}\ \textbf{66}, 899 (1994).
+
+\bibitem{king-smith-vanderbilt-1993}
+R.~D.\ King-Smith and D.~Vanderbilt,
+\textit{Phys.\ Rev.\ B}\ \textbf{47}, 1651 (1993).
+
+\bibitem{Sakurai-2nd_ed}
+J.~J.\ Sakurai and J.~Napolitano,
+\textit{Modern Quantum Mechanics}, 2nd ed.\
+(Addison-Wesley, Reading, MA, 2011).
+
+\bibitem{starace-1971}
+A.~F.\ Starace,
+\textit{Phys.\ Rev.\ A}\ \textbf{3}, 1242 (1971).
+
+\bibitem{starace-1973}
+A.~F.\ Starace,
+\textit{Phys.\ Rev.\ A}\ \textbf{8}, 1141 (1973).
+
+\bibitem{kleinman-bylander-1982}
+L.~Kleinman and D.~M.\ Bylander,
+\textit{Phys.\ Rev.\ Lett.}\ \textbf{48}, 1425 (1982).
+
+\bibitem{yabana-bertsch-1996}
+K.~Yabana and G.~F.\ Bertsch,
+\textit{Phys.\ Rev.\ B}\ \textbf{54}, 4484 (1996).
+
+\bibitem{Mattiat-Luber-2022}
+J.~Mattiat and S.~Luber,
+\textit{J.\ Chem.\ Theory Comput.}\ \textbf{18}, 2470 (2022).
+
+\bibitem{Luber-rt-tddft}
+S.~Luber,
+\textit{J.\ Chem.\ Theory Comput.}\ \textbf{17}, 3719 (2021).
+
+\bibitem{rt-DFTB-Wong-2023}
+B.~M.\ Wong \textit{et al.},
+\textit{J.\ Chem.\ Theory Comput.}\ \textbf{19}, 6241 (2023).
+
+\bibitem{jakowski-rmg-tddft-2025}
+J.~Jakowski \textit{et al.},
+\textit{J.\ Chem.\ Theory Comput.}\ (2025).
+
+\bibitem{pickard-mauri-2001}
+C.~J.\ Pickard and F.~Mauri,
+\textit{Phys.\ Rev.\ B}\ \textbf{63}, 245101 (2001).
+
+\end{thebibliography}
+
+\end{document}
+
+

@@ -1,0 +1,641 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% sec_theory_current.tex
+%%
+%% Section 2.5 for paper2_main.tex
+%% Title: Current Operator and Nonlocal Pseudopotential Contributions
+%%
+%% \input{sec_theory_current} replaces the placeholder in sec_theory.tex.
+%%
+%% CONVENTIONS:
+%%   Atomic units: hbar = m_e = e = 4*pi*eps_0 = 1
+%%   Electron charge = -1  (e > 0 is the elementary charge magnitude)
+%%   In atomic units the Hamiltonian is
+%%       H = (1/2)(-i*nabla + A)^2 + V_loc + V_nl
+%%   Imaginary unit: \imath  (dotless i, consistent with paper 1)
+%%   Sign check: NEAT-notes-RMG has a typo (-1/2m kinetic energy);
+%%               NEAT-project-notes has the correct +1/2m sign — used here.
+%%
+%% NOTATION MACROS (all in notation.tex):
+%%   \phat   = \hat{\mathbf{p}}  canonical momentum
+%%   \pihat  = \hat{\boldsymbol{\pi}}  mechanical momentum
+%%   \vhat   = \hat{\mathbf{v}}  velocity operator
+%%   \rhat   = \hat{\mathbf{r}}  position
+%%   \Vnl    = V^{\mathrm{nl}}
+%%   \Vloc   = V^{\mathrm{loc}}
+%%   \Avec   = \mathbf{A}
+%%   \Jpara  = \mathbf{J}_{\mathrm{para}}
+%%   \Jdia   = \mathbf{J}_{\mathrm{dia}}
+%%   \Jmat{x}= \mathcal{J}^{x}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\subsection{Current Operator and Nonlocal Pseudopotential Contributions}
+\label{sec:current}
+
+The central observable in periodic RT-TDDFT is the macroscopic
+electronic current density $J_\alpha(t)$, from which the optical
+conductivity $\sigma_{\alpha\beta}(\omega)$ and dielectric function
+$\varepsilon_{\alpha\beta}(\omega)$ are obtained by Fourier analysis
+(Section~\ref{sec:postprocessing}).
+For periodic systems the electric dipole moment
+$\langle\hat{\mathbf{r}}\rangle$ is ill-defined because the position
+operator is incompatible with periodic boundary
+conditions,\cite{resta-1998,king-smith-vanderbilt-1993} and the
+current is the natural replacement.
+
+We derive the current density operator in four steps: (i) we
+distinguish canonical from mechanical momentum and define the velocity
+operator via the Heisenberg equation of motion, identifying the role
+of nonlocal pseudopotentials; (ii) we rederive the same result from
+the continuity equation, decomposing the current into paramagnetic,
+diamagnetic, and nonlocal pseudopotential contributions; (iii) we
+specialize to Bloch states and derive the $\mathbf{k}$-vector
+correction explicitly from the Bloch ansatz; (iv) we express the
+macroscopic current in density matrix form and verify the sign
+convention in the code.
+All equations are in atomic units ($\hbar = m_e = e = 4\pi\varepsilon_0
+= 1$) with the electron charge equal to $-1$.
+
+%--------------------------------------------------------------------
+\subsubsection{Canonical and Mechanical Momentum}
+\label{sec:canon-mech}
+%--------------------------------------------------------------------
+
+The Hamiltonian of the Kohn-Sham system in the presence of a
+spatially uniform, time-dependent vector potential $\Avec(t)$
+(long-wavelength approximation, see Section~\ref{sec:EM-coupling})
+is
+\begin{equation}
+  \hat{H}(t) = \frac{1}{2}
+    \!\left(\hat{\mathbf{p}} + \Avec(t)\right)^{\!2}
+    + \Vloc(\mathbf{r}) + \Vnl,
+  \label{eq:H-vg-2}
+\end{equation}
+where $\hat{\mathbf{p}} = -\imath\nabla$ is the \emph{canonical}
+momentum operator and the sign on $\Avec$ reflects that in atomic
+units with electron charge $-1$ the coupling is
+$q\Avec = (+1)\cdot(-1)\cdot\Avec = -\Avec$, giving mechanical
+momentum $\pihat = \hat{\mathbf{p}} + \Avec$.\footnote{In
+Gaussian units the coupling is $q\Avec/c = -e\Avec/c$ for an
+electron; in atomic units $c=1/\alpha\approx137$ is absorbed by
+setting $e=1$ and the electron charge $-1$, giving
+$\hat{\boldsymbol{\pi}} = \hat{\mathbf{p}} + \Avec$ as written.}
+The canonical momentum is not gauge invariant and has no direct
+physical significance;\cite{Sakurai-2nd_ed} the
+\emph{mechanical} (kinetic) momentum
+\begin{equation}
+  \pihat \equiv \hat{\mathbf{p}} + \Avec(t) = -\imath\nabla + \Avec(t)
+  \label{eq:pi-mech}
+\end{equation}
+is gauge invariant and represents the physical velocity of the
+particle.\cite{Sakurai-2nd_ed,starace-1971}
+In Gaussian basis set language, this is directly analogous to the
+fact that only the kinetic energy integral $\langle\phi_\mu|T|
+\phi_\nu\rangle$, not the kinetic canonical momentum itself, enters
+the observable transition matrix elements.
+
+Expanding the kinetic term in eq.~(\ref{eq:H-vg-2}):
+\begin{align}
+  \frac{1}{2}\pihat^2
+  &= \frac{1}{2}
+     \!\left(-\imath\nabla + \Avec\right)^{\!2}
+  \nonumber \\
+  &= \underbrace{-\tfrac{1}{2}\nabla^2}_{T_0}
+   + \underbrace{\frac{\imath}{2}
+     \left(\Avec\cdot\nabla + \nabla\cdot\Avec\right)
+     }_{\text{paramagnetic coupling}}
+   + \underbrace{\frac{1}{2}\Avec^2}_{\text{diamagnetic}},
+  \label{eq:kinetic-expand}
+\end{align}
+where we use $\nabla\cdot\Avec = 0$ in the Coulomb gauge to
+simplify $\Avec\cdot\nabla + \nabla\cdot\Avec = 2\Avec\cdot\nabla$.
+In the linear response regime the $\Avec^2$ diamagnetic term is
+dropped (it is second order in the applied field).
+
+%--------------------------------------------------------------------
+\subsubsection{Velocity Operator from the Heisenberg Equation of Motion}
+\label{sec:velocity-eom}
+%--------------------------------------------------------------------
+
+The velocity operator is defined via the Heisenberg equation of
+motion for the position operator:
+\begin{equation}
+  \hat{v}_\alpha
+  \equiv \frac{1}{\imath}\left[\hat{r}_\alpha,\hat{H}\right].
+  \label{eq:heisenberg-v}
+\end{equation}
+We evaluate eq.~(\ref{eq:heisenberg-v}) for each term in
+$\hat{H} = \frac{1}{2}\pihat^2 + \Vloc + \Vnl$ separately.
+
+\paragraph{Kinetic energy contribution.}
+We compute $\frac{1}{\imath}[\hat{r}_\alpha, -\frac{1}{2}\nabla^2]$
+by acting on an arbitrary test function $g(\mathbf{r})$:
+\begin{align}
+  \left[\hat{r}_\alpha,\nabla_\alpha^2\right]g
+  &= r_\alpha\,\nabla_\alpha^2 g
+   - \nabla_\alpha^2(r_\alpha g)
+  \nonumber \\
+  &= r_\alpha\,\nabla_\alpha^2 g
+   - \nabla_\alpha\!\left(g + r_\alpha\nabla_\alpha g\right)
+  \nonumber \\
+  &= r_\alpha\,\nabla_\alpha^2 g
+   - \nabla_\alpha g
+   - \nabla_\alpha g
+   - r_\alpha\nabla_\alpha^2 g
+   = -2\nabla_\alpha g,
+  \label{eq:comm-r-nabla2}
+\end{align}
+where we applied the product rule twice.
+The same calculation holds for each Cartesian component, giving
+$[\hat{r}_\alpha,\nabla^2] = -2\nabla_\alpha$ (where the right-hand
+side involves only the $\alpha$-component of $\nabla$).
+Therefore
+\begin{equation}
+  \frac{1}{\imath}
+  \!\left[\hat{r}_\alpha,{-\tfrac{1}{2}\nabla^2}\right]
+  = \frac{1}{\imath}\cdot(-\tfrac{1}{2})\cdot(-2\nabla_\alpha)
+  = \frac{\nabla_\alpha}{\imath}
+  = -\imath\nabla_\alpha = \hat{p}_\alpha.
+  \label{eq:comm-r-T}
+\end{equation}
+Including the full mechanical momentum:
+$\frac{1}{\imath}[\hat{r}_\alpha, \frac{1}{2}\pihat^2]
+= \hat{p}_\alpha + A_\alpha(t) = \hat{\pi}_\alpha$.
+
+\paragraph{Local potential contribution.}
+Because $\Vloc(\mathbf{r})$ is multiplicative (diagonal in position
+space),
+\begin{equation}
+  \left[\hat{r}_\alpha,\Vloc(\mathbf{r})\right]g
+  = r_\alpha\,\Vloc g - \Vloc\,r_\alpha g = 0.
+  \label{eq:comm-r-Vloc}
+\end{equation}
+This is the same reason that, in a Gaussian basis, the velocity
+matrix elements $\langle\mu|-\imath\nabla|\nu\rangle$ and the
+length matrix elements $(\varepsilon_\mu - \varepsilon_\nu)
+\langle\mu|\hat{r}|\nu\rangle$ are equal when $V$ is local: both
+gauges give the same result.
+
+\paragraph{Nonlocal pseudopotential contribution.}
+The nonlocal pseudopotential $\Vnl$ is not diagonal in position
+space; its action involves an integral over all space,
+\begin{equation}
+  \left(\Vnl\psi\right)(\mathbf{r})
+  = \int \langle\mathbf{r}|\Vnl|\mathbf{r}'\rangle\,
+    \psi(\mathbf{r}')\,\mathrm{d}^3r',
+  \label{eq:Vnl-nonlocal-action}
+\end{equation}
+so $\hat{r}_\alpha$ and $\Vnl$ do not share a common eigenbasis
+and their commutator is nonzero.
+This is directly analogous to the situation in Gaussian basis sets
+with effective core potentials (ECPs), where the ECP commutator
+$[\hat{r},V_\mathrm{ECP}]$ also gives a nonzero
+contribution.\cite{starace-1971}
+The explicit form of $\frac{1}{\imath}[\hat{r}_\alpha,\Vnl]$ for
+Kleinman-Bylander separable pseudopotentials is derived in
+Appendix~\ref{app:gauge_nlpp}.
+
+\paragraph{Full result.}
+Collecting all contributions, the velocity operator is
+\begin{equation}
+  \boxed{
+  \hat{v}_\alpha
+  = \frac{1}{\imath}\left[\hat{r}_\alpha,\hat{H}\right]
+  = \underbrace{\hat{\pi}_\alpha}_{\displaystyle
+    = -\imath\nabla_\alpha + A_\alpha}
+  \;+\;
+  \underbrace{\frac{1}{\imath}
+    \left[\hat{r}_\alpha,\Vnl\right]}_{\text{nonlocal PP correction}}.
+  }
+  \label{eq:v-full}
+\end{equation}
+For a purely local Hamiltonian the second term vanishes and
+$\hat{v}_\alpha = \hat{\pi}_\alpha$.
+The nonlocal correction was first identified by
+Starace\cite{starace-1971,starace-1973} in the context of
+photoionization from atoms described by model potentials, and is
+discussed in detail by Mattiat and Luber\cite{Mattiat-Luber-2022}
+for RT-TDDFT with nonlocal pseudopotentials.
+Its physical origin is that the electron ``feels'' the nonlocal
+potential at points $\mathbf{r}'$ away from its instantaneous
+position $\mathbf{r}$, so its velocity cannot be expressed through
+the local gradient alone.
+
+%--------------------------------------------------------------------
+\subsubsection{Current Density from the Continuity Equation}
+\label{sec:current-continuity}
+%--------------------------------------------------------------------
+
+We now derive the same current density by an independent route
+through the continuity equation, which provides a consistency check
+and clarifies the physical role of each contribution.
+
+The probability density is $\rho(\mathbf{r},t) = \psi^*\psi$.
+Differentiating with respect to time and substituting the TDKS
+equation $\imath\partial_t\psi = \hat{H}\psi$ and its Hermitian
+conjugate $-\imath\partial_t\psi^* = \hat{H}\psi^*$:
+\begin{align}
+  \frac{\partial\rho}{\partial t}
+  &= \dot\psi^*\psi + \psi^*\dot\psi
+   = \imath\!\left[(\hat{H}\psi^*)\psi
+                  - \psi^*(\hat{H}\psi)\right].
+  \label{eq:drho-H}
+\end{align}
+We evaluate the right-hand side term by term.
+
+\paragraph{Local potential: vanishes.}
+$\imath[(\Vloc\psi^*)\psi - \psi^*(\Vloc\psi)]
+= \imath\Vloc(\psi^*\psi - \psi^*\psi) = 0$.
+
+\paragraph{Kinetic energy: paramagnetic and diamagnetic currents.}
+Using the Coulomb gauge $\nabla\cdot\Avec = 0$ and abbreviating
+$\hat{D} \equiv -\imath\nabla + \Avec$:
+\begin{align}
+  \imath\!\left[(\hat{T}\psi^*)\psi - \psi^*(\hat{T}\psi)\right]
+  &= \frac{\imath}{2}\!\left[
+     \overline{(\hat{D}^2\psi)}\cdot\psi
+     - \psi^*\cdot(\hat{D}^2\psi)
+     \right]
+  \nonumber \\
+  &= -\nabla\cdot\!\underbrace{\left[
+     \frac{1}{2}\operatorname{Re}\!\left(
+     \psi^*\hat{D}\psi\right)\right]}_{\displaystyle
+     = \Jpara + \Jdia},
+  \label{eq:kin-continuity}
+\end{align}
+where the last equality follows from integration by parts applied
+to $\nabla\cdot(\psi^*\hat{D}\psi)$.
+Expanding $\hat{D} = -\imath\nabla + \Avec$ inside the
+$\operatorname{Re}[\cdot]$:
+\begin{align}
+  \Jpara(\mathbf{r},t)
+  &= \operatorname{Re}\!\left[\psi^*(-\imath\nabla)\psi\right],
+  \label{eq:Jpara-def}
+  \\
+  \Jdia(\mathbf{r},t)
+  &= \Avec(t)\,|\psi(\mathbf{r},t)|^2.
+  \label{eq:Jdia-def}
+\end{align}
+
+\paragraph{Nonlocal pseudopotential: nonlocal current.}
+The nonlocal term contributes
+\begin{equation}
+  \imath\!\left[(\Vnl\psi^*)\psi - \psi^*(\Vnl\psi)\right]
+  = -\nabla\cdot\mathbf{J}_\mathrm{nl}(\mathbf{r},t),
+  \label{eq:Jnl-continuity}
+\end{equation}
+where $\mathbf{J}_\mathrm{nl}$ is the nonlocal current density
+whose explicit form in terms of the Kleinman-Bylander projectors
+is derived in Appendix~\ref{app:Jnl-expression}.
+
+\paragraph{Total current density.}
+Comparing with the continuity equation
+$\partial_t\rho + \nabla\cdot\mathbf{J} = 0$ and collecting
+all contributions:
+\begin{equation}
+  \mathbf{J}(\mathbf{r},t)
+  = \underbrace{
+      \operatorname{Re}\!\left[\psi^*(-\imath\nabla)\psi\right]
+    }_{\Jpara}
+  + \underbrace{
+      \Avec(t)|\psi|^2
+    }_{\Jdia}
+  + \underbrace{
+      \operatorname{Re}\!\left[
+        \psi^*\tfrac{1}{\imath}[\hat{\mathbf{r}},\Vnl]\psi
+      \right]
+    }_{\mathbf{J}_\mathrm{nl}}.
+  \label{eq:J-total}
+\end{equation}
+This is fully consistent with eq.~(\ref{eq:v-full}): the three
+contributions map one-to-one onto the mechanical momentum
+$\hat{\pi}_\alpha$ (split into its $\hat{p}_\alpha$ and $A_\alpha$
+parts) plus the nonlocal correction.
+
+%--------------------------------------------------------------------
+\subsubsection{Paramagnetic and Diamagnetic Contributions:
+  Physical Roles}
+\label{sec:para-dia}
+%--------------------------------------------------------------------
+
+The \emph{paramagnetic} current $\Jpara$ is independent of the
+external field $\Avec$ and represents the intrinsic probability
+current of the time-evolving quantum state.
+It oscillates in response to the delta-kick perturbation and, after
+Fourier transformation, yields the optical conductivity.
+
+The \emph{diamagnetic} current $\Jdia = \Avec(t)|\psi|^2$ is
+proportional to the applied vector potential.
+In the perturbative kick scheme used in \texttt{RMG},%
+\cite{yabana-bertsch-1996,jakowski-rmg-tddft-2025}
+the vector potential is a delta-function impulse:
+$\Avec(t) = \Avec_0\,\delta(t)$, with $\Avec(t) = 0$ for all
+$t > 0$.
+Consequently:
+\begin{equation}
+  \Jdia(\mathbf{r},t>0) = \Avec(t>0)\,|\psi|^2 = 0.
+  \label{eq:Jdia-zero}
+\end{equation}
+The diamagnetic current vanishes identically during the simulation
+after the kick.
+This is not an approximation: within linear response theory the
+complete first-order optical response is encoded in the oscillations
+of $\Jpara(t>0)$ and $\mathbf{J}_\mathrm{nl}(t>0)$,%
+\cite{yabana-bertsch-1996}
+so the macroscopic current that is recorded and Fourier-transformed
+is
+\begin{equation}
+  J_\alpha(t>0)
+  = \int_\Omega\!
+    \left[\Jpara(\mathbf{r},t)
+    + \mathbf{J}_{\mathrm{nl}}(\mathbf{r},t)\right]_\alpha
+    \mathrm{d}^3r,
+  \label{eq:J-sim}
+\end{equation}
+where the integral is over the unit cell $\Omega$.
+
+%--------------------------------------------------------------------
+\subsubsection{Current Operator for Bloch States:
+  the $\mathbf{k}$-Vector Correction}
+\label{sec:current-bloch}
+%--------------------------------------------------------------------
+
+For a periodic crystal, the Kohn-Sham orbitals satisfy Bloch's
+theorem.
+We derive how the current operator is modified when expressed in
+terms of the cell-periodic part $u_{n,\mathbf{k}}$.
+
+A Bloch state at band index $n$ and crystal momentum $\mathbf{k}$
+is written as
+\begin{equation}
+  \psi_{n,\mathbf{k}}(\mathbf{r},t)
+  = e^{\imath\mathbf{k}\cdot\mathbf{r}}\,
+    u_{n,\mathbf{k}}(\mathbf{r},t),
+  \label{eq:bloch-def}
+\end{equation}
+where $u_{n,\mathbf{k}}(\mathbf{r}+\mathbf{R},t)
+= u_{n,\mathbf{k}}(\mathbf{r},t)$ for all lattice vectors
+$\mathbf{R}$.
+Applying the canonical momentum operator $-\imath\nabla_\alpha$ to
+the full Bloch state and using the product rule:
+\begin{align}
+  (-\imath\nabla_\alpha)\,\psi_{n,\mathbf{k}}
+  &= (-\imath\nabla_\alpha)\!\left[
+     e^{\imath\mathbf{k}\cdot\mathbf{r}}\,u_{n,\mathbf{k}}
+     \right]
+  \nonumber \\
+  &= (-\imath)\!\left[
+     \imath k_\alpha\,
+     e^{\imath\mathbf{k}\cdot\mathbf{r}}\,u_{n,\mathbf{k}}
+     + e^{\imath\mathbf{k}\cdot\mathbf{r}}\,
+       \nabla_\alpha u_{n,\mathbf{k}}
+     \right]
+  \nonumber \\
+  &= e^{\imath\mathbf{k}\cdot\mathbf{r}}
+     \!\left[k_\alpha + (-\imath\nabla_\alpha)\right]
+     u_{n,\mathbf{k}}.
+  \label{eq:nabla-bloch}
+\end{align}
+The Bloch phase factor $e^{\imath\mathbf{k}\cdot\mathbf{r}}$
+cancels between bra and ket in a matrix element over the unit cell,
+so the matrix element of the canonical momentum between two Bloch
+states at the same $\mathbf{k}$-point is
+\begin{align}
+  p^\alpha_{ab}(\mathbf{k})
+  &\equiv \langle\psi_{a,\mathbf{k}}|(-\imath\nabla_\alpha)|
+    \psi_{b,\mathbf{k}}\rangle
+  \nonumber \\
+  &= \int_\Omega\!
+     e^{-\imath\mathbf{k}\cdot\mathbf{r}}\,u_{a,\mathbf{k}}^*\cdot
+     e^{\imath\mathbf{k}\cdot\mathbf{r}}
+     \!\left(-\imath\nabla_\alpha + k_\alpha\right)
+     u_{b,\mathbf{k}}\,\mathrm{d}^3r
+  \nonumber \\
+  &= \langle u_{a,\mathbf{k}}|
+     \!\left(-\imath\nabla_\alpha + k_\alpha\right)
+     |u_{b,\mathbf{k}}\rangle_\Omega.
+  \label{eq:para-bloch-me}
+\end{align}
+The $k_\alpha$ shift arises purely from the Bloch factor and is
+absent for $\Gamma$-point ($\mathbf{k} = \mathbf{0}$) calculations.
+For finite $\mathbf{k}$-point sampling it must be included to obtain
+the correct optical response; its omission would give wrong
+intensities proportional to $|\mathbf{k}|^2$ at each $\mathbf{k}$-point.
+
+The full current density summed over all occupied Bloch states is
+\begin{equation}
+  \mathbf{J}(\mathbf{r},t)
+  = \frac{1}{N_k}\!\sum_{n,\mathbf{k}}^{\mathrm{occ}}
+    f_{n,\mathbf{k}}\,
+    \operatorname{Re}\!\left[
+      u_{n,\mathbf{k}}^*\!\left(
+      -\imath\nabla + \mathbf{k}
+      + \frac{1}{\imath}[\hat{\mathbf{r}},\Vnl]
+      \right)u_{n,\mathbf{k}}
+    \right],
+  \label{eq:J-bloch-total}
+\end{equation}
+where $N_k$ is the number of $\mathbf{k}$-points and $f_{n,\mathbf{k}}$
+are the occupation numbers.
+Equation~(\ref{eq:J-bloch-total}) reproduces eq.~(8) of Yabana and
+Bertsch\cite{yabana-bertsch-1996} and eq.~(26) of Mattiat and
+Luber,\cite{Mattiat-Luber-2022} specialized to the Coulomb gauge
+and the velocity gauge with a spatially uniform $\Avec(t)$.
+
+%--------------------------------------------------------------------
+\subsubsection{Current Operator Matrix and Density Matrix Formulation}
+\label{sec:current-dm-sec}
+%--------------------------------------------------------------------
+
+In the density matrix formulation the macroscopic current is
+evaluated by contracting the propagated density matrix
+$\mathbf{P}_\mathbf{k}(t)$ (Section~\ref{sec:propagation}) with
+a fixed current operator matrix that is assembled once before the
+time loop.
+The current operator matrix element in the Kohn-Sham orbital basis
+at $\mathbf{k}$-point $\mathbf{k}$ is
+\begin{equation}
+  \boxed{
+  \Jmat{\alpha}_{ab}(\mathbf{k})
+  = \underbrace{
+      \langle\psi_{a,\mathbf{k}}|
+      (-\imath\nabla_\alpha + k_\alpha)
+      |\psi_{b,\mathbf{k}}\rangle
+    }_{\displaystyle\texttt{VecPHmatrix()}}
+  +
+  \underbrace{
+      \langle\psi_{a,\mathbf{k}}|
+      \tfrac{1}{\imath}[\hat{r}_\alpha,\Vnl]
+      |\psi_{b,\mathbf{k}}\rangle
+    }_{\displaystyle\texttt{CurrentNlpp()}},
+  }
+  \label{eq:Jmat-full}
+\end{equation}
+where the code labels refer to \texttt{RMG} routines described in
+Section~\ref{sec:implementation}.
+The macroscopic $\alpha$-component of the current is then
+\begin{equation}
+  J_\alpha(t)
+  = \sum_{\mathbf{k}} w_\mathbf{k}\,
+    \operatorname{Re}\operatorname{Tr}\!\left[
+      \mathbf{P}_\mathbf{k}(t)\cdot
+      \boldsymbol{\mathcal{J}}^\alpha_\mathbf{k}
+    \right],
+  \label{eq:J-dm}
+\end{equation}
+where $w_\mathbf{k}$ are the $\mathbf{k}$-point weights
+(with $\sum_\mathbf{k} w_\mathbf{k} = 1$) and the trace runs over
+the active orbital subspace.
+In the code, eq.~(\ref{eq:J-dm}) is evaluated at each time step by
+a single BLAS complex dot product:
+\begin{verbatim}
+J[alpha] += Re(zdotc(Norb^2, Pn0, 1, Palpha_matrix, 1)) * kweight;
+\end{verbatim}
+where \texttt{Palpha\_matrix} contains the stored matrix
+$\Jmat{\alpha}_{ab}$ (built by \texttt{VecPHmatrix} +
+\texttt{CurrentNlpp} before the time loop) and \texttt{Pn0}
+contains the current density matrix elements $P_{ab}(t)$.
+
+%--------------------------------------------------------------------
+\subsubsection{Hypervirial Relation and Gauge Invariance}
+\label{sec:hypervirial}
+%--------------------------------------------------------------------
+
+The hypervirial relation is a consistency condition that connects the
+velocity (current) operator in the velocity gauge to the dipole
+matrix elements in the length gauge.
+It is the periodic-system analog of the relation between oscillator
+strengths in the length and velocity forms.
+
+In the Heisenberg picture, the Ehrenfest theorem applied to
+$\hat{r}_\alpha$ gives:
+\begin{equation}
+  \langle\psi_a|\hat{v}_\alpha|\psi_b\rangle
+  = \langle\psi_a|\tfrac{1}{\imath}[\hat{r}_\alpha,\hat{H}]
+    |\psi_b\rangle
+  = (\varepsilon_b - \varepsilon_a)
+    \langle\psi_a|\hat{r}_\alpha|\psi_b\rangle,
+  \label{eq:ehrenfest}
+\end{equation}
+where $\varepsilon_a$, $\varepsilon_b$ are the ground-state
+Kohn-Sham eigenvalues.
+For a Hamiltonian with only local potentials, where $\hat{v}_\alpha
+= -\imath\nabla_\alpha$, this gives the standard hypervirial relation
+\begin{equation}
+  \langle\psi_a|(-\imath\nabla_\alpha)|\psi_b\rangle
+  = (\varepsilon_b - \varepsilon_a)
+    \langle\psi_a|\hat{r}_\alpha|\psi_b\rangle,
+  \label{eq:hypervirial-local}
+\end{equation}
+which states that the velocity gauge matrix element (left side)
+equals the length gauge matrix element (right side): both gauges
+are equivalent.
+
+When the Hamiltonian contains a nonlocal pseudopotential, the
+velocity operator gains the correction
+$\frac{1}{\imath}[\hat{r}_\alpha,\Vnl]$
+(eq.~\ref{eq:v-full}).
+Inserting into eq.~(\ref{eq:ehrenfest}), and rearranging:
+\begin{equation}
+  \boxed{
+  \langle\psi_a|(-\imath\nabla_\alpha)|\psi_b\rangle
+  = (\varepsilon_b - \varepsilon_a)
+    \langle\psi_a|\hat{r}_\alpha|\psi_b\rangle
+  - \langle\psi_a|\tfrac{1}{\imath}
+    [\hat{r}_\alpha,\Vnl]|\psi_b\rangle.
+  }
+  \label{eq:hypervirial-nlpp}
+\end{equation}
+Equation~(\ref{eq:hypervirial-nlpp}) is the nonlocal-PP-corrected
+hypervirial relation, first given by Starace\cite{starace-1971} and
+discussed for RT-TDDFT by Mattiat and
+Luber.\cite{Mattiat-Luber-2022}
+Its physical meaning is that omitting the commutator term from the
+velocity operator would give different results in the velocity and
+length gauges — that is, wrong spectra.
+Including the correction, and only then, restores the gauge
+equivalence and ensures that the computed optical conductivity is
+independent of the chosen gauge.
+Equation~(\ref{eq:hypervirial-nlpp}) also provides a practical
+numerical diagnostic: the left-hand side is computed by
+\texttt{VecPHmatrix()}, while the right-hand side can be computed
+independently from the Kohn-Sham eigenvalues and the dipole matrix;
+agreement between the two, up to the grid discretization error,
+validates the implementation.
+
+%--------------------------------------------------------------------
+\subsubsection{Sign Convention and Factor of $\imath$ in the Code}
+\label{sec:imath-convention}
+%--------------------------------------------------------------------
+
+We track the factors of $\imath$ explicitly to verify that the code
+implements eq.~(\ref{eq:J-dm}) with the correct sign.
+
+The physical current matrix element
+$\Jmat{\alpha}_{ab} = \langle\psi_a|(-\imath\nabla_\alpha + k_\alpha
++ \frac{1}{\imath}[\hat{r}_\alpha,\Vnl])|\psi_b\rangle$
+is complex-valued in general.
+In \texttt{VecPHmatrix()}, the gradient matrix is computed and stored
+multiplied by the prefactor \texttt{I\_t} $= \imath$:
+\begin{equation}
+  \texttt{Pxmatrix}[ab]
+  \leftarrow
+  \imath\cdot\langle\psi_a|(-\imath\nabla_\alpha)|\psi_b\rangle
+  + \imath\cdot k_\alpha\langle\psi_a|\psi_b\rangle
+  = \langle\psi_a|(\nabla_\alpha - \imath k_\alpha)|\psi_b\rangle.
+  \label{eq:stored-para}
+\end{equation}
+That is, \texttt{Pxmatrix} stores $\imath\Jmat{\alpha}_{ab}$ from
+the paramagnetic part.
+\texttt{CurrentNlpp()} adds the nonlocal contribution with the same
+prefactor:
+\begin{equation}
+  \texttt{Pxmatrix}[ab]
+  \mathrel{+}=
+  \imath\cdot\langle\psi_a|
+  \tfrac{1}{\imath}[\hat{r}_\alpha,\Vnl]|\psi_b\rangle
+  = \langle\psi_a|[\hat{r}_\alpha,\Vnl]|\psi_b\rangle.
+  \label{eq:stored-nlpp}
+\end{equation}
+Thus \texttt{Pxmatrix} $= \imath\cdot\Jmat{\alpha}_{ab}$ in total.
+The macroscopic current is extracted as
+\begin{align}
+  J_\alpha
+  &= \operatorname{Re}\operatorname{Tr}
+     \!\left[\mathbf{P}\cdot\texttt{Pxmatrix}\right]
+   = \operatorname{Re}\operatorname{Tr}
+     \!\left[\mathbf{P}\cdot(\imath\boldsymbol{\mathcal{J}}^\alpha)\right].
+  \label{eq:J-from-code}
+\end{align}
+For a Hermitian density matrix $\mathbf{P} = \mathbf{P}^\dag$
+and an anti-Hermitian current operator matrix
+$(\boldsymbol{\mathcal{J}}^\alpha)^\dag = -\boldsymbol{\mathcal{J}}^\alpha$
+(which follows from the anti-Hermitian nature of $-\imath\nabla$
+and of $\frac{1}{\imath}[\hat{r},\Vnl]$%
+\footnote{Both $-\imath\nabla$ and $\frac{1}{\imath}[\hat{r},\Vnl]$
+are anti-Hermitian operators when the projectors $\beta^{lm}_I$
+are real-valued, which is the case for norm-conserving
+pseudopotentials in \texttt{RMG}.}),
+the trace satisfies
+$\operatorname{Tr}[\mathbf{P}\boldsymbol{\mathcal{J}}^\alpha]
+= -\overline{\operatorname{Tr}[\mathbf{P}\boldsymbol{\mathcal{J}}^\alpha]}$,
+i.e., it is purely imaginary.
+Therefore
+\begin{equation}
+  J_\alpha
+  = \operatorname{Re}\!\left[\imath\operatorname{Tr}
+    (\mathbf{P}\boldsymbol{\mathcal{J}}^\alpha)\right]
+  = -\operatorname{Im}\operatorname{Tr}
+    \!\left[\mathbf{P}\boldsymbol{\mathcal{J}}^\alpha\right]
+  = \operatorname{Re}\operatorname{Tr}
+    \!\left[\mathbf{P}\cdot\imath\boldsymbol{\mathcal{J}}^\alpha\right],
+  \label{eq:J-sign-check}
+\end{equation}
+which is consistent with eq.~(\ref{eq:J-dm}) and confirms that the
+sign convention is correct.
+The uniform prefactor \texttt{I\_t} applied in both
+\texttt{VecPHmatrix()} and \texttt{CurrentNlpp()} ensures that the
+paramagnetic and nonlocal contributions enter the current with
+the same relative sign, as required by eq.~(\ref{eq:Jmat-full}).
+
+
+
