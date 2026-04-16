@@ -1,0 +1,656 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% sec_2_2_EM_interaction.tex
+%%
+%% Section 2.2 for paper2_main.tex
+%% RMG Periodic RT-TDDFT -- Paper 2
+%%
+%% Covers:
+%%   2.2  Interaction of Matter with Electromagnetic Radiation
+%%        2.2.1  General TDKS equation with EM coupling
+%%        2.2.2  The electromagnetic plane wave
+%%        2.2.3  Multipole expansion and long-wavelength approximation
+%%        2.2.4  Failure of the length gauge for periodic systems
+%%        2.2.5  Scope and limitations of the velocity gauge
+%%        2.2.6  Beyond the dipole approximation: the full vector potential
+%%        2.2.7  Observables: dipole moment, current density, Berry phase
+%%        2.2.8  Summary and scope of the present work
+%%
+%% CONVENTIONS:
+%%   Atomic units: hbar = m_e = e = 4*pi*eps_0 = 1
+%%   Electron charge = -1  (e > 0 is elementary charge magnitude)
+%%   Imaginary unit: \imath  (dotless i, consistent with paper 1)
+%%   \myblue{} for all annotations and placeholders
+%%   NEVER use \myred{}
+%%
+%% COMPILE NOTE:
+%%   This file is intended to be \input{} into paper2_main.tex.
+%%   It assumes the following macros are defined in the preamble:
+%%     \Avec, \Evec, \Bvec, \phat, \VKS, \iunit
+%%   If these are not available, uncomment the fallback block below.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%--- Fallback macro definitions (uncomment if not defined in preamble) ---
+\providecommand{\Avec}{\mathbf{A}}
+\providecommand{\Evec}{\mathbf{E}}
+\providecommand{\Bvec}{\mathbf{B}}
+\providecommand{\phat}{\hat{\mathbf{p}}}
+\providecommand{\VKS}{V_{\text{eff}}}
+\providecommand{\iunit}{\imath}
+\providecommand{\myblue}[1]{\textcolor{blue}{#1}}
+
+
+%--------------------------------------------------------------------
+\subsection{Interaction of Matter with Electromagnetic Radiation}
+\label{sec:em-interaction}
+%--------------------------------------------------------------------
+
+The starting point for any RT-TDDFT calculation is the coupling of
+the electronic system to an external time-dependent perturbation.
+This section establishes the general framework for the interaction
+of electrons with electromagnetic radiation, motivates the specific
+choices of gauge and approximation used in this work, and identifies
+the observables through which spectral properties are extracted from
+the simulation.
+
+
+%--------------------------------------------------------------------
+\subsubsection{The general time-dependent Kohn-Sham equation with
+               electromagnetic coupling}
+\label{sec:tdks-em}
+%--------------------------------------------------------------------
+
+The starting point for RT-TDDFT in the presence of an electromagnetic
+field is the time-dependent Kohn-Sham (TDKS) equation with the
+standard minimal coupling prescription.  For a single KS orbital
+$\psi$ of an electron (charge $q_e = -e$, with $e > 0$), the TDKS
+equation reads
+\begin{equation}
+  \iunit\hbar\frac{\partial\psi(\mathbf{r},t)}{\partial t}
+  = \hat{H}(t)\,\psi(\mathbf{r},t)
+  \label{eq:tdks-general}
+\end{equation}
+with the Hamiltonian
+\begin{equation}
+  \hat{H}(t)
+  = \frac{1}{2m}
+    \!\left(\phat - \frac{q_e}{c}\Avec(\mathbf{r},t)\right)^{\!2}
+  + q_e\,\Phi(\mathbf{r},t)
+  + V_\text{eff}[\rho](\mathbf{r},t).
+  \label{eq:H-general}
+\end{equation}
+Here $\Avec(\mathbf{r},t)$ and $\Phi(\mathbf{r},t)$ are the vector
+and scalar potentials describing the electromagnetic field, and
+$V_\text{eff}[\rho]$ is the Kohn-Sham effective potential containing
+the ionic, Hartree, and exchange-correlation contributions.
+
+In the general form, two electromagnetic potentials ($\Avec$ and
+$\Phi$) and the KS potential all appear simultaneously.  However,
+the gauge freedom of electrodynamics---the fact that $\Avec$ and
+$\Phi$ can be transformed without changing the physical fields
+$\Evec$ and $\Bvec$---allows us to simplify significantly.
+The choice of gauge determines how the EM coupling enters the
+Hamiltonian.
+
+Throughout this work we adopt the \textbf{Coulomb gauge}, defined
+by two conditions:
+\begin{equation}
+  \nabla\cdot\Avec = 0
+  \quad\text{(transversality)},
+  \qquad
+  \Phi_\text{rad} = 0
+  \quad\text{(no scalar potential from radiation)}.
+  \label{eq:coulomb-gauge}
+\end{equation}
+In this gauge, all information about the radiation field is carried
+exclusively by $\Avec(\mathbf{r},t)$.  The only scalar potential
+that remains is the instantaneous Coulomb interaction between
+charges, which is already contained in $V_\text{eff}$.
+The TDKS Hamiltonian simplifies to
+\begin{equation}
+  \hat{H}(t)
+  = \frac{1}{2m}
+    \!\left(\phat + \frac{e}{c}\Avec(\mathbf{r},t)\right)^{\!2}
+  + V_\text{eff}[\rho](\mathbf{r},t),
+  \label{eq:H-coulomb}
+\end{equation}
+where the sign flip ($-q_e \to +e$) comes from $q_e = -e$ for the
+electron.
+
+Expanding the squared kinetic term gives three physically distinct
+contributions:
+\begin{equation}
+  \hat{H}(t)
+  = \underbrace{\frac{\hat{p}^2}{2m}}_{T_0}
+  + \underbrace{\frac{e}{mc}\,\Avec\cdot\phat}_{\text{paramagnetic}}
+  + \underbrace{\frac{e^2}{2mc^2}\,\Avec^2}_{\text{diamagnetic}}
+  + V_\text{eff}.
+  \label{eq:H-expanded}
+\end{equation}
+The \emph{paramagnetic term} is the leading-order light-matter
+coupling; it is linear in $\Avec$ and couples the field to the
+electronic current.
+The \emph{diamagnetic term} is quadratic in $\Avec$ and is typically
+negligible for weak perturbative fields (it enters at second order
+in perturbation theory), though it is required for gauge invariance
+of the response and for satisfaction of the f-sum rule.
+In the Coulomb gauge, $\nabla\cdot\Avec = 0$ guarantees that
+$\Avec\cdot\phat = \phat\cdot\Avec$, so the paramagnetic term
+simplifies to a single $(e/mc)\Avec\cdot\phat$ without
+symmetrization.
+
+\myblue{[Molecular analogy:]}
+In Gaussian basis set codes, the same Hamiltonian appears but
+$\phat$ is represented as matrix elements
+$\langle\phi_\mu|\phat|\phi_\nu\rangle$ between atomic orbitals.
+In the real-space grid representation used by RMG, $\phat =
+-\iunit\hbar\nabla$ acts directly through finite-difference stencils
+on the grid---no basis transformation is needed.
+
+
+%--------------------------------------------------------------------
+\subsubsection{The electromagnetic plane wave}
+\label{sec:plane-wave}
+%--------------------------------------------------------------------
+
+A monochromatic EM plane wave in the Coulomb gauge is described by
+the vector potential
+\begin{equation}
+  \Avec(\mathbf{r},t)
+  = A_0\,\hat{\varepsilon}\,
+    e^{\iunit(\mathbf{q}\cdot\mathbf{r}-\omega t)}
+    + \text{c.c.},
+  \label{eq:plane-wave-A}
+\end{equation}
+where $\hat{\varepsilon}$ is the polarization unit vector,
+$\mathbf{q}$ is the photon wavevector with $|\mathbf{q}|=\omega/c$,
+and $\omega$ is the angular frequency.
+The transversality condition $\nabla\cdot\Avec=0$ requires
+$\hat{\varepsilon}\cdot\mathbf{q}=0$: the polarization is
+perpendicular to the direction of propagation.
+
+The physical electric and magnetic fields are obtained from $\Avec$
+alone through Maxwell's relations:
+\begin{align}
+  \Evec(\mathbf{r},t)
+  &= -\frac{1}{c}\frac{\partial\Avec}{\partial t}
+   = \frac{\iunit\omega A_0}{c}\,\hat{\varepsilon}\,
+     e^{\iunit(\mathbf{q}\cdot\mathbf{r}-\omega t)}
+     + \text{c.c.},
+  \label{eq:E-from-A}
+  \\[4pt]
+  \Bvec(\mathbf{r},t)
+  &= \nabla\times\Avec
+   = \iunit A_0\,(\mathbf{q}\times\hat{\varepsilon})\,
+     e^{\iunit(\mathbf{q}\cdot\mathbf{r}-\omega t)}
+     + \text{c.c.}
+  \label{eq:B-from-A}
+\end{align}
+This confirms that a single vector potential in the Coulomb gauge is
+sufficient to represent both physical fields---no scalar potential
+is needed.  In Gaussian units,
+$|\Bvec|/|\Evec| = 1$ for a plane wave, but the coupling of
+non-relativistic electrons to $\Bvec$ is weaker than to $\Evec$ by
+a factor of $v/c \approx \alpha \approx 1/137$.  This hierarchy is
+the physical origin of the dominance of electric-dipole transitions
+in ordinary spectroscopy.
+
+
+%--------------------------------------------------------------------
+\subsubsection{Multipole expansion and the long-wavelength
+               approximation}
+\label{sec:multipole}
+%--------------------------------------------------------------------
+
+The spatial factor $e^{\iunit\mathbf{q}\cdot\mathbf{r}}$ in the
+vector potential can be expanded in a Taylor series:
+\begin{equation}
+  e^{\iunit\mathbf{q}\cdot\mathbf{r}}
+  = 1 + \iunit\mathbf{q}\cdot\mathbf{r}
+  - \tfrac{1}{2}(\mathbf{q}\cdot\mathbf{r})^2
+  + \cdots
+  \label{eq:multipole}
+\end{equation}
+Each term corresponds to a class of multipole transitions with
+distinct selection rules and characteristic coupling strengths.
+
+The \textbf{zeroth-order term} (1) retains only the temporal
+oscillation of $\Avec$, making it spatially uniform:
+$\Avec(\mathbf{r},t) \to \Avec(t)$.  This is the
+\textbf{long-wavelength} or \textbf{dipole approximation}.
+The resulting $(e/mc)\Avec(t)\cdot\phat$ interaction drives
+electric dipole (E1) transitions---the dominant contribution to
+optical absorption.  The approximation is valid when the spatial
+extent of the electronic system is much smaller than the photon
+wavelength: $|\mathbf{q}||\mathbf{r}| \ll 1$.
+For visible light ($\lambda \approx 400$--700~nm) interacting with
+molecules (${\sim}1$~nm) or even nanoscale systems (${\sim}10$~nm),
+the ratio $|\mathbf{q}||\mathbf{r}| \approx 10^{-2}$--$10^{-1}$ is
+small and the approximation is excellent.
+
+The \textbf{first-order term} ($\iunit\mathbf{q}\cdot\mathbf{r}$)
+gives the electric quadrupole (E2) and magnetic dipole (M1)
+contributions.  These are suppressed by a factor of
+$|\mathbf{q}||\mathbf{r}| \approx v/c$ relative to E1 and are
+important for forbidden transitions, circular dichroism, and X-ray
+spectroscopy where $\lambda$ approaches atomic dimensions.
+
+Higher-order terms give electric octupole, magnetic quadrupole,
+etc., relevant only for very short wavelengths or very extended
+systems.
+
+The long-wavelength approximation (retaining only the zeroth-order
+term) has been the standard in molecular quantum chemistry, including
+in paper~1 of this series.\cite{jakowski-tddft-2025}
+However, it has well-known limitations that become critical for
+periodic systems, as discussed next.
+
+
+%--------------------------------------------------------------------
+\subsubsection{Failure of the length gauge for periodic systems}
+\label{sec:lg-failure}
+%--------------------------------------------------------------------
+
+In the long-wavelength limit with spatially uniform $\Avec(t)$, two
+equivalent representations of the light-matter interaction are
+available, connected by the G\"{o}ppert-Mayer gauge transformation
+(derived in Section~\ref{sec:GM-transform}):
+
+\paragraph{Velocity gauge (VG).}
+The interaction enters through the kinetic energy as
+$(e/mc)\Avec(t)\cdot\phat$.  The perturbation operator involves
+$\phat = -\iunit\hbar\nabla$, which is well-defined for any basis
+set or boundary condition.
+
+\paragraph{Length gauge (LG).}
+A gauge transformation with $\chi(\mathbf{r},t)
+= -\mathbf{r}\cdot\Avec(t)$ eliminates $\Avec$ from the kinetic
+energy and transfers the interaction to a scalar potential
+$\Phi = \Evec(t)\cdot\mathbf{r}$, giving the familiar dipole
+interaction $-e\,\Evec(t)\cdot\hat{\mathbf{r}}$.  The perturbation
+operator now involves the position operator $\hat{\mathbf{r}}$.
+
+\medskip
+\noindent
+Note that these two gauges both operate within the Coulomb gauge
+framework---they are different representations of the same physics
+obtained by choosing different gauge functions, not different
+physical theories.
+For \emph{finite} molecular systems, both give identical results,
+and the length gauge is often preferred because the dipole matrix
+elements $\langle\psi_a|\hat{r}_\alpha|\psi_b\rangle$ have a
+transparent physical interpretation as transition dipole moments.
+This was the approach used in paper~1.\cite{jakowski-tddft-2025}
+
+For \emph{periodic} systems under Born-von K\'{a}rm\'{a}n boundary
+conditions, the length gauge fails catastrophically.
+The position operator $\hat{\mathbf{r}}$ is fundamentally
+incompatible with periodicity: $\mathbf{r}$ and $\mathbf{r}+\mathbf{L}$
+must be physically equivalent, but $\hat{\mathbf{r}}$ distinguishes
+them.
+The scalar potential $\Evec\cdot\mathbf{r}$ is a linearly growing
+ramp that produces a discontinuous ``sawtooth'' at the unit cell
+boundary---it is not periodic and cannot be represented in a Bloch
+basis.
+The matrix elements
+$\langle\psi_{n\mathbf{k}}|\hat{r}_\alpha|\psi_{m\mathbf{k}}\rangle$
+between Bloch states are ill-defined (this is precisely the problem
+resolved by the modern theory of polarization via Berry phases,
+discussed in Section~\ref{sec:observables-berry}).
+
+The velocity gauge completely avoids this problem: the momentum
+operator $\phat$ is perfectly well-defined for Bloch states, and the
+matrix elements
+$\langle\psi_{n\mathbf{k}}|\hat{p}_\alpha|\psi_{m\mathbf{k}}\rangle$
+exist without any difficulty.  This is why periodic-system RT-TDDFT
+implementations, including the present one, use the velocity gauge.
+
+
+%--------------------------------------------------------------------
+\subsubsection{Scope and limitations of the velocity gauge with the
+               dipole approximation}
+\label{sec:vg-scope}
+%--------------------------------------------------------------------
+
+The velocity gauge resolves the periodic-boundary problem, but the
+underlying long-wavelength approximation itself imposes a
+fundamental limitation: it restricts the calculation to
+\textbf{vertical transitions} with zero crystal momentum transfer
+($\Delta\mathbf{k} = 0$).  This means that only the optical limit
+of the dielectric function $\varepsilon(\mathbf{q}\to 0,\omega)$ is
+accessible.
+
+It is sometimes stated that the velocity gauge ``is not general,''
+but this is imprecise.  The gauge transformation itself is
+exact---gauge transformations are always unitary and introduce no
+approximation.  What is limited is the \emph{dipole approximation}
+that precedes it: by setting $e^{\iunit\mathbf{q}\cdot\mathbf{r}}
+\to 1$, one discards all finite-$\mathbf{q}$ physics regardless of
+which gauge is used.  The velocity gauge is the correct and rigorous
+framework for $q = 0$ optical response in periodic systems; the
+limitation lies in the $q = 0$ restriction, not in the gauge.
+
+Many important spectroscopies and collective excitations involve
+finite momentum transfer and lie beyond this approximation.
+These include plasmon dispersion $\varepsilon(\mathbf{q},\omega)$,
+electron energy-loss spectroscopy (EELS) where the beam transfers
+finite $\mathbf{q}$ to the sample, inelastic X-ray scattering (IXS),
+and magnon dispersion in magnetic systems.
+
+
+%--------------------------------------------------------------------
+\subsubsection{Beyond the dipole approximation: the full vector
+               potential}
+\label{sec:beyond-dipole}
+%--------------------------------------------------------------------
+
+A natural generalization is to retain the full spatial dependence of
+the vector potential without making the dipole approximation:
+\begin{equation}
+  \hat{H}(t)
+  = \frac{1}{2m}
+    \!\left(\phat + \frac{e}{c}\Avec(\mathbf{r},t)\right)^{\!2}
+  + V_\text{eff}[\rho](\mathbf{r},t)
+  \label{eq:H-full-A}
+\end{equation}
+with $\Avec(\mathbf{r},t) = A_0\hat{\varepsilon}\,
+e^{\iunit(\mathbf{q}\cdot\mathbf{r}-\omega t)} + \text{c.c.}$
+retaining the full plane-wave spatial structure.  This is still the
+Coulomb gauge---no new gauge choice is needed.  The spatial factor
+$e^{\iunit\mathbf{q}\cdot\mathbf{r}}$ is automatically periodic (it
+is a reciprocal-space function commensurate with the lattice for
+appropriate $\mathbf{q}$), so the problematic $\hat{\mathbf{r}}$
+operator never appears.  Transitions now satisfy crystal momentum
+conservation $\mathbf{k}_f = \mathbf{k}_i + \mathbf{q}$
+(mod~$\mathbf{G}$), allowing finite-$\mathbf{q}$ excitations.
+
+This approach is more general than the dipole approximation because
+the full exponential automatically includes all multipole orders.
+For finite but small $|\mathbf{q}||\mathbf{r}|$, the leading
+correction beyond E1 is the electric quadrupole / magnetic dipole
+term (first order in $\mathbf{q}\cdot\mathbf{r}$).
+For $|\mathbf{q}||\mathbf{r}| \sim 1$ (as in X-ray spectroscopy or
+large nanostructures), all orders contribute and the full exponential
+must be retained.
+
+\paragraph{Important distinction regarding finite-$\mathbf{q}$
+response.}
+There is a second, independent route to finite-$\mathbf{q}$
+excitations that does not involve the vector potential at all.
+One can apply a scalar potential perturbation
+\begin{equation}
+  \delta V(\mathbf{r},t)
+  = V_0\,e^{\iunit\mathbf{q}\cdot\mathbf{r}}\,\delta(t)
+  \label{eq:density-wave-kick}
+\end{equation}
+directly to $V_\text{eff}$, with no gauge considerations.
+This ``density-wave kick'' probes the density-density response
+function $\chi(\mathbf{q},\omega)$, whereas the EM route probes the
+current-current response $\sigma(\mathbf{q},\omega)$.
+The two response functions are related but distinct:
+$\sigma$ is a tensor ($3\times3$), $\chi$ is a scalar;
+$\sigma$ naturally gives the transverse (optical) response,
+$\chi$ gives the longitudinal response relevant to EELS.
+For the longitudinal response at finite $\mathbf{q}$, the scalar
+perturbation approach is more direct.
+For transverse (optical) response including finite-$\mathbf{q}$
+corrections (beyond dipole), the full
+$\Avec(\mathbf{r},t)$ approach is the natural choice.
+
+The present implementation uses the long-wavelength limit
+(spatially uniform $\Avec(t)$) exclusively.
+The general framework described here indicates the natural extension
+path: keeping the full $e^{\iunit\mathbf{q}\cdot\mathbf{r}}$
+spatial structure in $\Avec$ for beyond-dipole optical response, or
+using scalar density-wave perturbations for longitudinal excitations
+at arbitrary $\mathbf{q}$.
+Such extensions would enable simulation of plasmon dispersion, EELS
+spectra, inelastic X-ray scattering, and magnon dispersion from
+first principles---all within the same RT-TDDFT framework.
+
+
+%--------------------------------------------------------------------
+\subsubsection{Observables: from dipole moment to current density to
+               Berry phase polarization}
+\label{sec:observables-berry}
+%--------------------------------------------------------------------
+
+The choice of gauge determines not only how the perturbation enters
+the Hamiltonian but also which observable provides the most natural
+route to spectral properties.
+Three complementary approaches exist, corresponding to three
+equivalent but operationally distinct ways of characterizing the
+electronic response.
+
+\paragraph{Length gauge---dipole moment.}
+In the length gauge, the EM field couples through the scalar
+potential $\Evec(t)\cdot\hat{\mathbf{r}}$, acting directly on the
+charge density.  The natural observable is the time-dependent dipole
+moment:
+\begin{equation}
+  \mu_\alpha(t)
+  = -e\sum_n f_n
+    \langle\psi_n(t)|\hat{r}_\alpha|\psi_n(t)\rangle,
+  \label{eq:dipole-moment}
+\end{equation}
+where the sum runs over occupied KS orbitals with occupations $f_n$.
+The Fourier transform of $\mu(t)$ after an impulsive perturbation
+yields the frequency-dependent polarizability tensor $\alpha(\omega)$,
+from which the photoabsorption cross section follows as
+$\sigma_\text{abs}(\omega) = (4\pi\omega/c)\,
+\text{Im}\,\alpha(\omega)$.
+For finite molecular systems this is the standard RT-TDDFT
+post-processing route, and it was used in
+paper~1.\cite{jakowski-tddft-2025}
+
+Higher-order multipole moments---the quadrupole
+$Q_{\alpha\beta}(t) = \langle r_\alpha r_\beta\rangle$, the
+octupole, etc.---can be extracted analogously and provide access to
+E2, M1, and higher-order contributions to optical activity and
+circular dichroism, though these are rarely needed for systems small
+compared to the photon wavelength.
+
+\paragraph{Velocity gauge---electronic current density.}
+In the velocity gauge, the EM field couples through
+$\Avec(t)\cdot\phat$, acting on the electronic momentum.
+The natural observable is the time-dependent electronic current
+density:
+\begin{equation}
+  \mathbf{j}(\mathbf{r},t)
+  = \frac{1}{2}\sum_n f_n
+    \left[\psi_n^*(\mathbf{r},t)\,\phat\,\psi_n(\mathbf{r},t)
+          + \text{c.c.}\right]
+  + \mathbf{j}_\text{NL}(\mathbf{r},t).
+  \label{eq:current-density}
+\end{equation}
+The first term is the familiar paramagnetic current---the same
+quantity that appears in probability current expressions in
+introductory quantum mechanics.
+The second term, $\mathbf{j}_\text{NL}$, arises from the nonlocal
+pseudopotential: because the Kleinman-Bylander projectors do not
+commute with the position operator, the continuity equation
+$\partial\rho/\partial t + \nabla\cdot\mathbf{j} = 0$ is satisfied
+only when the nonlocal contribution is included.
+The derivation and explicit form of $\mathbf{j}_\text{NL}$ are
+given in Section~\ref{sec:current}.
+\myblue{[Verify cross-reference label for Sec.~2.5.]}
+
+The macroscopic (cell-averaged) current
+$\mathbf{J}(t) = (1/\Omega)\int_\text{cell}\mathbf{j}(\mathbf{r},t)
+\,d^3r$
+connects to optical properties through the frequency-dependent
+optical conductivity:
+\begin{equation}
+  \sigma_{\alpha\beta}(\omega)
+  = \frac{J_\alpha(\omega)}{E_\beta(\omega)},
+  \label{eq:conductivity}
+\end{equation}
+and the dielectric function:
+\begin{equation}
+  \varepsilon_{\alpha\beta}(\omega)
+  = \delta_{\alpha\beta}
+  + \frac{4\pi\iunit}{\omega}\,\sigma_{\alpha\beta}(\omega),
+  \label{eq:dielectric}
+\end{equation}
+from which absorption spectra, reflectivity, refractive index, and
+energy-loss functions follow by standard relations.
+This is the periodic-system analog of the molecular polarizability
+route: where molecular RT-TDDFT extracts $\alpha(\omega)$ from
+$\mu(t)$, periodic RT-TDDFT extracts $\varepsilon(\omega)$ from
+$\mathbf{J}(t)$.
+
+\paragraph{Berry phase---macroscopic polarization.}
+The macroscopic polarization $\mathbf{P}$ of a periodic system
+cannot be defined as the expectation value of any local
+operator---this is the same fundamental difficulty with
+$\hat{\mathbf{r}}$ discussed in Section~\ref{sec:lg-failure}.
+The modern theory of polarization\cite{king-smith-vanderbilt-1993,%
+resta-1994} resolves this by expressing $\mathbf{P}$ as a geometric
+phase (Berry phase) of the occupied Bloch orbitals:
+\begin{equation}
+  P_\alpha
+  = \frac{-e}{(2\pi)^3}\sum_n
+    \int_\text{BZ}\!d\mathbf{k}\;
+    \langle u_{n\mathbf{k}}|
+    \iunit\frac{\partial}{\partial k_\alpha}
+    |u_{n\mathbf{k}}\rangle,
+  \label{eq:berry-phase-P}
+\end{equation}
+where $u_{n\mathbf{k}}(\mathbf{r})$ is the cell-periodic part of the
+Bloch orbital.
+This expression is defined modulo a quantum of polarization
+$e\mathbf{R}/\Omega$ (where $\mathbf{R}$ is a lattice vector and
+$\Omega$ is the cell volume), reflecting the intrinsic
+multivaluedness of the geometric phase.
+
+The Berry phase polarization is the periodic-system generalization
+of the molecular dipole moment.
+Just as $\mu = -e\langle\hat{\mathbf{r}}\rangle$ is a single
+well-defined number for a localized molecule, $P^\text{Berry}$ is a
+well-defined number (modulo the quantum) for an infinite periodic
+crystal.
+The Berry phase accomplishes for periodic systems what the position
+operator does for molecules---but through a topological construction
+in $k$-space rather than a real-space expectation value.
+
+In RT-TDDFT, the time-evolved Bloch orbitals $\psi_{n\mathbf{k}}(t)$
+at each time step define a time-dependent Berry phase, giving the
+polarization $\mathbf{P}(t)$ directly without reference to the
+position operator.
+The connection to the current is exact:
+\begin{equation}
+  \mathbf{J}(t) = \frac{d\mathbf{P}}{dt},
+  \label{eq:J-dPdt}
+\end{equation}
+so the polarization can equivalently be recovered by time-integration
+of the current:
+\begin{equation}
+  \mathbf{P}(t) = \mathbf{P}(0) + \int_0^t\!\mathbf{J}(t')\,dt'.
+  \label{eq:P-from-J}
+\end{equation}
+The two routes---direct Berry phase evaluation at each step versus
+current integration---are formally equivalent but have different
+numerical characteristics.
+The Berry phase gives $\mathbf{P}(t)$ without accumulating
+integration error, but requires dense $k$-point sampling (the
+formula is a $k$-space integral) and careful tracking of the
+polarization quantum for large-amplitude perturbations.
+Current integration avoids the Berry phase calculation but
+accumulates time-stepping error over long propagations.
+In the linear response regime (small perturbations), both approaches
+are reliable and serve as mutual consistency checks.
+The Berry phase formalism and its implementation in the present code
+are described in detail in Section~\ref{sec:berry-phase}.
+\myblue{[Verify cross-reference label for Sec.~2.8.]}
+
+\paragraph{Equivalence, complementarity, and the choice of
+observable.}
+For finite systems where $\hat{\mathbf{r}}$, $\phat$, and the Berry
+phase are all well-defined, the three routes are exactly equivalent,
+connected by the time derivative of the dipole moment:
+\begin{equation}
+  \frac{d\mu_\alpha}{dt}
+  = -e\sum_n f_n
+    \langle\psi_n(t)|\hat{v}_\alpha|\psi_n(t)\rangle
+  = \Omega\,J_\alpha(t)
+  = \Omega\,\frac{dP_\alpha}{dt}.
+  \label{eq:mu-J-P-equiv}
+\end{equation}
+In frequency space this yields the fundamental relation
+$\sigma(\omega) = \iunit\omega\,\alpha(\omega)$, linking the
+polarizability to the conductivity, and the dielectric function
+$\varepsilon(\omega) = 1 + 4\pi\alpha(\omega)/\Omega
+= 1 + 4\pi\iunit\sigma(\omega)/\omega$.
+
+For periodic systems, the dipole moment is undefined, leaving two
+viable routes: the current density $\mathbf{J}(t)$, which gives
+$\sigma(\omega)$ and $\varepsilon(\omega)$ directly via Fourier
+transform; and the Berry phase $\mathbf{P}(t)$, which gives
+$\alpha(\omega)$ and connects to the absolute polarization.
+In the present work, we use the current density as the primary
+observable (Sections~\ref{sec:current}--\myblue{[2.6]}) and the
+Berry phase as a complementary diagnostic and for properties
+where the absolute polarization is needed
+(Section~\ref{sec:berry-phase}).
+
+There is an appealing conceptual symmetry in the
+gauge-observable pairing: in the length gauge, the field perturbs
+the density (through $\Evec\cdot\hat{\mathbf{r}}$) and the response
+is read from the density's moments; in the velocity gauge, the field
+perturbs the current (through $\Avec\cdot\phat$) and the response is
+read from the current.
+The Berry phase stands apart from this pattern---it is a
+gauge-invariant geometric property of the occupied manifold that can
+be evaluated regardless of how the perturbation was applied,
+depending only on the instantaneous state of the system, not on the
+history of how it was driven.
+
+
+%--------------------------------------------------------------------
+\subsubsection{Summary and scope of the present work}
+\label{sec:em-summary}
+%--------------------------------------------------------------------
+
+The general TDKS equation with full minimal coupling to
+$\Avec(\mathbf{r},t)$ in the Coulomb gauge provides a unified
+framework for modeling the interaction of electronic systems with
+electromagnetic radiation.
+The key approximations adopted in the present work and their
+consequences are as follows.
+
+The \textbf{Coulomb gauge} ($\nabla\cdot\Avec = 0$,
+$\Phi_\text{rad} = 0$) carries all radiation physics in $\Avec$
+alone, avoiding ambiguity between scalar and vector potential
+contributions.
+Both electric and magnetic fields are derivable from $\Avec$ via
+standard Maxwell relations.
+
+The \textbf{long-wavelength approximation}
+($e^{\iunit\mathbf{q}\cdot\mathbf{r}} \to 1$) reduces
+$\Avec(\mathbf{r},t)$ to a spatially uniform $\Avec(t)$,
+restricting the calculation to vertical transitions
+($\Delta\mathbf{k} = 0$).
+This is equivalent to the electric dipole approximation and is valid
+when the photon wavelength far exceeds the system size.
+
+The \textbf{velocity gauge} represents the interaction as
+$(e/mc)\Avec(t)\cdot\phat$ in the kinetic energy, avoiding the
+ill-defined position operator that plagues the length gauge in
+periodic systems.
+
+The \textbf{current density} is the primary observable, giving the
+optical conductivity $\sigma(\omega)$ and dielectric function
+$\varepsilon(\omega)$ via Fourier transform.
+The \textbf{Berry phase polarization} provides a complementary route
+to the same spectral information and additionally gives the absolute
+macroscopic polarization.
+
+The present work operates within all three approximations: Coulomb
+gauge, long-wavelength limit, velocity gauge.
+This gives access to the full optical response $\varepsilon(\omega)$
+of periodic systems with correct treatment of local field effects,
+current contributions from nonlocal pseudopotentials, and
+spin-collinear dynamics.
+Extensions to finite-$\mathbf{q}$ response---via either the full
+$\Avec(\mathbf{r},t)$ or scalar density-wave perturbations---and to
+higher-multipole processes are natural next steps that the framework
+accommodates without conceptual difficulty.
