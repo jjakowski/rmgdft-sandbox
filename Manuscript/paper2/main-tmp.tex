@@ -47,10 +47,19 @@
 %% ---- Section numbering (appendix behaves like a normal section) -----------
 \usepackage{appendix}
 
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Annotation color commands (consistent with paper 1)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\newcommand{\myred}[1]{\textcolor{red}{#1}}
+\newcommand{\myblue}[1]{\textcolor{blue}{#1}}
+\newcommand{\mygrey}[1]{\textcolor{gray}{#1}}
+\newcommand{\mygreen}[1]{\textcolor{green}{#1}}
+
 %% ===========================================================================
 %% NOTATION MACROS  (copied from notation.tex; keep in sync)
 %% ===========================================================================
-
+   
 %% Operators
 \newcommand{\Hhat}{\hat{H}}
 \newcommand{\HKS}{\hat{H}_{\mathrm{KS}}}
@@ -160,6 +169,7 @@ Imaginary unit: $\imath$ (dotless i).
 %% ===========================================================================
 \section{Theory}
 
+\input{sec_theory_EM}
 \input{sec_theory_current}
 
 %% ===========================================================================

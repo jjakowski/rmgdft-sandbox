@@ -17,7 +17,39 @@
 ```
 
 
+
+
+
+
 * That is it. With those five files fetched in the first exchange, a new session will be fully oriented. The summary it produces back to you serves as a confirmation that it understood correctly — if it gets something wrong, you correct it before any work begins.
+
+=====
+  I am continuing work on the RMG periodic RT-TDDFT manuscript (paper 2, 
+  follow-up to Jakowski et al. JCTC 2025). Please fetch and read these 
+  files from GitHub repo jjakowski/rmgdft-sandbox, branch explore:
+
+Fetch and read these files in order using web_fetch:
+
+1. https://raw.githubusercontent.com/jjakowski/rmgdft-sandbox/explore/Manuscript/CONTEXT.md
+2. https://raw.githubusercontent.com/jjakowski/rmgdft-sandbox/explore/Manuscript/source/SOURCE_FILES_ANALYSIS.md
+3. https://raw.githubusercontent.com/jjakowski/rmgdft-sandbox/explore/Manuscript/DECISIONS.md
+4. https://raw.githubusercontent.com/jjakowski/rmgdft-sandbox/explore/Manuscript/notation.tex
+5. https://raw.githubusercontent.com/jjakowski/rmgdft-sandbox/explore/Manuscript/paper2/sec_theory.tex
+6. https://raw.githubusercontent.com/jjakowski/rmgdft-sandbox/explore/Manuscript/paper2/sec_theory_current.tex
+
+After reading those five files, fetch the two source derivation files:
+
+7. https://raw.githubusercontent.com/jjakowski/rmgdft-sandbox/explore/Manuscript/source/NEAT-notes-RMG_main.tex
+8. https://raw.githubusercontent.com/jjakowski/rmgdft-sandbox/explore/Manuscript/source/NEAT-project-notes_main.tex
+
+
+  After reading them, summarize in 3-4 sentences what the project is,
+  where we are, and what the immediate next task is. Then we will proceed.
+
+
+
+===
+
 
 For a session focused on a specific subsection, add one line at the end:
 

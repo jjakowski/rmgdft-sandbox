@@ -94,17 +94,13 @@ Spin-Polarized Systems with the Real-Space Multigrids (RMG)%
 %%----- Candidate 3:
 %% Real-Time TDDFT Beyond Finite Systems: Periodic Boundaries,
 %% Spin Polarization, and Large-Scale Applications with RMG%
-\footnote{NOTICE OF COPYRIGHT: This manuscript has been authored by
-UT-Battelle, LLC under Contract No.\ DE-AC05-00OR22725 with the
-U.S.\ Department of Energy. The United States Government retains and
-the publisher, by accepting the article for publication, acknowledges
-that the United States Government retains a non-exclusive, paid-up,
-irrevocable, worldwide license to publish or reproduce the published
-form of this manuscript, or allow others to do so, for United States
-Government purposes. The Department of Energy will provide public
-access to these results of federally sponsored research in accordance
-with the DOE Public Access Plan
+%-- short version:
+\footnote{Notice of Copyright: This manuscript has been authored by UT-Battelle, LLC, under contract DE-AC05-00OR22725 with the US Department of Energy (DOE). The publisher acknowledges the US government license to provide public access under the DOE Public Access Plan (http://energy.gov/downloads/doe-public-access-plan)
 (http://energy.gov/downloads/doe-public-access-plan).}}
+
+%--long version:
+%\footnote{NOTICE OF COPYRIGHT: This manuscript has been authored by UT-Battelle, LLC under Contract No.\ DE-AC05-00OR22725 with the U.S.\ Department of Energy. The United States Government retains and the publisher, by accepting the article for publication, acknowledges that the United States Government retains a non-exclusive, paid-up, irrevocable, worldwide license to publish or reproduce the published form of this manuscript, or allow others to do so, for United States Government purposes. The Department of Energy will provide public access to these results of federally sponsored research in accordance with the DOE Public Access Plan
+%(http://energy.gov/downloads/doe-public-access-plan).}}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Keywords and abbreviations
@@ -112,7 +108,7 @@ with the DOE Public Access Plan
 \abbreviations{DFT, RT-TDDFT, RMG}
 \keywords{density functional theory, real-time TDDFT, periodic systems,
   velocity gauge, current operator, spin polarization, optical conductivity,
-  Berry phase, NV center, real-space multigrid}
+  NV center, real-space multigrid}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Document begins
@@ -136,12 +132,15 @@ and outlook.]}
 
 \input{sec_intro}
 
+\input{sec_theory_EM-jj}
+\newpage 
 \input{sec_theory}
 
 \input{sec_implementation}
 
 \input{sec_benchmarks}
 
+\input{sec_2_2_EM_interaction}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Summary and Outlook
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -208,7 +207,28 @@ appendix; or can be removed if not needed.]}
 %% Bibliography
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \balance
-\bibliography{../source/references}
+\bibliography{../source/references,./references-pap2}
 \balance
 
 \end{document}
+
+
+
+%%%%%%%%%%%%%%%%%%%%%
+missing refs:
+
+
+Warning--I didn't find a database entry for "jakowski-rmg-tddft-2025"
+Warning--I didn't find a database entry for "resta-1998"
+Warning--I didn't find a database entry for "king-smith-vanderbilt-1993"
+Warning--I didn't find a database entry for "Mattiat-Luber-2022"
+Warning--I didn't find a database entry for "furche-2001"
+Warning--I didn't find a database entry for "ding-gauge-2011"
+Warning--I didn't find a database entry for "pickard-mauri-2001"
+Warning--I didn't find a database entry for "starace-1971"
+Warning--I didn't find a database entry for "exciting-2014"
+Warning--I didn't find a database entry for "nv-center-review"
+Warning--I didn't find a database entry for "yabana-bertsch-1996"
+Warning--I didn't find a database entry for "kleinman-bylander-1982"
+Warning--I didn't find a database entry for "hamann-1989"
+
