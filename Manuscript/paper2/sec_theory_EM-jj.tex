@@ -1,0 +1,495 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% sec_theory_EM_v2.tex
+%%
+%% Sections 2.2 -- 2.4 for paperH_HLmain.tex
+%% RMG Periodic RT-TDDFT -- Paper 2
+%% REVISED April 2026: clean separation of EM-field perturbations
+%% (gauge-dependent, Track A) from scalar-potential perturbations
+%% (gauge-independent, Track B).
+%%
+%% Subsection structure:
+%%   2.2  Interaction with electromagnetic radiation
+%%        2.2.1  Plane wave and minimal coupling
+%%        2.2.2  Multipole expansion and long-wavelength approximation
+%%        2.2.3  Crystal momentum conservation: vertical transitions
+%%        2.2.4  Beyond the optical limit: scalar-potential perturbations
+%%   2.3  Gauge transformation: length to velocity gauge
+%%        2.3.1  Why the length gauge fails for periodic systems
+%%        2.3.2  The Goppert-Mayer transformation
+%%        2.3.3  The velocity-gauge TDKS Hamiltonian
+%%        2.3.4  The perturbative momentum kick
+%%   2.4  Vector potential and magnetic perturbations
+%%        2.4.1  Electric perturbation: spatially uniform A(t)
+%%        2.4.2  Magnetic perturbation: spatially varying A(r)
+%%        2.4.3  Scope of the present implementation
+%%
+%% CONVENTIONS (all from notation.tex):
+%%   Atomic units: hbar = m_e = e = 4*pi*eps_0 = 1
+%%   Electron charge = -1  (e > 0 is elementary charge magnitude)
+%%   Imaginary unit: \imath  (dotless i, consistent with paper 1)
+%%   \myblue{} for all annotations and placeholders -- NEVER \myred{}
+%%
+%% SOURCES:
+%%   NEAT-notes-RMG_main.tex lines 116-716 (primary)
+%%   NEAT-project-notes_main.tex lines 256-716 (supplementary)
+%%   Physics discussion notes, April 2026
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%--------------------------------------------------------------------
+\subsection{Interaction of Matter with Electromagnetic Radiation}
+\label{sec:em-interaction}
+%--------------------------------------------------------------------
+
+%The starting point for any RT-TDDFT calculation is the coupling of
+%the electronic system to an external time-dependent perturbation.
+%
+%\subsection{External electromagnetic fields in periodic RT-TDDFT}
+%\label{sec:external_fields}
+
+
+
+The starting point for a RT-TDDFT calculation  is the time-dependent Kohn–Sham equation for single-particle orbitals 
+$\Psi_j(r,t)$ in the presence of external electromagnetic fields which,  with  the minimal coupling Hamiltonian,
+takes the form
+\begin{equation}
+	\imath \pdv{}{t} \Psi_j(\vb r,t) = \left[  \frac{1}{2m} \left( \vb{\hat p} - \frac{q_e}{c}\vb A_\mathrm{ext}(\vb r, t)\right)^2
+	 + q_e \Phi_\mathrm{ext} (\vb r,t)   + \hat V_\mathrm{KS} [\rho](t)
+	 \right] \Psi_j(\vb r,t)
+\end{equation}
+where $ \vb A_\mathrm{ext}$ and  $\Phi_\mathrm{ext}$ are vector and scalar potential representing external electromagnetic (EM) field, 
+$\vb{\hat p} =-\imath\hbar \nabla $ is a canonical momentum operator,  
+and $q_e=-1$ is and electron charge.
+The Kohn-Sham potential, $ \hat V_\mathrm{KS} [\rho](t)$, 
+ contains the ionic potential, Hartree potential, and exchange-correlation potential: 
+\begin{equation}
+  \hat V_{\mathrm{KS}} =   
+  \hat V_{\mathrm{ion}} + \hat V_{\mathrm{H}}[\rho](\mathbf r,t) + \hat V_{\mathrm{xc}}[\rho](\mathbf r,t).
+\end{equation}
+In practical implementations based on norm-conserving or ultrasoft pseudopotentials,  $\hat V_{\mathrm{ion}}$ may contain both local
+and nonlocal parts, and gauge transformations of the Hamiltonian may introduce additional terms that must be accounted for in both the
+Hamiltonian and the current density operator.
+The choice of the specific form of $\vb A_\mathrm{ext}$ and  $\Phi_\mathrm{ext}$ depends on the problem and is subject to a gauge freedom.\cite{gauge-theory}
+
+
+
+ For a monochromatic external EM field, the vector potential may be represented as a plane wave,
+\begin{equation}
+	%\vb A(r,t)= \vb  A_0(\vb r,t) e^{\imath (\vb q \vb r -\omega t)} +  A_0^*( \vb r,t) e^{-\imath (\vb q \vb r -\omega t)}
+	\vb A(r,t)= \vb  A_0 e^{\imath (\vb q \cdot \vb r -\omega t)} +  c.c. 
+	\label{eq:plane_wave_vector_potential}
+\end{equation}
+where  $\omega$  is the angular frequency, a wave vector $\vb q$ describes propagation direction, and $\vb A_0$ is a complex polarization  amplitude.
+The corresponding electric and magnetic fields are obtained from Maxwell equations:
+\begin{align*}
+	\mathbf E(\mathbf r,t) =& -\nabla \Phi_{\mathrm{ext}}(\mathbf r,t) - \frac{1}{c}\frac{\partial \mathbf A_{\mathrm{ext}}(\mathbf r,t)}{\partial t}, \\
+	\mathbf B(\mathbf r,t) =& \nabla \times \mathbf A_{\mathrm{ext}}(\mathbf r,t).
+\label{eq:em_fields_from_potentials}
+\end{align*}
+%Imposing the Coulomb gauge condition,
+%leads to the transversality condition
+%\begin{equation}
+%  \vb q \cdot \vb A_0 = 0,
+%\label{eq:transversality_condition}
+%\end{equation}
+%which states that the polarization of the electromagnetic wave is perpendicular to its propagation direction.
+
+Any vector field $\vb A$ can be uniquely decomposed into a \emph{transverse} (divergence-free) component perpendicular to $\vb q$ and a
+\emph{longitudinal} (curl-free) component parallel to $\vb q$.
+In the Coulomb gauge, defined by the condition
+\begin{equation}
+  \nabla \cdot \vb A_{\mathrm{ext}}(\vb r,t) = 0,
+\label{eq:coulomb_gauge_condition}
+\end{equation}
+the vector potential is purely transverse: it carries only the transverse part of the electric field and the magnetic field,
+while the scalar potential $\Phi_{\mathrm{ext}}$ carries the longitudinal part of the electric field exclusively.
+For a plane wave, this becomes apparent upon applying the
+gauge condition~\eqref{eq:coulomb_gauge_condition} to
+Eq.~\eqref{eq:plane_wave_vector_potential}, which yields
+the transversality condition
+\begin{equation}
+  \vb q \cdot \vb A_0 = 0,
+  \label{eq:transversality_condition}
+\end{equation}
+requiring that the polarization of the radiation field is perpendicular to its propagation direction.
+
+
+%the longitudinal (parallel to the propagation direction vector $\vb q$) and  transverse (perpedicular to $\vb q$) components of  electric field
+%are carried, respectively,   by the  a scalar and  vector potential exclusively.
+%That is, the vector potential carries the transverse electric field and the magnetic field, 
+% as can be seen by  a direct  application of Eq. \ref{eq:coulomb_gauge_condition}  to a Eq. \ref{eq:plane_wave_vector_potential}
+% %resulting in the transversality condition
+%\begin{equation}
+%  \vb q \cdot \vb A_0 = 0,
+%\label{eq:transversality_condition}
+%\end{equation}
+
+ In general,  the electromagnetic  potentials ($\vb A$ and $\Phi$)  and the KS potential all appear simultaneously. However, the gauge  freedom  allows  to transform  
+ $\vb A$ and $\Phi$ to form suitable for a given problem using an arbitrarily selected scalar function $\chi(r)$  and  a set of  tranformation rules
+\begin{align}
+  & \vb A  \to \vb  A +\nabla\chi , \\
+	& \phi \to \phi-   \frac{1}{c}  \pdv{\chi}{t} ,
+  \label{eq:gauge-rules}
+  \\
+  & \hat{U} = e^{-\imath\chi} = e^{\imath \vb r\cdot\vb A(t)} \label{eq:U-def} \\
+  & \Psi \to \Psi' = \hat{U}\Psi. 
+\end{align}
+The Hamiltonian transforms as:
+\begin{equation}
+  \hat{H}
+  \to\hat{H}'
+  = \hat{U}\hat{H}\hat{U}^\dagger
+    - \imath \hat{U}\frac{\partial\hat{U}^\dagger}{\partial t}.
+  \label{eq:H-transform}
+\end{equation}
+A specific choice of $\chi$ relevant to periodic systems is discussed in Sec.~\ref{sec:velocity_gauge}.
+
+%In  chemistry application  the most common choice for RT-TDDFT  is so called  \emph{Length Gauge} 
+% which  sets  $\vb A = 0$,  and   the external EM   field is introduced  trough a curl-free and magnetic-field free
+%scalar potential
+%\begin{equation}
+%\Phi(r,t)= -\vb E \cdot \vb r,
+%\label{eq:EM_dipolar}
+%\end{equation}
+%where  $\vb E=const$ represents a uniform (homogenuos) electric field,  and is usually used to investigate an optical response of finite size molecular system.
+%The potential in   Eq. \ref{eq:EM_dipolar}  represents so  dipolar  scalar potential and can obtained  in long wavelength limit ($\vb q \to0$) of $e^{\imath \vq cdot\vbr}$
+%in the  plane wave  Eq. \ref{eq:plane_wave_vector_potential}.
+%This approximation is valid when size of molecular system $L$  is such that  $|\vb q| L<<1 $  meaning thatm olecualr size $L$ is  mcuh smaller than 
+%the radiation wavelength  $\lambda =\frac{2 \pi}{|\vb q|}$, so the field is effectively uniform over the system. 
+
+ 
+In chemistry applications, the most common choice for RT-TDDFT is the \emph{length gauge}, 
+in which $\vb A = 0$ and the external electromagnetic field
+enters entirely through a magnetic-field-free scalar potential.
+In the long-wavelength limit, applicable when the size of the system $L$ satisfies $|\vb q| L \ll 1$ (i.e.\ $L$ is much
+smaller than the radiation wavelength $\lambda = 2\pi/|\vb q|$), the external field is effectively
+spatially uniform over the system and the interaction reduces to the electric-dipole approximation.
+A spatially uniform electric field $\vb E(t)$ is represented by the dipolar scalar potential
+\begin{equation}
+  \Phi(\vb r,t) = -\vb E(t) \cdot \vb r,
+  \label{eq:EM_dipolar}
+\end{equation}
+as can be verified from $\vb E = -\nabla\Phi$. This form is widely used to investigate the optical response of finite molecular systems.
+
+While the plane-wave form~\eqref{eq:plane_wave_vector_potential} describes a monochromatic perturbation, in practice the
+time-oscillating factor may be replaced by an arbitrary envelope function $f(t)$, so that the applied electric field
+takes the form $\vb E(t) = \hat{\vb e}\, E_0\, f(t)$, where $\hat{\vb e}$ is the polarization direction.
+A particularly useful choice is the Dirac delta kick, $f(t) = \kappa\,\delta(t)$, which delivers a broadband
+impulsive perturbation of strength $\kappa$ at $t=0$.  Since the delta function has a flat spectral content,
+a single time propagation yields the dynamical response at all frequencies simultaneously.
+The frequency-dependent absorption spectrum is then obtained from the Fourier transform of the time-dependent observable
+monitored during the propagation.
+
+For finite systems, the relevant observable is the time-dependent dipole moment 
+$  {\vb d}(t) = \int \vb r\rho(\vb r,t) d\vb r^3$, 
+from which the polarizability and absorption cross section are obtained from  a dipole correlation function  by Fourier transform.
+For periodic systems, however, the scalar-potential form $\Phi = -\vb E(t)\cdot\vb r$ is not compatible with
+periodic boundary conditions, because the position operator $\vb r$ is discontinuous at the cell boundary.
+This motivates the use of the velocity-gauge formulation, in which the external field enters through a spatially
+uniform vector potential $\vb A(t)$ and the scalar potential is set to zero.
+For finite systems, the optical response is extracted from the time-dependent dipole moment, which depends
+on the density, whereas for truly periodic systems the relevant observable is the current density
+$\vb j(\vb r,t)$, which remains well defined under periodic boundary conditions.
+
+
+
+In a summary, it is useful at this point to recognize that external
+perturbations in RT-TDDFT fall into two physically distinct categories.
+The first category comprises electromagnetic field
+perturbations, in which the external field enters through
+the vector potential in the kinetic energy via the minimal
+coupling $\vb{\hat p} \to \vb{\hat p} - (q_e/c)\vb A$.
+The choice of gauge (length or velocity) determines how
+this coupling is represented in the Hamiltonian, and the
+long-wavelength limit leads to the dipolar approximation
+discussed above.
+Typical applications include optical absorption spectra
+and laser-driven electron dynamics.
+
+The second category comprises scalar potential
+perturbations of the form
+\begin{equation}
+  \Phi_{\mathrm{ext}}(\vb r,t)
+  = \Phi_0\, e^{\imath(\vb q\cdot\vb r - \omega t)}
+    + \text{c.c.},
+  \label{eq:scalar_probe}
+\end{equation}
+which are added directly to the Kohn--Sham potential
+$\hat V_{\mathrm{KS}}$ and involve no gauge freedom.
+The electric field generated by such a potential,
+$\vb E = -\nabla\Phi_{\mathrm{ext}}
+\propto \imath\,\vb q\, e^{\imath(\vb q\cdot\vb r - \omega t)}$,
+is purely longitudinal (parallel to $\vb q$) and carries
+no magnetic field.
+This type of perturbation probes the density--density
+response function $\chi(\vb q,\omega)$ and is the
+natural tool for studying collective excitations at
+finite momentum transfer, such as plasmon dispersion
+and charge-density oscillations.
+
+Although both categories may involve the same spatial
+factor $e^{\imath\vb q\cdot\vb r}$, they are physically
+and computationally distinct: the electromagnetic
+perturbation couples to the electron momentum through
+the kinetic energy and requires gauge treatment, while
+the scalar perturbation couples to the electron density
+through the potential energy and enters the calculation
+without any gauge considerations.
+
+
+Many important spectroscopies and collective excitations
+involve finite momentum transfer and lie beyond the
+dipolar approximation.
+These include plasmon dispersion
+$\varepsilon(\vb q,\omega)$, electron energy-loss
+spectroscopy (EELS) where the beam transfers finite
+$\vb q$ to the sample, inelastic X-ray scattering (IXS),
+and magnon dispersion in magnetic systems.
+Table~\ref{tab:gauge_cases} summarizes the common
+external-field representations used in TDDFT and
+their typical applications.
+
+\begin{table}[t]
+\footnotesize
+\caption{Summary of common external-field representations
+  used in TDDFT, applicable to both linear-response and
+  real-time formulations.
+  In Coulomb gauge, the scalar potential carries the
+  longitudinal part of the electric field, while the
+  transverse vector potential carries the transverse
+ electric field and the magnetic field.}
+\label{tab:gauge_cases}
+\centering
+\begin{tabular}{p{2.5cm}p{4.2cm}p{3.2cm}p{1.4cm}p{4.0cm}}
+\hline
+Case
+  & Potentials
+  & Field character
+  & $B$ field
+  & Typical applications \\
+\hline
+Length gauge, dipole
+  & $\Phi=-\mathbf r\cdot\mathbf E(t)$,
+    $\mathbf A=0$
+  & homogeneous electric field
+  & no
+  & optical absorption of finite
+    systems,
+    photochemistry
+    \cite{Yabana1996,Jakowski2025} \\[0.6em]
+Velocity gauge
+  & $\Phi=0$,
+    $\mathbf A=\mathbf A(t)$
+  & homogeneous field
+  & no
+  & optical response of solids and
+    periodic systems under PBC
+    \cite{Bertsch2000,Mattiat2022,Hanasaki2023}
+    \\[0.6em]
+Finite-$\mathbf q$ scalar probe
+  & $\Phi \propto e^{i(\mathbf q\cdot\mathbf r
+    -\omega t)}$, $\mathbf A=0$
+  & longitudinal,
+    $\mathbf E \parallel \mathbf q$
+  & no
+  & density response, loss function,
+    EELS, plasmon
+    dispersion
+    \cite{Onida2002,Weissker2006,Weissker2010}
+    \\[0.6em]
+Finite-$\mathbf q$ EM wave
+  & $\mathbf A \propto
+    \boldsymbol{\epsilon}\,
+    e^{i(\mathbf q\cdot\mathbf r-\omega t)}$,
+    $\mathbf q\cdot\boldsymbol{\epsilon}=0$
+  & transverse EM radiation
+  & yes
+  & IXS, radiative coupling
+    beyond dipole,
+    magnon dispersion
+    \cite{TancogneDejean2020,Krieger2015}
+    \\
+\hline
+\end{tabular}
+\end{table}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{ VELOCITY GAUGE}
+
+
+For finite systems, the relevant observable is the
+time-dependent dipole moment $\vb d(t) = \int \vb r\,
+\rho(\vb r,t)\, d\vb r$, from which the polarizability
+and absorption cross section follow by Fourier transform.
+For periodic systems, however, the scalar-potential form
+$\Phi = -\vb E(t)\cdot\vb r$ is not compatible with
+periodic boundary conditions, because the position
+operator $\vb r$ is discontinuous at the cell boundary.
+This motivates the use of the velocity-gauge formulation,
+in which the external field enters through a spatially
+uniform vector potential $\vb A(t)$ and the scalar
+potential is set to zero.
+
+The time-dependent Kohn--Sham equation then takes the form
+\begin{equation}
+  \imath \pdv{}{t} \Psi_j(\vb r,t) = \left[
+    \frac{1}{2m}\left(\vb{\hat p}
+    - \frac{q_e}{c}\vb A(t)\right)^2
+    + \hat V_{\mathrm{KS}}[\rho](t)
+  \right] \Psi_j(\vb r,t),
+  \label{eq:tdks_velocity_gauge}
+\end{equation}
+where the two gauges are related by the Göppert-Mayer
+transformation, discussed in detail in
+Sec.~\ref{sec:velocity_gauge}.
+In the velocity gauge, the position operator no longer
+appears in the Hamiltonian and all terms are compatible
+with periodic boundary conditions.
+Correspondingly, the physical observable used to extract
+the optical response is the time-dependent current density
+$\vb j(\vb r,t)$ rather than the dipole moment, since
+the current is well defined under periodic boundary
+conditions whereas $\vb d(t)$ is not.
+
+
+
+
+
+===========
+\subsection{REMAINING STUFF}
+
+To describe the interaction of electrons with an external electromagnetic field, we start from the time-dependent Kohn--Sham (TDKS) equation for the occupied Kohn--Sham orbitals,
+\begin{equation}
+i\frac{\partial}{\partial t}\psi_{n}(\mathbf r,t) = \hat H_{\mathrm{KS}}(t)\psi_{n}(\mathbf r,t),
+\label{eq:tdks_general}
+\end{equation}
+where, in atomic units, the TDKS Hamiltonian in the presence of external scalar and vector potentials is written as
+\begin{equation}
+\hat H_{\mathrm{KS}}(t) = \frac{1}{2} \left[ \hat{\mathbf p} + \frac{1}{c}\mathbf A_{\mathrm{ext}}(\mathbf r,t) \right]^2
+                       - \Phi_{\mathrm{ext}}(\mathbf r,t) + \hat V_{\mathrm{ion}} + \hat V_{\mathrm{H}}[n](\mathbf r,t) + \hat V_{\mathrm{xc}}[n](\mathbf r,t).
+\label{eq:tdks_minimal_coupling}
+\end{equation}
+Here \(\hat{\mathbf p}=-i\nabla\), \(\Phi_{\mathrm{ext}}(\mathbf r,t)\) and \(\mathbf A_{\mathrm{ext}}(\mathbf r,t)\) are the external scalar and vector potentials, and \(\hat V_{\mathrm{ion}}\), \(\hat V_{\mathrm{H}}[n]\), and \(\hat V_{\mathrm{xc}}[n]\) denote the ionic, Hartree, and exchange-correlation contributions, respectively. In practical implementations based on pseudopotentials, \(\hat V_{\mathrm{ion}}\) may contain both local and nonlocal parts. The corresponding electric and magnetic fields are obtained from
+\begin{equation}
+\mathbf E(\mathbf r,t)
+=
+-\nabla \Phi_{\mathrm{ext}}(\mathbf r,t)
+-
+\frac{1}{c}\frac{\partial \mathbf A_{\mathrm{ext}}(\mathbf r,t)}{\partial t},
+\qquad
+\mathbf B(\mathbf r,t)
+=
+\nabla \times \mathbf A_{\mathrm{ext}}(\mathbf r,t).
+\label{eq:em_fields_from_potentials}
+\end{equation}
+
+For finite systems, such as atoms and molecules, the interaction with light is commonly treated within the long-wavelength, or electric-dipole, approximation. In this limit the spatial phase factor of the electromagnetic wave,
+\begin{equation}
+e^{i(\mathbf q\cdot \mathbf r-\omega t)},
+\end{equation}
+varies negligibly over the extent of the system, so that \(\mathbf q\cdot \mathbf r \ll 1\) and the field may be regarded as spatially uniform. The interaction is then conveniently written in the length gauge as
+\begin{equation}
+\hat V_{\mathrm{ext}}^{(L)}(t)
+=
+-\mathbf r \cdot \mathbf E(t).
+\label{eq:length_gauge_perturbation}
+\end{equation}
+Equivalently, one may regard this perturbation as arising from the scalar potential
+\begin{equation}
+\Phi_{\mathrm{ext}}^{(L)}(\mathbf r,t)
+=
+\mathbf r\cdot \mathbf E(t),
+\qquad
+\mathbf A_{\mathrm{ext}}^{(L)}(\mathbf r,t)=0.
+\label{eq:length_gauge_potentials}
+\end{equation}
+Within this approximation, the magnetic component of the radiation field is neglected, and the physically relevant quantity is the field polarization direction. Since the wavevector \(\mathbf q\) is no longer retained explicitly, the terms transverse and longitudinal are not the most useful descriptors at this stage.
+
+The length-gauge form of Eq.~\eqref{eq:length_gauge_perturbation} is well suited for finite systems, but becomes problematic for periodic solids. In particular, the scalar potential \(-\mathbf E(t)\cdot\mathbf r\) is not lattice periodic and is therefore incompatible with Bloch-periodic boundary conditions. In real-space representations this issue is often manifested as a discontinuous sawtooth-like potential across the cell boundary. More fundamentally, the response of a periodic solid to a homogeneous electric field is more naturally expressed in terms of macroscopic current or polarization rather than a direct scalar-potential coupling through the position operator.
+
+For this reason, periodic RT-TDDFT is commonly formulated in the velocity gauge. For a spatially homogeneous electric field, a gauge transformation removes the scalar potential and introduces a purely time-dependent vector potential,
+\begin{equation}
+\Phi_{\mathrm{ext}}^{(V)}(\mathbf r,t)=0,
+\qquad
+\mathbf A_{\mathrm{ext}}^{(V)}(\mathbf r,t)=\mathbf A(t),
+\qquad
+\mathbf E(t)
+=
+-\frac{1}{c}\frac{d\mathbf A(t)}{dt}.
+\label{eq:velocity_gauge_uniform}
+\end{equation}
+The TDKS Hamiltonian then takes the form
+\begin{equation}
+\hat H_{\mathrm{KS}}^{(V)}(t)
+=
+\frac{1}{2}
+\left[
+\hat{\mathbf p}
++
+\frac{1}{c}\mathbf A(t)
+\right]^2
++
+\hat V_{\mathrm{ion}}
++
+\hat V_{\mathrm{H}}[n](\mathbf r,t)
++
+\hat V_{\mathrm{xc}}[n](\mathbf r,t).
+\label{eq:tdks_velocity_gauge}
+\end{equation}
+This formulation is gauge-equivalent to the dipole length gauge of Eq.~\eqref{eq:length_gauge_perturbation}, but is considerably better suited for periodic systems because the perturbation preserves translational symmetry. It is important to emphasize that the homogeneous-field velocity gauge of Eq.~\eqref{eq:velocity_gauge_uniform} is still a dipole-limit description. Since \(\mathbf A(t)\) carries no spatial dependence, it does not represent a full propagating electromagnetic wave and does not generate a magnetic field, \(\nabla\times\mathbf A(t)=0\).
+
+A more general description of radiative coupling is obtained by retaining the spatial dependence of the external field. In Coulomb gauge,
+\begin{equation}
+\nabla \cdot \mathbf A_{\mathrm{ext}}(\mathbf r,t)=0,
+\label{eq:coulomb_gauge_condition2}
+\end{equation}
+a transverse electromagnetic plane wave may be written as
+\begin{equation}
+\mathbf A_{\mathrm{ext}}(\mathbf r,t)
+=
+\mathbf A_{0}
+e^{i(\mathbf q\cdot\mathbf r-\omega t)}
++\mathrm{c.c.},
+\qquad
+\mathbf q\cdot\mathbf A_{0}=0.
+\label{eq:transverse_plane_wave}
+\end{equation}
+The condition \(\mathbf q\cdot\mathbf A_{0}=0\) expresses the transverse character of the field, namely that the polarization direction is perpendicular to the propagation direction \(\mathbf q\). In this case both electric and magnetic components are present, with
+\begin{equation}
+\mathbf E(\mathbf r,t)
+=
+-\frac{1}{c}\frac{\partial \mathbf A_{\mathrm{ext}}(\mathbf r,t)}{\partial t},
+\qquad
+\mathbf B(\mathbf r,t)
+=
+\nabla\times \mathbf A_{\mathrm{ext}}(\mathbf r,t).
+\label{eq:transverse_wave_fields}
+\end{equation}
+This finite-\(\mathbf q\) formulation is more general than the dipole approximation because it explicitly retains momentum transfer and spatial phase information. In the long-wavelength limit, \(e^{i\mathbf q\cdot\mathbf r}\approx 1\), it reduces to the homogeneous-field description discussed above.
+
+It is useful to distinguish the transverse plane wave of Eq.~\eqref{eq:transverse_plane_wave} from a scalar-potential perturbation of the form
+\begin{equation}
+\Phi_{\mathrm{ext}}(\mathbf r,t)
+=
+\Phi_{0}\,e^{i(\mathbf q\cdot\mathbf r-\omega t)},
+\qquad
+\mathbf A_{\mathrm{ext}}(\mathbf r,t)=0.
+\label{eq:scalar_probe}
+\end{equation}
+In this case the electric field is
+\begin{equation}
+\mathbf E(\mathbf r,t)
+=
+-\nabla \Phi_{\mathrm{ext}}(\mathbf r,t)
+=
+-i\mathbf q \,\Phi_{0}\,e^{i(\mathbf q\cdot\mathbf r-\omega t)},
+\label{eq:longitudinal_field}
+\end{equation}
+which is parallel to \(\mathbf q\). Such a perturbation is therefore longitudinal and probes the density response of the system at finite momentum transfer. This type of field is natural for the calculation of density-density response functions, loss spectra, and plasmonic excitations, whereas the transverse vector-potential form of Eq.~\eqref{eq:transverse_plane_wave} describes radiative coupling to an external electromagnetic wave.
+
+The distinction between these external-field representations is also reflected in the analysis of RT-TDDFT simulations. For finite systems treated in the dipole approximation, the response is commonly characterized through the time-dependent dipole moment and its Fourier transform, which yield optical absorption spectra and frequency-dependent polarizabilities. In periodic systems formulated in the velocity gauge, the natural observable is instead the time-dependent current density, from which optical conductivity, dielectric response, and related quantities may be extracted. In the exact limit, length-gauge and velocity-gauge descriptions are equivalent, provided that observables and operators are transformed consistently. In practice, however, the current-based formulation is the natural choice for periodic systems under homogeneous fields, while the more general finite-\(\mathbf q\) framework provides a clear route toward momentum-resolved response beyond the dipole limit.
+
+In the present work we employ the homogeneous-field velocity-gauge formulation of Eqs.~\eqref{eq:velocity_gauge_uniform} and \eqref{eq:tdks_velocity_gauge} as the working framework for periodic RT-TDDFT. This choice preserves periodic boundary conditions, provides direct access to current-based observables, and establishes a natural starting point for future extensions to finite-\(\mathbf q\) perturbations and momentum-resolved spectroscopies.
+
+
+
