@@ -29,11 +29,11 @@ capability of \texttt{RMG} through calculations on nitrogen-vacancy
 (NV) centers in diamond at varying supercell sizes.
 
 In all calculations, a momentum kick of amplitude $E_0 =
-\myred{[\mathrm{value}]}$~a.u.\ was applied at $t=0$ along each
+\myblue{[\mathrm{value}]}$~a.u.\ was applied at $t=0$ along each
 Cartesian direction independently, and the optical conductivity
 was obtained from the Fourier transform of the resulting current
 density.
-\myred{[Add: common computational parameters -- time step, total
+\myblue{[Add: common computational parameters -- time step, total
 propagation time, broadening gamma, XC functional, pseudopotential
 library used for all systems.]}
 
@@ -51,20 +51,20 @@ velocity gauge implementation in the limit of a quasi-one-dimensional
 geometry, where the longitudinal ($z$-direction) and transverse
 ($x$, $y$-direction) optical responses differ substantially.
 
-\myred{[Computational details:
+\myblue{[Computational details:
 - Supercell geometry: H--H bond length, H$_2$--H$_2$ separation
-- K-point sampling: \myred{[N\_k points along z, Gamma in x and y]}
-- Grid spacing: \myred{[value]} a$_0$
-- XC functional: \myred{[PBE or LDA]}
-- Pseudopotential: \myred{[type]}
-- Time step $\Delta t$: \myred{[value]} a.u.
-- Total simulation time: \myred{[value]} a.u.
-- Broadening $\gamma$: \myred{[value]} eV]}
+- K-point sampling: \myblue{[N\_k points along z, Gamma in x and y]}
+- Grid spacing: \myblue{[value]} a$_0$
+- XC functional: \myblue{[PBE or LDA]}
+- Pseudopotential: \myblue{[type]}
+- Time step $\Delta t$: \myblue{[value]} a.u.
+- Total simulation time: \myblue{[value]} a.u.
+- Broadening $\gamma$: \myblue{[value]} eV]}
 
 \begin{figure}[ht!]
   \includegraphics[width=\columnwidth]{Figs/out-h2.pdf}
   \caption{\footnotesize
-    \myred{[Caption for H$_2$ chain optical conductivity figure.
+    \myblue{[Caption for H$_2$ chain optical conductivity figure.
     Should describe: (a) longitudinal $\sigma_{zz}(\omega)$ and
     transverse $\sigma_{xx}(\omega)$ components from RMG compared
     with Octopus; (b) convergence with k-point density if shown;
@@ -74,7 +74,7 @@ geometry, where the longitudinal ($z$-direction) and transverse
   \label{fig:h2}
 \end{figure}
 
-\myred{[Discussion points:
+\myblue{[Discussion points:
 - Agreement between RMG and Octopus for both longitudinal and
   transverse components
 - K-point convergence: how many k-points needed for converged spectrum?
@@ -101,19 +101,19 @@ This system tests the implementation of two-dimensional periodic
 boundary conditions and the symmetry enforcement of the conductivity
 tensor in \texttt{RMG}.
 
-\myred{[Computational details:
-- Monolayer geometry: lattice constant \myred{[a]} \AA,
-  vacuum layer \myred{[d]} \AA\ to prevent inter-layer interactions
-- K-point sampling: \myred{[N\_k $\times$ N\_k $\times$ 1]} Monkhorst-Pack
-- Grid spacing: \myred{[value]} a$_0$
-- XC functional: \myred{[PBE]}
-- Pseudopotential: \myred{[type]}
-- Time step and total simulation time: \myred{[values]}]}
+\myblue{[Computational details:
+- Monolayer geometry: lattice constant \myblue{[a]} \AA,
+  vacuum layer \myblue{[d]} \AA\ to prevent inter-layer interactions
+- K-point sampling: \myblue{[N\_k $\times$ N\_k $\times$ 1]} Monkhorst-Pack
+- Grid spacing: \myblue{[value]} a$_0$
+- XC functional: \myblue{[PBE]}
+- Pseudopotential: \myblue{[type]}
+- Time step and total simulation time: \myblue{[values]}]}
 
 \begin{figure}[ht!]
   \includegraphics[width=\columnwidth]{Figs/out-hBN.pdf}
   \caption{\footnotesize
-    \myred{[Caption for hBN optical conductivity figure.
+    \myblue{[Caption for hBN optical conductivity figure.
     Should describe: in-plane $\sigma_{xx}(\omega)$ from RMG and
     Octopus; out-of-plane component if shown; indicate the onset
     of absorption near the band gap.
@@ -123,7 +123,7 @@ tensor in \texttt{RMG}.
   \label{fig:hbn}
 \end{figure}
 
-\myred{[Discussion points:
+\myblue{[Discussion points:
 - Agreement between RMG and Octopus for in-plane conductivity
 - Symmetry: show that $\sigma_{xx}=\sigma_{yy}$ (Fruit 3 from CONTEXT.md)
 - Physical features: onset at band gap, first excitonic peak if visible
@@ -144,21 +144,21 @@ implementation.
 The cubic symmetry requires $\sigma_{xx}(\omega) = \sigma_{yy}(\omega)
 = \sigma_{zz}(\omega)$, providing an immediate symmetry validation.
 
-\myred{[Computational details:
-- Unit cell: conventional 8-atom cell, lattice constant \myred{[a]} \AA
-- K-point sampling: \myred{[N\_k $\times$ N\_k $\times$ N\_k]} Monkhorst-Pack
-- Grid spacing: \myred{[value]} a$_0$
-- XC functional: \myred{[PBE]}
-- Pseudopotential: \myred{[type, NCPP]}
-- Number of occupied + virtual states: \myred{[N\_occ + N\_virt]}
-- Time step $\Delta t$: \myred{[value]} a.u.
-- Total simulation time: \myred{[value]} a.u. (\myred{[value]} fs)
-- Broadening $\gamma$: \myred{[value]} eV]}
+\myblue{[Computational details:
+- Unit cell: conventional 8-atom cell, lattice constant \myblue{[a]} \AA
+- K-point sampling: \myblue{[N\_k $\times$ N\_k $\times$ N\_k]} Monkhorst-Pack
+- Grid spacing: \myblue{[value]} a$_0$
+- XC functional: \myblue{[PBE]}
+- Pseudopotential: \myblue{[type, NCPP]}
+- Number of occupied + virtual states: \myblue{[N\_occ + N\_virt]}
+- Time step $\Delta t$: \myblue{[value]} a.u.
+- Total simulation time: \myblue{[value]} a.u. (\myblue{[value]} fs)
+- Broadening $\gamma$: \myblue{[value]} eV]}
 
 \begin{figure}[ht!]
   \includegraphics[width=\columnwidth]{Figs/out-Si.pdf}
   \caption{\footnotesize
-    \myred{[Caption for Si optical conductivity figure.
+    \myblue{[Caption for Si optical conductivity figure.
     Should describe: $\sigma_{xx}(\omega)$ (= $\sigma_{yy}$ = $\sigma_{zz}$
     by cubic symmetry) from RMG compared with Octopus;
     indicate band gap region; optionally compare with experiment.
@@ -167,7 +167,7 @@ The cubic symmetry requires $\sigma_{xx}(\omega) = \sigma_{yy}(\omega)
   \label{fig:si}
 \end{figure}
 
-\myred{[Discussion points:
+\myblue{[Discussion points:
 - Agreement between RMG and Octopus: peak positions, lineshapes
 - Symmetry: $\sigma_{xx}=\sigma_{yy}=\sigma_{zz}$ (Fruit 3)
 - Energy conservation test for periodic case (Fruit 5 from CONTEXT.md):
@@ -193,19 +193,19 @@ with a common Hartree potential, yielding spin-resolved optical
 conductivities that can be compared with \texttt{Octopus} and with
 available experimental data.
 
-\myred{[Computational details:
-- Unit cell: \myred{[describe geometry and magnetic ordering]}
-- K-point sampling: \myred{[N\_k $\times$ N\_k $\times$ N\_k]}
-- XC functional: \myred{[PBE or PBE+U; specify U if used]}
-- Pseudopotential: \myred{[type, NCPP]}
+\myblue{[Computational details:
+- Unit cell: \myblue{[describe geometry and magnetic ordering]}
+- K-point sampling: \myblue{[N\_k $\times$ N\_k $\times$ N\_k]}
+- XC functional: \myblue{[PBE or PBE+U; specify U if used]}
+- Pseudopotential: \myblue{[type, NCPP]}
 - Initial spin configuration: ferromagnetic, moments on Cr sites
-- Time step and total simulation time: \myred{[values]}
-- Broadening: \myred{[value]} eV]}
+- Time step and total simulation time: \myblue{[values]}
+- Broadening: \myblue{[value]} eV]}
 
 \begin{figure}[ht!]
   \includegraphics[width=\columnwidth]{Figs/out-CrI3.pdf}
   \caption{\footnotesize
-    \myred{[Caption for \ch{CrI3} optical conductivity figure.
+    \myblue{[Caption for \ch{CrI3} optical conductivity figure.
     Should describe: spin-up and spin-down optical conductivities
     from RMG compared with Octopus; indicate the relevant spectral
     features (charge-transfer peaks, d-d transitions);
@@ -214,7 +214,7 @@ available experimental data.
   \label{fig:cri3}
 \end{figure}
 
-\myred{[Discussion points:
+\myblue{[Discussion points:
 - Agreement between RMG and Octopus for both spin channels
 - Physical interpretation: which spectral features are spin-up vs spin-down?
   Charge-transfer excitations, Cr d-d transitions
@@ -250,29 +250,29 @@ concentration at which the isolated-defect limit is reached.
 
 We investigate this convergence by performing RT-TDDFT calculations
 on diamond supercells containing a single NV center, systematically
-increasing the cell size from \myred{[N$_{\min}$] to [\myred{N$_{\max}$}}]
+increasing the cell size from \myblue{[N$_{\min}$] to [\myblue{N$_{\max}$}}]
 atoms.
-\myred{[Specific supercell sizes to be determined. Suggested sequence
+\myblue{[Specific supercell sizes to be determined. Suggested sequence
 (subject to computational feasibility on Frontier):
 64, 216, 512, 1000, [larger if possible]
 These correspond to defect concentrations of approximately
-\myred{[values]} cm$^{-3}$.]}
+\myblue{[values]} cm$^{-3}$.]}
 
-\myred{[Computational details:
-- Host: diamond cubic, lattice constant \myred{[a]} \AA
+\myblue{[Computational details:
+- Host: diamond cubic, lattice constant \myblue{[a]} \AA
 - Defect: single NV$^-$ center (negatively charged)
 - Spin state: triplet ground state ($S=1$), ferromagnetic alignment
 - K-point sampling: Gamma point only for large supercells
-  (\myred{[note if Gamma+additional k-points used for small cells]})
-- XC functional: \myred{[PBE]}
-- Pseudopotential: \myred{[NCPP type]}
-- Number of states: \myred{[N\_occ + N\_virt per spin]}
-- Time step and total simulation time: \myred{[values]}
+  (\myblue{[note if Gamma+additional k-points used for small cells]})
+- XC functional: \myblue{[PBE]}
+- Pseudopotential: \myblue{[NCPP type]}
+- Number of states: \myblue{[N\_occ + N\_virt per spin]}
+- Time step and total simulation time: \myblue{[values]}
 - Computational platform: Frontier at ORNL
-- Nodes used: \myred{[values per system size]}]}
+- Nodes used: \myblue{[values per system size]}]}
 
 \begin{figure}[ht!]
-  \myred{[Figure placeholder: NV center convergence figure.
+  \myblue{[Figure placeholder: NV center convergence figure.
   Suggested panels:
   (a) Optical conductivity $\sigma(\omega)$ for each supercell size,
       showing convergence with increasing cell size
@@ -282,16 +282,16 @@ These correspond to defect concentrations of approximately
   Label defect-related spectral features (zero-phonon line region,
   broad phonon sideband).]}
   \caption{\footnotesize
-    \myred{[Caption for NV center convergence figure.
+    \myblue{[Caption for NV center convergence figure.
     Describe the system, the supercell sizes shown, the key spectral
     features, and the convergence behavior. Identify the minimum
     supercell size for which the isolated-defect optical spectrum is
-    recovered within \myred{[tolerance]}.]}
+    recovered within \myblue{[tolerance]}.]}
   }
   \label{fig:nv}
 \end{figure}
 
-\myred{[Discussion points:
+\myblue{[Discussion points:
 - At what supercell size does the spectrum converge?
   What is the corresponding defect concentration threshold?
 - What is the physical origin of the convergence: direct defect-defect

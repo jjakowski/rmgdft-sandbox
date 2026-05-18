@@ -66,6 +66,10 @@
 \affiliation{Department of Physics, North Carolina State University,
   Raleigh, NC 27695-8202, USA}
 
+\author{Liangbo Liang}
+\affiliation{Center For Nanophase Materials Sciences,
+  Oak Ridge National Laboratory, Oak Ridge, TN 37831, USA}
+
 \author{Emil Briggs}
 \affiliation{Department of Physics, North Carolina State University,
   Raleigh, NC 27695-8202, USA}
@@ -132,20 +136,34 @@ and outlook.]}
 
 \input{sec_intro}
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Methodology & implementation
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Methodology}    %------------------------------------------
+\label{sec:methodology}
+
 \input{sec_theory_EM-jj}
-\newpage 
-\input{sec_theory}
+
+\input{sec_theory_gauge}
+
+
+\section{Implementation} %------------------------------------------
+\label{sec:implementation}
 
 \input{sec_implementation}
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Simulations 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \input{sec_benchmarks}
 
-\input{sec_2_2_EM_interaction}
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Summary and Outlook
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Summary and Outlook}
 \label{sec:summary}
+
 
 \myblue{[To be written after all other sections are complete. Should
 summarize the key contributions, state the validated capabilities,
@@ -153,6 +171,13 @@ and outline planned extensions: (1) continuous driving field / nonlinear
 response, (2) non-collinear spin RT-TDDFT, (3) Ehrenfest dynamics
 combined with spin, (4) ultrasoft pseudopotentials.]}
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\newpage 
+
+\input{sec_theory_EM-jj_remaining}
+\input{sec_theory}
+
+\input{sec_2_2_EM_interaction}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Acknowledgements
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -166,6 +191,7 @@ This research used resources of the Oak Ridge Leadership Computing
 Facility at the Oak Ridge National Laboratory, which is supported by
 the Office of Science of the U.S.\ Department of Energy under
 Contract No.\ DE-AC05-00OR22725.
+
 \myblue{[Additional funding sources to be added: confirm current grants
 with Jacek, Wenchang, and Jerzy Bernholc.]}
 Computing resources were provided through the Innovative and Novel
@@ -218,17 +244,31 @@ appendix; or can be removed if not needed.]}
 missing refs:
 
 
-Warning--I didn't find a database entry for "jakowski-rmg-tddft-2025"
-Warning--I didn't find a database entry for "resta-1998"
-Warning--I didn't find a database entry for "king-smith-vanderbilt-1993"
-Warning--I didn't find a database entry for "Mattiat-Luber-2022"
-Warning--I didn't find a database entry for "furche-2001"
-Warning--I didn't find a database entry for "ding-gauge-2011"
-Warning--I didn't find a database entry for "pickard-mauri-2001"
-Warning--I didn't find a database entry for "starace-1971"
-Warning--I didn't find a database entry for "exciting-2014"
-Warning--I didn't find a database entry for "nv-center-review"
-Warning--I didn't find a database entry for "yabana-bertsch-1996"
-Warning--I didn't find a database entry for "kleinman-bylander-1982"
-Warning--I didn't find a database entry for "hamann-1989"
+Warning--I didn't find a database entry for "jakowski-rmg-tddft-2025"   :   
+Warning--I didn't find a database entry for "resta-1998"                : [1] R. Resta, Rev. Mod. Phys. 66, 899 (1994).
+Warning--I didn't find a database entry for "king-smith-vanderbilt-1993": [2] R. D. King-Smith and D. Vanderbilt, Phys. Rev. B 47, 1651 (1993).
+Warning--I didn't find a database entry for "Mattiat-Luber-2022"        : [8] J. Mattiat and S. Luber, J. Chem. Theory Comput. 18, 2470 (2022).
+                                                                          [9] S. Luber, J. Chem. Theory Comput. 17, 3719 (2021).
+Warning--I didn't find a database entry for "furche-2001"               : 
+Warning--I didn't find a database entry for "ding-gauge-2011"           :  
+Warning--I didn't find a database entry for "pickard-mauri-2001"        : [12] C. J. Pickard and F. Mauri, Phys. Rev. B 63, 245101 (2001).     
+Warning--I didn't find a database entry for "starace-1971"              : [4] A. F. Starace, Phys. Rev. A 3, 1242 (1971).           
+                                                                          [5] A. F. Starace, Phys. Rev. A 8, 1141 (1973).
+Warning--I didn't find a database entry for "exciting-2014"             :
+Warning--I didn't find a database entry for "nv-center-review"          :   
+Warning--I didn't find a database entry for "yabana-bertsch-1996"       : [7] K. Yabana and G. F. Bertsch, Phys. Rev. B 54, 4484 (1996).     
+Warning--I didn't find a database entry for "kleinman-bylander-1982"    : [6] L. Kleinman and D. M. Bylander, Phys. Rev. Lett. 48, 1425 (1982).        
+Warning--I didn't find a database entry for "hamann-1989"               : 
 
+   [1] R. Resta, Rev. Mod. Phys. 66, 899 (1994).                                                                   
+   [2] R. D. King-Smith and D. Vanderbilt, Phys. Rev. B 47, 1651 (1993).
+?  [3] J. J. Sakurai and J. Napolitano, Modern Quantum Mechanics, 2nd ed. (Addison-Wesley, Reading, MA, 2011).
+   [4] A. F. Starace, Phys. Rev. A 3, 1242 (1971).
+   [5] A. F. Starace, Phys. Rev. A 8, 1141 (1973).
+   [6] L. Kleinman and D. M. Bylander, Phys. Rev. Lett. 48, 1425 (1982).
+   [7] K. Yabana and G. F. Bertsch, Phys. Rev. B 54, 4484 (1996).
+   [8] J. Mattiat and S. Luber, J. Chem. Theory Comput. 18, 2470 (2022).
+   [9] S. Luber, J. Chem. Theory Comput. 17, 3719 (2021).
+?  [10] B. M. Wong et al., J. Chem. Theory Comput. 19, 6241 (2023).
+?  [11] J. Jakowski et al., J. Chem. Theory Comput. (2025).
+   [12] C. J. Pickard and F. Mauri, Phys. Rev. B 63, 245101 (2001).

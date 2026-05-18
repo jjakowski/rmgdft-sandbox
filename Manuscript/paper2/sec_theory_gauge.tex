@@ -1,8 +1,51 @@
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\subsection{ Gauge  transformations}
+\label{sec:velocity_gauge}
 
-In this section     we discuss traansformation og Time-Dependent Kohn_Sham  equation  under differet gauge representation within Coulomb gauge condtion.
+In this section we discuss traansformation og Time-Dependent Kohn-Sham  equation  under differet gauge representation within Coulomb gauge condtion.
 The srtarting point are  general Eqs. [ A'->A+ '  ; Phi'->Phi +]   and  the requirement that physically measurable quantities such  mechanical momentum, velocities
  and  physicall measurable  operator observable remain unchanged 
 The  invarance of E and B is directly guaranted by   [XXX] 
+
+
+For finite systems, the relevant observable is the
+time-dependent dipole moment $\vb d(t) = \int \vb r\,
+\rho(\vb r,t)\, d\vb r$, from which the polarizability
+and absorption cross section follow by Fourier transform.
+For periodic systems, however, the scalar-potential form
+$\Phi = -\vb E(t)\cdot\vb r$ is not compatible with
+periodic boundary conditions, because the position
+operator $\vb r$ is discontinuous at the cell boundary.
+This motivates the use of the velocity-gauge formulation,
+in which the external field enters through a spatially
+uniform vector potential $\vb A(t)$ and the scalar
+potential is set to zero.
+
+The time-dependent Kohn--Sham equation then takes the form
+\begin{equation}
+  \imath \pdv{}{t} \Psi_j(\vb r,t) = \left[
+    \frac{1}{2m}\left(\vb{\hat p}
+    - \frac{q_e}{c}\vb A(t)\right)^2
+    + \hat V_{\mathrm{KS}}[\rho](t)
+  \right] \Psi_j(\vb r,t),
+  \label{eq:tdks_velocity_gauge}
+\end{equation}
+where the two gauges are related by the Göppert-Mayer
+transformation, discussed in detail in
+Sec.~\ref{sec:velocity_gauge}.
+In the velocity gauge, the position operator no longer
+appears in the Hamiltonian and all terms are compatible
+with periodic boundary conditions.
+Correspondingly, the physical observable used to extract
+the optical response is the time-dependent current density
+$\vb j(\vb r,t)$ rather than the dipole moment, since
+the current is well defined under periodic boundary
+conditions whereas $\vb d(t)$ is not.
+
+
+
+
+
 
 
