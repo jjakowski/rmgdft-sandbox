@@ -230,9 +230,35 @@ available experimental data.
 \label{sec:nv}
 %--------------------------------------------------------------------
 
-As a demonstration of the unique large-scale capability of \texttt{RMG},
+As a final  demonstration, 
 we apply the periodic spin-polarized RT-TDDFT implementation to
-nitrogen-vacancy (NV) centers in diamond.
+ to the negatively charged nitrogen-vacancy center (NV(-)) in diamond.\cite{NV-Doherty-2013,NV-Gali-2008,NV-Gali-2019} 
+This system tests several capabilities simultaneously: spin-polarized real-time propagation, 
+optical response of a localized defect in a three-dimensional periodic host, 
+convergence toward the dilute-defect limit, as well as  computaitonal  scaling to  thousands of atoms 
+
+
+
+The negatively charged nitrogen-vacancy (NV(-)) center in diamond 
+consists of a substitutional nitrogen atom adjacent to a carbon vacancy, with one additional trapped electron.
+The ground state of NV(-) center is an optically addresable  spin-triplet  embedded within a band gap 
+between valence and comdunction bands of a diamond.\cite{NV-Gali-2008,NV-Gali-2019,NV-Louie-2012}
+Becasue of its optical adreasbility and long coherence times at room temperature the NV(-) center is 
+an attractive system for for several emerging quantum technologies, including single -photon emitter,
+nanoscale magnetometry, quantum sensing, quantum information 
+processing.\cite{NV-coherence-Balasubramanian-2009,NV-sensing-Degen-2017,NV-sensing-Maze-2008,NV-sensing-Schirhagl-2014,NV-spe-Aharonovich-2016,NV-QComp-Bradley-2019}
+
+%[PLACEHOLDER cite: Degen 2017 RMP; Maze 2008 Nature], quantum sensing of temperature, electric fields, and strain [PLACEHOLDER cite: Schirhagl 2014 ARPC], single-photon sources for quantum communication [PLACEHOLDER cite: Aharonovich 2016 Nat.\ Photon.], and small-scale quantum information processing demonstrations
+
+
+The purpose of our  demonstration is not to provide a complete many-body description of the NV$^-$ photophysics, 
+which involves vibronic effects, singlet-triplet manifolds, and charge-state physics, 
+but to demonstrate  large-scale spin-polarized real-time simulations of 
+optical response for  increasing supercell size.
+
+
+
+
 The NV center---a substitutional nitrogen atom adjacent to a carbon
 vacancy---is one of the most studied point defects in solid-state
 physics, of primary importance for quantum sensing and quantum
