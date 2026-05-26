@@ -8,8 +8,8 @@ conda activate rmg-dev
 
 ## Build
 ```bash
-cd ~/Development/RMG/rmgdft-sandbox-explore
-mkdir -p build_explore && cd build_explore/
+cd ~/Development/RMG/rmgdft-sandbox-explore-new
+mkdir -p build_explore_new && cd build_explore_new/
 
 export CC="$CONDA_PREFIX/bin/mpicc"
 export CXX="$CONDA_PREFIX/bin/mpicxx"
@@ -21,6 +21,6 @@ make VERBOSE=1 -j 4 >& make.log
 
 ## Rebuild a single file
 ```bash
-cd build_explore/
-touch ../TDDFT/RMG_TDDFT/RmgTddft.cpp && make -j 4
+cd build_explore_new/
+touch ../TDDFT/RMG_TDDFT/rmg_tddft.cpp && make -j 4
 ```

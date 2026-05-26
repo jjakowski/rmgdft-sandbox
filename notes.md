@@ -1,8 +1,9 @@
-# Typical 'rmgdft-sandbox-explore' session — step by step
+# Typical 'rmgdft-sandbox-explore-new' session — step by step
 
-  1. Update explore with latest develop (so you start from current code)
-  cd ~/Development/RMG/rmgdft-sandbox-explore
-  git merge develop
+  1. Update explore-new with latest develop (so you start from current code)
+  cd ~/Development/RMG/rmgdft-sandbox-explore-new
+  git fetch origin
+  git merge origin/develop
 
   2. Update the CLAUDE.md — fill in what you're exploring today:
   ## Current exploration
@@ -14,7 +15,7 @@
   claude
   Claude will automatically load:
   - /home/j2c/Development/RMG/CLAUDE.md (root — who you are, project goals)
-  - /home/j2c/Development/RMG/rmgdft-sandbox-explore/CLAUDE.md (what you're exploring today)
+  - /home/j2c/Development/RMG/rmgdft-sandbox-explore-new/CLAUDE.md (what you're exploring today)
   - /home/j2c/Development/RMG/rmgdft-sandbox-develop/CLAUDE.md (RT-TDDFT file map)
 
   4. Ask Claude your questions — for example:
@@ -27,6 +28,6 @@
   git push
 
   6. End of session — two outcomes:
-  - Idea was useful → open a PR or merge into develop-Ehrenfest
-  - Just exploration → leave it on explore, notes stay in CLAUDE.md for next time
+  - Idea was useful → graduate to a new feature branch off `develop` and open a PR
+  - Just exploration → leave it on explore-new, notes stay in CLAUDE.md for next time
 
