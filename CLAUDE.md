@@ -30,24 +30,42 @@ feature branch off `develop`.
 
 ---
 
-## Relationship to the frozen `explore` branch
+## Relationship to the `explore` branch
 
-The `explore` branch is **frozen** — it contains the manuscript and the
-annotated pre-refactor `RmgTddft.cpp` (which no longer exists in `develop`).
-Treat it as a read-only historical reference.
+The `explore` worktree is **retired as an active session** — no new code work
+happens there. But it contains three categories of content, only two of which
+are purely historical:
+
+1. **Retired session records** (`session_context*_explore_frozen.md`,
+   `session_progress*_explore_frozen.md`) — historical only. Do not edit.
+2. **Frozen annotated source files** (`TDDFT/RMG_TDDFT/RmgTddft.cpp` and
+   its companions) — Rosetta Stone for the pre-refactor algorithm. The
+   `RmgTddft.cpp` annotated version is the only documented record of the
+   old code, since upstream deleted that file in the May 2026 refactor.
+3. **Live canonical documentation** — the `Manuscript/` folder (paper2 on
+   RT-TDDFT with NL-PP) and the `docs/` folder (`rmg_tddft_theory.tex`,
+   `tddft_memory_tutorial.tex`, …). These are **not retired** — they remain
+   the canonical physics-to-code mapping and are consulted from any active
+   worktree. They are kept on `explore` as their permanent home.
+
+Useful commands:
 
 ```bash
-# View the old annotated deleted file (Rosetta Stone):
+# View the old annotated source (Rosetta Stone, category 2):
 git show explore:TDDFT/RMG_TDDFT/RmgTddft.cpp
 
-# What annotations were added on explore (vs. the pre-sync develop):
+# Read the live theory documentation (category 3):
+ls ~/Development/RMG/rmgdft-sandbox-explore/Manuscript/
+ls ~/Development/RMG/rmgdft-sandbox-explore/docs/
+
+# Diff annotations vs. pre-sync develop:
 git diff pre-TDDFT-annotation..explore -- TDDFT/RMG_TDDFT/
 
-# What the upstream refactoring did (vs. the pre-sync develop):
+# Diff upstream refactoring vs. pre-sync develop:
 git diff pre-TDDFT-annotation..upstream/develop -- TDDFT/RMG_TDDFT/
 ```
 
-The `pre-TDDFT-annotation` tag is the anchor for all these comparisons.
+The `pre-TDDFT-annotation` tag is the anchor for the diff comparisons.
 
 ---
 
@@ -155,8 +173,115 @@ different lifetime. Claude should respect this separation and not mix them.
 | `session_progress_explore_frozen.md` | Historical | Frozen snapshot from the old `explore` branch. Reference only — do not edit. |
 
 When starting a session, look for active `session_context.md` /
-`session_progress.md`. If absent, create them — don't write current-task
-state into `CLAUDE.md`.
+`session_progress.md`. If absent, create them using the skeletons below —
+fill in the placeholders with the session's actual content immediately. Do
+not commit blank templates.
+
+### `session_context.md` skeleton
+
+````markdown
+# Session Context — <one-line topic>
+**Date:** <YYYY-MM-DD>
+**Branch:** `<branch>` (`<worktree-path>/`)
+**Session goal:** <one-line goal>
+
+---
+
+## What is being explored / prototyped
+<one short paragraph: which code path, which physics question, or which
+implementation idea is the focus of this session>
+
+## Files read and understood so far
+| File | What it does | Key takeaway |
+|---|---|---|
+| `<path/file.cpp>` | <one line> | <one line> |
+
+## Key physics or implementation insights reconstructed
+- <bullet: formula, invariant, buffer reuse, gauge choice, etc.>
+
+## How to verify this prototype / feature
+- **Build:** see `build-notes-bigroo64.md` (machine) + CLAUDE.md Build section (worktree).
+- **Test case(s):** <input file, test geometry, or unit-test path>
+- **Expected output:** <observable, energy, force, current — and tolerance>
+- **Regression baseline:** <reference run or commit to compare against>
+
+## Open questions / gaps
+- <bullet>
+
+## Prior session references (optional)
+List frozen records or live docs from other worktrees that may inform this
+session. Consult only if relevant — findings do not auto-propagate.
+- `session_context_explore_frozen.md` — <one-line summary of what's there>
+- `~/Development/RMG/rmgdft-sandbox-explore/Manuscript/` — live RT-TDDFT manuscript
+- `~/Development/RMG/rmgdft-sandbox-explore/docs/rmg_tddft_theory.tex` — live theory doc
+- (none, if this is a clean-slate session)
+
+## Next steps
+- <bullet>
+````
+
+### `session_progress.md` skeleton
+
+````markdown
+# Session Progress — Concrete File State and Next Actions
+**Date:** <YYYY-MM-DD>
+**Branch:** `<branch>`
+
+---
+
+## Files Modified
+### `<path/file.cpp>`
+**What was added/changed:**
+- <bullet>
+
+**Git status:** <Modified — uncommitted | Committed: <sha> | Pushed>
+
+---
+
+## New Files Created
+### `<path/file.ext>`
+- <one line: what it is>
+- **Status:** <Draft | Committed | Compiling cleanly>
+
+---
+
+## Build / test status
+| Run | Date | Commit | Test case | Result | Notes |
+|---|---|---|---|---|---|
+| 1 | YYYY-MM-DD | <sha> | <input> | PASS/FAIL | <short note or log path> |
+
+(Append a row per run; never delete rows. This is a running log of "does
+this prototype still work?")
+
+---
+
+## Pending
+- <bullet>
+
+## Next actions
+- <bullet>
+````
+
+### Retiring a worktree
+
+When a worktree's session is finished and a new worktree is spun up for a
+different exploration, retire the old worktree's session files instead of
+deleting them:
+
+1. Rename in place:
+   - `session_context.md` → `session_context_<worktree-name>_frozen.md`
+   - `session_progress.md` → `session_progress_<worktree-name>_frozen.md`
+2. Prepend a freeze header to each file:
+   ```
+   # FROZEN RECORD — <worktree-name>, <date range or sync milestone>
+   # Do not edit.
+   ```
+3. Commit and push. The retired worktree itself can remain as a worktree (for
+   read-only reference) or be removed via `git worktree remove …` — its branch
+   and frozen session files survive in the repo either way.
+
+The next worktree's `session_context.md` can then list the new frozen file
+under "Prior session references" if its content is relevant.
 
 ---
 
