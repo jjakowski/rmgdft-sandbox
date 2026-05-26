@@ -1,0 +1,489 @@
+% ============================================================================
+% RMG-DFT TDDFT refactor: old-to-new source mapping (May 2026 upstream sync)
+% ============================================================================
+% Compile: pdflatex tddft_refactor_mapping
+% ============================================================================
+\documentclass[11pt,letterpaper]{article}
+
+\usepackage{amsmath,amssymb}
+\usepackage{hyperref}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{geometry}
+\usepackage{enumitem}
+\usepackage{tcolorbox}
+\usepackage{bm}
+
+\geometry{margin=1in}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=blue!70!black,
+  citecolor=green!50!black,
+  urlcolor=blue!70!black
+}
+
+% ---------- C++ listing style (matches rmg_tddft_theory.tex) ----------
+\lstdefinestyle{cppstyle}{
+  language=C++,
+  basicstyle=\small\ttfamily,
+  keywordstyle=\color{blue!80!black}\bfseries,
+  commentstyle=\color{green!50!black}\itshape,
+  stringstyle=\color{orange!80!black},
+  frame=single,
+  framerule=0.4pt,
+  rulecolor=\color{gray!50},
+  backgroundcolor=\color{gray!5},
+  breaklines=true,
+  showstringspaces=false,
+  tabsize=4
+}
+
+% ---------- Math macros (shared with rmg_tddft_theory.tex) ----------
+\newcommand{\ii}{\mathrm{i}}
+
+% ---------- Boxes for gaps and new items ----------
+\tcbuselibrary{skins,breakable}
+\newtcolorbox{gapbox}[2][]{
+  title={#2},
+  colback=red!5!white,
+  colframe=red!50!black,
+  fonttitle=\bfseries\small,
+  breakable,
+  #1
+}
+\newtcolorbox{infobox}[2][]{
+  title={#2},
+  colback=blue!5!white,
+  colframe=blue!50!black,
+  fonttitle=\bfseries\small,
+  breakable,
+  #1
+}
+
+% ============================================================================
+\begin{document}
+
+\title{\Large\bfseries TDDFT Refactor: Source-Code Mapping\\[4pt]
+\normalsize\textit{Pre-refactor \texttt{RmgTddft.cpp} $\to$
+Post-refactor \texttt{rmg::tddft} class}\\[2pt]
+\normalsize\textit{Companion to \texttt{rmg\_tddft\_theory.tex}}}
+\author{Jacek Jakowski \and \textit{(working notes, May 2026)}}
+\date{\today}
+\maketitle
+
+\begin{abstract}
+In May 2026 the RMG-DFT upstream repository underwent a structural refactor
+that affected the TDDFT module.  The pre-refactor monolithic free function
+\texttt{RmgTddft<O,M>(...)} was deleted; its functionality was redistributed
+into a new \texttt{rmg::tddft<OrbitalType,MatrixType>} class split across
+three source files.  The annotated copy of the old file in the frozen
+\texttt{explore} branch serves as a \emph{Rosetta Stone} for understanding
+what the new code does and where each piece of the old algorithm now lives.
+
+This note documents the structural change, the section-by-section mapping
+between old and new code, the post-refactor status of the eight known
+theory/code gaps (\texttt{GAP-1}$\dots$\texttt{GAP-8}) catalogued in the
+companion theory document, and three substantive additions that the
+refactor introduced.  It serves as an entry point for further work on
+non-collinear spin RT-TDDFT and Ehrenfest dynamics.
+\end{abstract}
+
+\tableofcontents
+\bigskip
+
+% ============================================================================
+\section{Context: why this document exists}
+\label{sec:context}
+% ============================================================================
+
+The \texttt{explore} branch of the personal fork
+\texttt{jjakowski/rmgdft-sandbox} was used for several months as a sandbox
+for annotating the RT-TDDFT C++ source with detailed physics commentary.
+Three files were annotated:
+\texttt{TDDFT/RMG\_TDDFT/RmgTddft.cpp}, \texttt{CurrentNlpp.cpp}, and
+\texttt{VecPmatrix.cpp}.  The manuscript and theory notes also live on
+\texttt{explore}.
+
+When the upstream sync was performed in May 2026, three issues appeared:
+\begin{itemize}[leftmargin=*]
+  \item \texttt{RmgTddft.cpp} was \emph{deleted} from upstream and replaced
+        by a different file structure --- annotation could not be carried
+        forward by simple copy.
+  \item \texttt{CurrentNlpp.cpp} and \texttt{VecPmatrix.cpp} were unchanged
+        upstream --- annotation \emph{could} be copied verbatim.
+  \item \texttt{explore} also held months of manuscript work that must be
+        preserved.
+\end{itemize}
+The resolution was to (i) tag the pre-sync state of \texttt{develop} as
+\texttt{pre-TDDFT-annotation}, (ii) leave \texttt{explore} frozen as a
+permanent Rosetta Stone, (iii) sync \texttt{develop} with upstream, and
+(iv) create a clean \texttt{explore-new} branch off the post-sync
+\texttt{develop}.  Annotations from the unchanged files were migrated by
+direct copy (Task~A).  Annotations for \texttt{RmgTddft.cpp} were migrated
+by re-mapping each annotated section to its new location in the refactored
+files (Task~B).  This document captures the structural understanding
+developed during Task~B.
+
+% ============================================================================
+\section{Structural change}
+\label{sec:structure}
+% ============================================================================
+
+\paragraph{Before.}  A single templated free function did everything
+inline:
+\begin{lstlisting}[style=cppstyle]
+template <typename OrbitalType, typename MatrixType>
+void RmgTddft( spinobj<double>& vxc,
+               fgobj<double>&   vh,
+               fgobj<double>&   vnuc,
+               spinobj<double>& rho,
+               fgobj<double>&   rhocore,
+               fgobj<double>&   rhoc,
+               Kpoint<OrbitalType>** Kptr );
+\end{lstlisting}
+1245 lines in one function: SETUP (memory, file open, \texttt{ReadData})
+$\to$ velocity-gauge init / kick $\to$ ground-state $J_0$ baseline $\to$
+outer time loop (STEP 1 / 2 / 3) $\to$ cleanup (file close, write
+checkpoint).
+
+\paragraph{After.}  A C++ class
+\texttt{rmg::tddft<OrbitalType,MatrixType>} split across three files:
+\begin{center}
+\begin{tabular}{ll}
+\toprule
+File & Members \\
+\midrule
+\texttt{rmg\_tddft.cpp} & constructor \texttt{tddft(...)} (setup + init + kick) \\
+                       & method \texttt{tddft\_md()} (outer time loop) \\
+                       & destructor \texttt{$\sim$tddft()} (write + close + free) \\
+                       & helpers \texttt{tstconv()}, \texttt{gather\_rho\_matrix()} \\
+\texttt{rmg\_tddft\_energy.cpp} & methods \texttt{tddft\_energy\_init()}, \texttt{tddft\_energy()} \\
+\texttt{rmg\_rotate\_sint.cpp}  & free function \texttt{rmg::rotate\_sint<O>()} (Ehrenfest helper) \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+The split reflects a real architectural change, not just file
+reorganisation: in the new design \texttt{tddft\_md()} can be invoked
+\emph{multiple times} from an outer Ehrenfest MD loop, each invocation
+propagating the electrons for \texttt{ct.tddft\_steps} steps before
+returning forces on the nuclei.  The constructor sets up the persistent
+state once; the destructor flushes it once.  In the old design every TDDFT
+call was a single self-contained run from setup to cleanup, with no notion
+of repeated invocations.
+
+% ============================================================================
+\section{Section-by-section mapping}
+\label{sec:mapping}
+% ============================================================================
+
+Line numbers in the rightmost column refer to
+\texttt{TDDFT/RMG\_TDDFT/rmg\_tddft.cpp} after the Task~B annotation commit
+(\texttt{a998da7c2}).  Line numbers in the leftmost column refer to the
+frozen \texttt{explore} version of \texttt{RmgTddft.cpp}.
+
+\begin{longtable}{p{0.32\linewidth} p{0.20\linewidth} p{0.40\linewidth}}
+\toprule
+\textbf{Old section (RmgTddft.cpp)} & \textbf{New member} & \textbf{New location (rmg\_tddft.cpp)} \\
+\midrule
+\endhead
+File-level header + GAP-1..8 audit (l.~23--152)
+  & --- (file header)
+  & Top of file, after GPL header (l.~25--165) \\
+\midrule
+Velocity-gauge initialization (l.~606--657)
+  & constructor
+  & Inside \texttt{if(ct.tddft\_mode == VECTOR\_POT)} block, l.~561 \\
+Inline \texttt{STEP A / B / C} labels (l.~663, 668, 677)
+  & constructor
+  & l.~615, 620, 629 \\
+Ground-state $J_0$ baseline (l.~696--707)
+  & constructor
+  & l.~648 (before zdotc loop populating \texttt{current0[]}) \\
+\midrule
+Outer time loop comment (l.~794--803)
+  & \texttt{tddft\_md()}
+  & l.~830 (before \texttt{for(int tddft\_steps...)}) \\
+STEP 1 --- PREDICTOR (l.~815--820)
+  & \texttt{tddft\_md()}
+  & l.~851 (before \texttt{extrapolate\_Hmatrix}) \\
+STEP 2 --- CORRECTOR SCF (l.~849--854)
+  & \texttt{tddft\_md()}
+  & l.~886 (before SCF \texttt{while}) \\
+STEP 2a --- Magnus operator (l.~885--889)
+  & \texttt{tddft\_md()}
+  & l.~921 (before \texttt{magnus(...)}) \\
+STEP 2b --- BCH propagator (l.~892--898)
+  & \texttt{tddft\_md()}
+  & l.~929 (before \texttt{eldyn\_ort(...)}) \\
+STEP 2c --- Density update (l.~916--920)
+  & \texttt{tddft\_md()}
+  & l.~955 (before Rho \texttt{RmgTimer}) \\
+STEP 2d --- Update potentials (l.~971--973)
+  & \texttt{tddft\_md()}
+  & l.~1009 (before \texttt{compute\_vxc(...)}) \\
+STEP 2e --- Update Hamiltonian (l.~991--999)
+  & \texttt{tddft\_md()}
+  & l.~1029 (before \texttt{vtot} accumulation) \\
+Convergence check (l.~1038--1042)
+  & \texttt{tddft\_md()}
+  & l.~1078 (after \texttt{daxpy}, before \texttt{tstconv}) \\
+STEP 3 --- Advance (l.~1096--1101)
+  & \texttt{tddft\_md()}
+  & l.~1144 (before advance \texttt{for} loop) \\
+TIME-DEPENDENT CURRENT $J(t)$ (l.~1113--1130)
+  & \texttt{tddft\_md()}
+  & l.~1160 (inside \texttt{if(VECTOR\_POT)} branch) \\
+\bottomrule
+\end{longtable}
+
+\noindent\textit{All twelve annotation blocks were ported verbatim from the
+Rosetta Stone}; only their position changed to follow the constructor /
+\texttt{tddft\_md()} split.
+
+% ============================================================================
+\section{GAP audit (post-refactor)}
+\label{sec:gaps}
+% ============================================================================
+
+Each of the eight gaps documented in
+\href{rmg_tddft_theory.tex}{\texttt{rmg\_tddft\_theory.tex}} was re-checked
+against the refactored code.  \emph{None was fixed by the refactor.}
+The evidence for each is summarised below.
+
+\begin{gapbox}{GAP-1: Velocity-gauge mode is delta-kick only}
+The time-varying field update
+\texttt{daxpy(A\_0*cos($\omega t$), Pxmatrix, Hmatrix\_0)}
+is still present but \emph{commented out} (\texttt{rmg\_tddft.cpp} l.~838--846
+inside \texttt{tddft\_md()}).  \texttt{ct.tddft\_frequency} is read from input
+but has no effect on the propagation.
+\end{gapbox}
+
+\begin{gapbox}{GAP-2: Diamagnetic current is missing}
+\texttt{current[]} is still computed as $J_\alpha = \mathrm{Re}\,
+\mathrm{Tr}(P\, P^\alpha)$ only --- see l.~1175--1186 inside
+\texttt{tddft\_md()}.  The $-n(r,t)\,A(t)$ contribution is absent.  For the
+delta-kick (where $A \to 0$ after $t=0$) this is fine; if GAP-1 is fixed,
+GAP-2 must also be.
+\end{gapbox}
+
+\begin{gapbox}{GAP-3: \texorpdfstring{$A^2$}{A^2} term is dropped}
+The minimal-coupling Hamiltonian $(p + A)^2/2 = p^2/2 + A\cdot p + A^2/2$
+is truncated to the linear $A\cdot p$ term.  No amplitude check enforces the
+linear-response regime in which this is valid.
+\end{gapbox}
+
+\begin{gapbox}{GAP-4: Non-collinear spin in VECTOR\_POT path is incomplete}
+The \texttt{vtot} update at STEP 2e uses only the scalar part of $V_{xc}$.
+Same code structure as before; both \texttt{// noncoll need change} comments
+are still present at l.~1039 and l.~1048 of \texttt{rmg\_tddft.cpp}.
+This is directly relevant to the planned non-collinear spin RT-TDDFT work.
+\end{gapbox}
+
+\begin{gapbox}{GAP-5: \texttt{Hmatrix\_m1\_cpu} triple-purposed}
+Same buffer reuse pattern as before: before SCF it is $H(t-dt)$; during
+STEP 2a it is overwritten with the Magnus operator $\Omega$; during STEP 2e
+it is overwritten with $\langle \delta V \rangle$.  $H(t-dt)$ is restored
+only at STEP 3 via \texttt{memcpy(Hmatrix\_m1\_cpu, Hmatrix\_0\_cpu, ...)}.
+\end{gapbox}
+
+\begin{gapbox}{GAP-6: \texttt{Hmatrix\_cpu} is never explicitly reset to $H(t)$}
+Same convention as before: \texttt{Hmatrix\_cpu} carries the converged $H$
+from the previous step and the SCF loop adds \emph{incremental} potential
+corrections $\delta V$ on top of it.  Any future modification that breaks
+the ``$vtot$ is incremental'' invariant will silently corrupt $H$.
+\end{gapbox}
+
+\begin{gapbox}{GAP-7: No guard on mode vs.~boundary conditions}
+No check that EFIELD is used only with finite molecules
+(\texttt{ct.is\_gamma == true}) or that VECTOR\_POT is used only with
+proper k-point sampling.  Misuse compiles and runs but produces
+unphysical results.
+\end{gapbox}
+
+\begin{gapbox}{GAP-8: \texttt{ct.efield\_tddft\_crds} semantics differ between modes}
+The same input array is interpreted as $E_0$ (length gauge, EFIELD) or
+$A_0$ (velocity gauge, VECTOR\_POT).  The relationship $E_0 = A_0 \omega$
+means the two modes require different input values for the same physical
+field strength.  Not enforced in input parsing.
+\end{gapbox}
+
+\noindent\textbf{Implication.}  The refactor was a \emph{structural}
+reorganisation, not a physics rewrite.  Every theoretical limitation
+identified before the refactor remains an open item in
+\texttt{explore-new}.
+
+% ============================================================================
+\section{New items introduced by the refactor}
+\label{sec:newitems}
+% ============================================================================
+
+Three blocks of code have no analogue in the old \texttt{RmgTddft.cpp}.
+They are documented inline in the post-refactor source; the discussion
+below is for forward reference.
+
+% ----------------------------------------------------------------------------
+\subsection{Per-call bootstrap (\texttt{first\_step})}
+\label{sec:bootstrap}
+
+Located near the top of \texttt{tddft\_md()} (l.~776--800):
+\begin{lstlisting}[style=cppstyle]
+static int first_step;
+for(int kpt = 0; kpt < ct.num_kpts_pe; kpt++)
+{
+    BetaProjector->project(...);    // ALWAYS: refresh sint = <beta|phi>
+    if(first_step) {
+        HSmatrix(...);              // rebuild H_ij = <phi_i|H_KS|phi_j>
+        DistributeMatrix(...);      // scatter into BLACS storage
+        // re-seed Hmatrix_m1/0/1 with fresh H
+    }
+}
+first_step++;
+\end{lstlisting}
+
+The condition \texttt{if(first\_step)} evaluates to \texttt{false} on the
+very first call (since the \texttt{static int} is zero-initialized) and
+\texttt{true} on every subsequent call.  This skips the $H$ rebuild on the
+first invocation --- because the constructor already filled $H$ with the
+diagonal of ground-state eigenvalues, which is valid as long as ions have
+not moved.  From the second call onward (i.e., after the outer MD loop
+has moved ions), the ground-state diagonal $H$ is no longer valid and
+must be rebuilt from scratch via \texttt{HSmatrix} in the current geometry.
+
+\begin{infobox}{Implication for non-collinear spin RT-TDDFT}
+For non-collinear spinor wavefunctions the bootstrap path matters because
+\texttt{HSmatrix} must produce the correct $2\times 2$ spin-space matrix
+elements.  Verify that the \texttt{HSmatrix} implementation in
+\texttt{TDDFT/RMG\_TDDFT/HSmatrix.cpp} respects \texttt{ct.noncoll\_factor}
+before enabling noncoll with multi-step Ehrenfest dynamics.
+\end{infobox}
+
+% ----------------------------------------------------------------------------
+\subsection{Running time-averaged density (\texttt{trho})}
+\label{sec:trho}
+
+After each propagation step (\texttt{rmg\_tddft.cpp} l.~1104--1111):
+\[
+  \texttt{trho}(\mathbf{r}) \mathrel{+}= \rho(\mathbf{r}, t_n)
+\]
+After the outer time loop completes, \texttt{trho} is rescaled by
+$1/N_\text{steps}$:
+\[
+  \overline{\rho}(\mathbf{r})
+  = \frac{1}{N_\text{steps}}\sum_{n=0}^{N_\text{steps}-1} \rho(\mathbf{r},t_n).
+\]
+The time-averaged density $\overline\rho$ is the input to the
+\texttt{Force(...)} call in the Ehrenfest block (Section~\ref{sec:cve}),
+rather than the final-snapshot density $\rho(t_\text{final})$.
+
+\paragraph{Why averaging?}  The instantaneous TD density carries fast
+electronic oscillations (interband and plasmon-like) that, if used
+directly, would produce noisy nuclear forces and unstable trajectories.
+Averaging over the propagation window damps these oscillations and
+provides smoother forces.  This is conceptually similar to the
+``time-averaged forces'' used in adiabatic-following schemes in
+quantum-chemistry molecular dynamics codes; physically it is a low-pass
+filter on $F[\rho(t)]$.
+
+% ----------------------------------------------------------------------------
+\subsection{Ehrenfest force update (\texttt{TDDFT\_CVE} branch)}
+\label{sec:cve}
+
+The post-refactor \texttt{tddft\_md()} ends with an Ehrenfest force-update
+block (l.~1259--1305 in \texttt{rmg\_tddft.cpp}).  It runs when
+\texttt{ct.forceflag == TDDFT\_CVE}, i.e., when the user has requested
+Combined-Velocity-Verlet/Ehrenfest dynamics.  The algorithm:
+
+\begin{enumerate}[leftmargin=*]
+\item \textbf{Rotate force pointers.}  \texttt{Atoms[ion].RotateForces()}
+      shifts old per-ion force snapshots back by one slot so the
+      Beeman/Velocity-Verlet integrator has access to $F(t-dt)$,
+      $F(t-2dt)$ after the new force is written.
+\item \textbf{Gather global density matrix.}
+      \texttt{gather\_rho\_matrix(global, Pn0)} collects the
+      BLACS-distributed $P(t_\text{final})$ into a global
+      $N_\text{states} \times N_\text{states}$ matrix on each rank.
+\item \textbf{Rotate \texttt{sint} into TD basis.}
+      \texttt{save\_sint()} preserves the ground-state
+      $\texttt{sint} = \langle \beta_{lm} | \phi_j \rangle$;
+      occupations are temporarily set to 1.0 (slot~[3] holds the
+      ground-state values for restore);
+      \texttt{rmg::rotate\_sint(...)} multiplies the ground-state
+      \texttt{sint} by the density matrix to produce the TD-basis
+      \texttt{sint}.  Occupations $f_j$ are set to unity because the
+      per-orbital weights are already encoded in $P_{ij}$.
+\item \textbf{Compute forces from time-averaged density.}
+      \texttt{Force(trho.up, trho.dw, ..., Kptr)} computes the nuclear
+      forces using $\overline{\rho}$, not the final snapshot.
+\item \textbf{Restore state.}  \texttt{restore\_sint()}, restore
+      occupations, then \texttt{get\_ddd(...)} refreshes the $D_{ij}$
+      dual-projector coefficients for the next call.
+\end{enumerate}
+
+\begin{infobox}{Open: nonlocal-PP contribution to the Ehrenfest force}
+The current \texttt{Force(...)} call assumes the local potential
+contribution is the dominant force component.  For norm-conserving
+pseudopotentials, the nonlocal contribution to the Hellmann--Feynman
+force is non-zero and depends on the TD density via the same projectors
+used in \texttt{CurrentNlpp.cpp}.  Active development on this lives in
+the \texttt{develop-Ehrenfest} branch.  The current-operator analogue
+$\ii[V_\text{NL}, \mathbf{r}]$ in \texttt{CurrentNlpp.cpp} is the
+relevant reference; the force analogue is
+$\frac{\partial}{\partial R_I} \langle \phi | V_\text{NL} | \phi \rangle$
+contracted with $P(t)$.
+\end{infobox}
+
+% ============================================================================
+\section{Forward look}
+\label{sec:forward}
+% ============================================================================
+
+The Task~A/Task~B migration unblocks three lines of development:
+
+\begin{enumerate}[leftmargin=*]
+\item \textbf{Non-collinear spin RT-TDDFT.}  Requires fixing GAP-4
+      (\texttt{vtot} must include the off-diagonal spin components of
+      $V_{xc}$) in \texttt{tddft\_md()} l.~1039--1048.  The two existing
+      \texttt{// noncoll need change} markers point to the exact lines.
+      Also verify the bootstrap (Section~\ref{sec:bootstrap}) handles
+      the $2\times 2$ spin block correctly.
+
+\item \textbf{Ehrenfest dynamics with NL-PP forces.}  Open issue
+      flagged in Section~\ref{sec:cve}.  The
+      \texttt{develop-Ehrenfest} branch is the active worktree for this
+      work; the relevant reference files in this branch are
+      \texttt{Force/Force.cpp} (ground-state version) and
+      \texttt{TDDFT/RMG\_TDDFT/CurrentNlpp.cpp} (current-operator
+      analogue, annotated).
+
+\item \textbf{Spin + Ehrenfest combined.}  Requires both of the above.
+      The \texttt{rmg::tddft} class is already structured to support
+      it: \texttt{tddft\_md()} is designed to be re-entrant from an
+      outer MD loop, and the \texttt{first\_step} bootstrap rebuilds
+      $H$ in the current geometry on every call.
+\end{enumerate}
+
+\paragraph{Pre-existing physics work that is still relevant.}
+GAP-1 (sustained field) and GAP-2 (diamagnetic current) are the two
+remaining items needed to extend RT-TDDFT from delta-kick optical-spectra
+calculations to true pump--probe and laser-driven simulations.  Both
+require changes in \texttt{rmg\_tddft.cpp} at the locations identified
+in Section~\ref{sec:gaps}.
+
+% ============================================================================
+\section*{Document provenance}
+% ============================================================================
+
+\begin{itemize}[leftmargin=*]
+  \item Frozen Rosetta Stone: \texttt{git show explore:TDDFT/RMG\_TDDFT/RmgTddft.cpp}
+  \item Task~A commit (CurrentNlpp + VecPmatrix): \texttt{b01af2025}
+  \item Task~B commit (rmg\_tddft.cpp annotations): \texttt{a998da7c2}
+  \item Pre-sync anchor tag: \texttt{pre-TDDFT-annotation}
+  \item Companion theory document: \texttt{docs/rmg\_tddft\_theory.tex}
+        (in the frozen \texttt{explore} branch)
+\end{itemize}
+
+\end{document}
