@@ -3,6 +3,13 @@
 Branch: `explore-new` — dual-purpose sandbox for code exploration and early-stage prototyping. Successor to the now-frozen `explore` worktree.
 Based on: `develop` after the May 2026 upstream sync (post-refactor; `RmgTddft.cpp` deleted, replaced by `rmg_tddft.cpp` and helpers).
 
+> **Context loaded ahead of this file:** `~/Development/RMG/CLAUDE.md`
+> provides the project-level context — RMG-DFT overview, developer profile
+> (Jacek's quantum chemistry background), strategic development goals,
+> collaborators, and git remotes. This file covers worktree-specific
+> identity, build, and conventions. Both are loaded automatically by
+> Claude Code's CLAUDE.md walk-up.
+
 ---
 
 ## Purpose
