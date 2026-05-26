@@ -141,6 +141,25 @@ rmg_tddft.cpp
 
 ---
 
+## Per-session context files
+
+The worktree uses a three-tier separation of context, each file with a
+different lifetime. Claude should respect this separation and not mix them.
+
+| File | Lifetime | Contents |
+|---|---|---|
+| `CLAUDE.md` | **Durable** — changes rarely | Worktree identity, build, sync, exploration map, durable rules for Claude. This file. |
+| `session_context.md` | **Per-session** — rewritten each session | Current task: goal, what's being explored or annotated, what's been understood about the code so far. |
+| `session_progress.md` | **Per-session** — appended each session | Concrete file-level state: what was modified, what's committed, what's pending, next actions. |
+| `session_context_explore_frozen.md` | Historical | Frozen snapshot from the old `explore` branch. Reference only — do not edit. |
+| `session_progress_explore_frozen.md` | Historical | Frozen snapshot from the old `explore` branch. Reference only — do not edit. |
+
+When starting a session, look for active `session_context.md` /
+`session_progress.md`. If absent, create them — don't write current-task
+state into `CLAUDE.md`.
+
+---
+
 ## Notes for Claude CLI sessions
 
 ### Durable rules (apply in every session)
@@ -163,9 +182,9 @@ rmg_tddft.cpp
 
 ### Current-pass rules (while annotation is the active focus)
 
-- **Read `STATUS.md` first.** It records which refactored file is in flight
-  and what has already been annotated. Remove this rule once the annotation
-  pass is complete.
+- **Read `session_context.md` and `session_progress.md` first.** They record
+  the current task and what has already been annotated. If they are absent,
+  the session is a fresh one — create them per the convention above.
 - **Use the Rosetta Stone.** Annotation of post-refactor files should
   cross-reference the frozen `explore` version of `RmgTddft.cpp` whenever
   the physics is unclear from the new code alone.
