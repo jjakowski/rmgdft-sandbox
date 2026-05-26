@@ -1,26 +1,32 @@
 # rmgdft-sandbox-explore-new
 
-Branch: `explore-new` — active annotation and exploration of the refactored TDDFT code.
+Branch: `explore-new` — dual-purpose sandbox for code exploration and early-stage prototyping. Successor to the now-frozen `explore` worktree.
 Based on: `develop` after the May 2026 upstream sync (post-refactor; `RmgTddft.cpp` deleted, replaced by `rmg_tddft.cpp` and helpers).
 
 ---
 
 ## Purpose
 
-This worktree is the successor to the (now frozen) `explore` branch. Its two
-modes of work are the same as before:
+This worktree serves two distinct modes of work, same as the old `explore`:
 
-**Mode 1 — Annotation of refactored TDDFT code**
-Add physics explanations to the post-refactor source files as block comments,
-using the frozen `explore` branch as a Rosetta Stone for the deleted
-pre-refactor `RmgTddft.cpp`. This is the dominant activity in early sessions.
+**Mode 1 — Code exploration (read-oriented)**
+Safe space to trace call chains, add temporary print statements, insert
+assertions, or instrument code to understand what RMG-DFT is actually doing
+at runtime. Nothing here is expected to be production-ready. Commits are
+optional and disposable.
+
+Annotation of source files with physics block comments also lives in this
+mode. The current focus is re-annotating the refactored TDDFT files, using
+the frozen `explore` branch as a Rosetta Stone (see "Current focus" below).
 
 **Mode 2 — Early-stage prototyping**
 Scratchpad for new physics ideas (non-collinear spin RT-TDDFT, Ehrenfest
-extensions) before they justify a dedicated feature branch.
+extensions) before they justify a dedicated feature branch. Code here may
+be incomplete, physically incorrect, or purely illustrative of an approach.
 
 **This worktree is never merged directly into `develop` or `master`.**
-When a prototype graduates, it goes onto a fresh feature branch off `develop`.
+Finished work is either cherry-picked or re-implemented cleanly on a proper
+feature branch off `develop`.
 
 ---
 
@@ -70,25 +76,6 @@ touch ../TDDFT/RMG_TDDFT/rmg_tddft.cpp && make -j 4
 
 ---
 
-## Refactored TDDFT file map (post-May-2026 sync)
-
-| File | Refactoring status | Annotation status |
-|---|---|---|
-| `TDDFT/RMG_TDDFT/rmg_tddft.cpp` | MODIFIED — main replacement for deleted `RmgTddft.cpp` | DONE — Session 1 (Task B) |
-| `TDDFT/RMG_TDDFT/rmg_tddft_energy.cpp` | MODIFIED | NOT STARTED |
-| `TDDFT/RMG_TDDFT/rmg_rotate_sint.cpp` | NEW | NOT STARTED |
-| `TDDFT/ELDYN/commutp2.cpp` | MODIFIED | NOT STARTED |
-| `TDDFT/RMG_TDDFT/CurrentNlpp.cpp` | UNCHANGED | DONE — Session 1 (Task A) |
-| `TDDFT/RMG_TDDFT/VecPmatrix.cpp` | UNCHANGED | DONE — Session 1 (Task A) |
-| `TDDFT/RMG_TDDFT/HmatrixUpdate.cpp` | CHECK STATUS | NOT STARTED |
-| `TDDFT/ELDYN/Magnus.cpp` | CHECK STATUS | NOT STARTED |
-| `TDDFT/RMG_TDDFT/GetNewRho_rmgtddft.cpp` | CHECK STATUS | NOT STARTED |
-
-Companion document: `TDDFT_refactor_mapping.tex` (committed in Session 1) maps
-pre-refactor → post-refactor structure in detail.
-
----
-
 ## Sync with `develop` before each session
 
 ```bash
@@ -102,16 +89,69 @@ file outside your active annotation or experiment.
 
 ---
 
+## Current focus — annotation of refactored TDDFT files
+
+Active annotation pass: walking the post-May-2026 refactored TDDFT files and
+adding physics block comments, cross-referencing the frozen `explore` branch
+where the pre-refactor `RmgTddft.cpp` lives as a Rosetta Stone.
+
+| File | Refactoring status | Annotation status |
+|---|---|---|
+| `TDDFT/RMG_TDDFT/rmg_tddft.cpp` | MODIFIED — main replacement for deleted `RmgTddft.cpp` | DONE — Session 1 (Task B) |
+| `TDDFT/RMG_TDDFT/rmg_tddft_energy.cpp` | MODIFIED | NOT STARTED |
+| `TDDFT/RMG_TDDFT/rmg_rotate_sint.cpp` | NEW | NOT STARTED |
+| `TDDFT/ELDYN/commutp2.cpp` | MODIFIED | NOT STARTED |
+| `TDDFT/RMG_TDDFT/CurrentNlpp.cpp` | UNCHANGED | DONE — Session 1 (Task A) |
+| `TDDFT/RMG_TDDFT/VecPmatrix.cpp` | UNCHANGED | DONE — Session 1 (Task A) |
+| `TDDFT/RMG_TDDFT/HmatrixUpdate.cpp` | CHECK STATUS | NOT STARTED |
+| `TDDFT/ELDYN/Magnus.cpp` | CHECK STATUS | NOT STARTED |
+| `TDDFT/RMG_TDDFT/GetNewRho_rmgtddft.cpp` | CHECK STATUS | NOT STARTED |
+
+Companion document: `TDDFT_refactor_mapping.tex` (committed in Session 1)
+maps pre-refactor → post-refactor structure in detail.
+
+---
+
+## Most frequently explored code paths
+
+These are the files most likely to be relevant for exploration or
+prototyping in the RT-TDDFT / Ehrenfest / spin context.
+
+### RT-TDDFT time propagation spine (post-refactor)
+
+```
+rmg_tddft.cpp
+  └─► HmatrixUpdate.cpp          # rebuild H at each step
+        └─► Magnus.cpp            # exponential propagator exp(-iHΔt)
+              └─► GetNewRho_rmgtddft.cpp   # update electron density ρ(t)
+```
+
+### Key files
+
+| File | Module | What to look for |
+|---|---|---|
+| `TDDFT/RMG_TDDFT/rmg_tddft.cpp` | TDDFT | Outer time loop — entry point for any TD extension |
+| `TDDFT/RMG_TDDFT/HmatrixUpdate.cpp` | TDDFT | H rebuild — where nuclear position updates feed back in |
+| `TDDFT/ELDYN/Magnus.cpp` | TDDFT | Propagator — key target for spinor / non-collinear work |
+| `TDDFT/RMG_TDDFT/GetNewRho_rmgtddft.cpp` | TDDFT | Density update — source of Ehrenfest forces |
+| `Force/Force.cpp` | Force | Ground-state forces — reference for nonlocal PP force term |
+| `Force/CorrectForces.cpp` | Force | Force corrections |
+| `RMG/Spin/` | Spin | Spin-polarized routines — reference for non-collinear extension |
+| `Headers/prototypes_tddft.h` | Headers | All TDDFT function signatures in one place |
+
+---
+
 ## Notes for Claude CLI sessions
 
-- **Read `STATUS.md` first — always, before anything else.** It records the
-  state of the current annotation pass and which file is in flight.
+### Durable rules (apply in every session)
+
 - **Reconstruct physics formulas, not just C++ syntax.** Relate real-space
   grid quantities to their Gaussian basis set analogs wherever possible
   (this is Jacek's native idiom).
-- **Use the Rosetta Stone.** Annotation of post-refactor files should
-  cross-reference the frozen `explore` version of `RmgTddft.cpp` whenever
-  the physics is unclear from the new code alone.
+- **Don't assume this branch is clean.** It may contain leftover print
+  statements, commented-out experiments, or partially implemented ideas
+  from previous sessions. Always check `git diff origin/develop` before
+  starting to understand what is already modified.
 - **Mark prototype code distinctly:**
   ```cpp
   // EXPLORE-NEW: <brief description of what this is testing>
@@ -121,6 +161,15 @@ file outside your active annotation or experiment.
   create a new feature branch off `develop` (not off `explore-new`) and
   re-implement cleanly there.
 
+### Current-pass rules (while annotation is the active focus)
+
+- **Read `STATUS.md` first.** It records which refactored file is in flight
+  and what has already been annotated. Remove this rule once the annotation
+  pass is complete.
+- **Use the Rosetta Stone.** Annotation of post-refactor files should
+  cross-reference the frozen `explore` version of `RmgTddft.cpp` whenever
+  the physics is unclear from the new code alone.
+
 ---
 
 ## Next development tasks
@@ -128,8 +177,9 @@ file outside your active annotation or experiment.
 (from `README-Jacek-sync-annotation.md`)
 
 1. **Complete annotation of refactored TDDFT files** — work through the
-   "NOT STARTED" rows in the file map above. Priority: the propagator spine
-   (`rmg_tddft.cpp` → `HmatrixUpdate.cpp` → `Magnus.cpp` → `GetNewRho_rmgtddft.cpp`).
+   "NOT STARTED" rows in the Current focus table. Priority: the propagator
+   spine (`rmg_tddft.cpp` → `HmatrixUpdate.cpp` → `Magnus.cpp` →
+   `GetNewRho_rmgtddft.cpp`).
 2. **Nonlocal PP forces for Ehrenfest** — active task on `develop-Ehrenfest`.
    References: `Force/Force.cpp` (ground-state), `TDDFT/RMG_TDDFT/CurrentNlpp.cpp`
    (current-operator analogue).
