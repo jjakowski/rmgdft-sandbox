@@ -1,119 +1,190 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% sec_intro.tex
 %% Section 1: Introduction
-%% RMG Periodic RT-TDDFT — Paper 2
+%% RMG Periodic RT-TDDFT -- Paper 2
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \section{Introduction}
 \label{sec:intro}
 
-Real-time time-dependent density functional theory (RT-TDDFT) has
-established itself as one of the primary tools for simulating the
-electronic response of materials to external electromagnetic
-perturbations.\cite{tddft-fundamentals,chem-rev-Li}
-Its applications span a broad range of phenomena, including optical
-spectroscopy,\cite{lopata-2011,raman-govind-2013,Yabana-dichrosim-2011,Rubio-angular-2017,xray-herbert-2023}
-charge transfer and photovoltaics,\cite{review-photovoltaics,chem-rev-Li,lvn-ct-2012}
-nanoplasmonics,\cite{LSPR-review,wong-plasmonic-antennas-2017,tao-2021}
-and spin and magnetization
-dynamics.\cite{spin-rt-tddft-Li-2014,spin-rt-tddft-Li-2016,LvN-spin-Hod-Scuseria-2015}
-In an earlier publication, we presented a scalable RT-TDDFT
-implementation within the Real-space MultiGrid (\texttt{RMG}) code
-for finite molecular systems, demonstrating simulations of up to
-24,000 electrons on massively parallel
-architectures.\cite{jakowski-rmg-tddft-2025}
-The present work extends that implementation to periodic systems and
-spin-polarized calculations, significantly broadening the range of
-physically relevant problems accessible to \texttt{RMG}.
+Real-time time-dependent density functional theory (RT-TDDFT) provides
+a direct first-principles route for following electronic response after
+an applied perturbation.  By propagating the electronic degrees of
+freedom in time, RT-TDDFT gives access to optical spectra, transient
+charge rearrangement, nonlinear response, and ultrafast electron
+dynamics within a single initial-value
+framework.\cite{tddft-fundamentals,chem-rev-Li,bertsch-96}
+For extended materials, low-dimensional systems, magnetic compounds, and
+defects in solids, the same real-time perspective is attractive because
+the relevant response may depend simultaneously on crystal momentum,
+spin polarization, local defect states, and long-range periodic
+environment.  These requirements motivate scalable RT-TDDFT
+implementations that can treat periodic boundary conditions and large
+supercells without abandoning a first-principles electronic-structure
+description.
 
-The transition from finite to periodic systems in RT-TDDFT requires
-a corresponding transition in the treatment of the electromagnetic
-perturbation. In finite systems, the length gauge---in which the
-coupling to an electric field is expressed through the dipole operator
-$\hat{\mathbf{r}}$---is natural and convenient. In periodic systems,
-however, the position operator is ill-defined because it is not
-translationally invariant, and the dipole moment of an extended system
-is intrinsically multivalued.\cite{resta-1998,king-smith-vanderbilt-1993}
-The correct framework for periodic systems is the velocity gauge, in
-which the electromagnetic interaction is expressed through the
-vector potential $\mathbf{A}(t)$ and the current operator, which is
-inherently translationally invariant. The transition between the two
-gauges is effected by a gauge transformation of the time-dependent
-Kohn-Sham equations,\cite{Mattiat-Luber-2022,furche-2001,ding-gauge-2011}
-and requires careful treatment of the nonlocal part of
-pseudopotentials.\cite{pickard-mauri-2001,starace-1971,Mattiat-Luber-2022}
-The primary observable in the velocity gauge is the macroscopic
-current density $\mathbf{J}(t)$, from which the optical conductivity
-$\boldsymbol{\sigma}(\omega)$ and dielectric function
-$\boldsymbol{\varepsilon}(\omega)$ are extracted by Fourier analysis.
+Periodic systems require special care in the representation of a
+homogeneous optical perturbation.  In finite systems, the electric-dipole
+interaction is often written in the length gauge through the position
+operator.  Under periodic boundary conditions, however, the ordinary
+position operator is not a lattice-periodic observable, and the
+macroscopic polarization of an extended insulator is defined through
+Berry-phase or related periodic formulations rather than through a
+simple dipole
+moment.\cite{Resta-polarization-1994,KingSmith-Vanderbilt-polarization-1993,periodic-operator}
+A natural periodic formulation of the long-wavelength optical response
+therefore uses a spatially homogeneous vector potential and evaluates
+the induced current response.\cite{Luber-rt-tddft,Hanasaki-2023}
+The homogeneous vector potential represents the optical
+$\mathbf q\rightarrow0$ limit; the restriction to vertical transitions
+comes from the long-wavelength approximation, not from the velocity
+gauge itself.
 
-RT-TDDFT for periodic systems has been implemented in several codes.
-The \texttt{Octopus} code,\cite{octopus} based on real-space grids,
-provides a comprehensive periodic RT-TDDFT implementation including
-both length and velocity gauges and has served as the primary
-validation reference for the present work.
-Plane-wave codes including \texttt{Qbox}/\texttt{Qball},\cite{qball-2017,qball-II-2021}
-\texttt{cp2k},\cite{cp2k-2020} and \texttt{Exciting}\cite{exciting-2014}
-offer periodic RT-TDDFT with natural handling of Born-von K\'{a}rm\'{a}n
-boundary conditions.
-Atom-centered basis set codes such as \texttt{SIESTA}\cite{siesta-2007}
-and \texttt{DFTB+}\cite{DFTB+} provide efficient implementations for
-systems where localized orbitals are appropriate.
-The \texttt{DFT-FE} code\cite{gavini-rt-tddft} offers an alternative
-real-space approach based on finite elements.
-\myblue{[Check: add any missing periodic RT-TDDFT codes before submission.
-In particular: GPAW, Abinit, Yambo.]}
+Table~\ref{tab:external-field-map} places this homogeneous optical
+limit in the broader landscape of external-field representations used
+in time-dependent electronic-response theory.  The table is intended as
+a conceptual map for the present discussion, not as a list of all
+capabilities implemented in \texttt{RMG}.  In Coulomb gauge,
+$\nabla\cdot\mathbf A=0$, the vector potential is transverse; after the
+longitudinal/transverse decomposition of the electric field,
+$-\nabla\Phi$ gives the longitudinal electric field, while
+$-(1/c)\partial\mathbf A/\partial t$ gives the transverse electric field
+and $\nabla\times\mathbf A$ gives the magnetic field.  The present work
+addresses the homogeneous periodic optical-response row of
+Table~\ref{tab:external-field-map}.  The finite-$\mathbf q$, magnetic,
+and multipolar rows are included only as broader perspective for related
+TDDFT response problems.\cite{Rubio-2002,Luber-rt-tddft}
 
-The treatment of spin-polarized systems within RT-TDDFT introduces
-an additional degree of freedom: the electronic density is resolved
-into spin-up and spin-down components, and the time-dependent
-exchange-correlation potential depends on both. In the collinear
-approximation, the two spin channels evolve independently subject to
-a common self-consistent spin-dependent potential, and the optical
-response carries spin-specific signatures. This capability is
-essential for magnetic insulators such as \ch{CrI3}, where the
-spin-up and spin-down optical spectra differ markedly and encode
-information about the electronic and magnetic
-structure.\cite{spin-rt-tddft-Li-2014,LvN-spin-Hod-Scuseria-2015}
-The non-collinear spin extension, in which the electronic states are
-represented as two-component spinors, is beyond the scope of the
-present work and will be addressed in a future publication.
+\begin{table}[t]
+\scriptsize
+\setlength{\tabcolsep}{3pt}
+\hbadness=10000
+\caption{Summary of representative external-field perturbations relevant
+to time-dependent electronic-response calculations.  The table is
+intended as a conceptual map.  Among the perturbations summarized here,
+the present work treats the homogeneous periodic optical response.}
+\label{tab:external-field-map}
+\centering
+\begin{tabular}{@{}p{0.16\linewidth}p{0.24\linewidth}p{0.17\linewidth}p{0.20\linewidth}p{0.12\linewidth}@{}}
+\hline
+Physical probe / response
+& Representative perturbation
+& Field character
+& Typical applications
+& Relation to this work \\
+\hline
+Homogeneous optical electric field
+& Length-gauge dipole coupling for finite systems; homogeneous
+  $\mathbf A(t)$ velocity-gauge representation for periodic systems
+& Long-wavelength $\mathbf q\rightarrow0$ optical limit
+& Optical response, ultrafast laser-driven electron dynamics,
+  pump/probe-type response
+& Present work \\[0.6em]
+Finite-$\mathbf q$ longitudinal scalar perturbation
+& $\Phi_{\mathbf q}(t)e^{\imath\mathbf q\cdot\mathbf r}$
+& Longitudinal electric field / density response
+& Finite-$\mathbf q$ density response, EELS/loss spectra,
+  plasmon dispersion
+& Broader perspective; not implemented here \\[0.6em]
+Finite-$\mathbf q$ transverse electromagnetic perturbation
+& $\mathbf A_{\mathbf q}(t)e^{\imath\mathbf q\cdot\mathbf r}$,
+  with $\mathbf q\cdot\mathbf A_{\mathbf q}=0$ in Coulomb gauge
+& Transverse electromagnetic response with associated magnetic field
+& Finite-$\mathbf q$ transverse optical or radiative response beyond
+  the homogeneous optical limit
+& Broader perspective; not implemented here \\[0.6em]
+Magnetic / spin perturbation
+& Time-dependent magnetic field, Zeeman coupling, or spin-dependent
+  perturbation
+& Magnetic or spin response
+& Spin dynamics, magnetic resonance, magnetic excitations, magnons in
+  appropriate noncollinear spin-dynamical frameworks
+& Not presently implemented as such \\[0.6em]
+Multipolar / chiroptical perturbations
+& Electric quadrupole, magnetic dipole, field gradients, or mixed
+  electric/magnetic response
+& Beyond electric-dipole response
+& Beyond-dipole spectroscopy, ECD, MCD
+& Broader perspective; not implemented here \\
+\hline
+\end{tabular}
+\end{table}
 
-A distinctive feature of the \texttt{RMG} implementation is its
-scalability. The real-space multigrid approach assigns different
-regions of space to different processors, enabling near-linear
-scaling to hundreds or thousands of GPU-accelerated
-nodes.\cite{jakowski-rmg-tddft-2025,rmg-dft-2024}
-This scalability is particularly significant for periodic calculations
-with spin, where both the k-point sampling and the spin-polarized
-density matrix increase the computational cost relative to finite
-systems. To demonstrate this capability, we apply the periodic
-spin-polarized RT-TDDFT implementation to nitrogen-vacancy (NV)
-centers in diamond---a prototypical point defect system of substantial
-interest for quantum sensing and quantum information
-applications.\cite{nv-center-review}
-By systematically increasing the supercell size from \myblue{[X]} to
-\myblue{[Y]} atoms, we show how the optical response of the defect
-converges as the interaction between periodic images becomes negligible,
-identifying the minimum supercell size required for physically
-meaningful results at realistic defect concentrations.
+RT-TDDFT for extended systems has been developed in a variety of
+numerical representations.  Real-space implementations such as
+\texttt{Octopus} provide time propagation for finite and extended
+systems and serve here as the independent reference for cross-code
+validation.\cite{octopus-2020}  Plane-wave and related periodic
+approaches, including \texttt{Qbox}/\texttt{Qball} developments and
+\texttt{CP2K}, have demonstrated real-time response calculations under
+periodic boundary
+conditions.\cite{qball-2017,qball-II-2021,Luber-rt-tddft,cp2k-2020}
+All-electron and atom-centered formulations provide complementary
+routes for crystalline and molecular systems, including recent periodic
+RT-TDDFT implementations in \texttt{exciting}, numeric atom-centered
+basis frameworks, and PySCF.\cite{exciting-code-2021,Hekele-2021,Hanasaki-2023}
+Finite-element approaches provide another real-space route to large
+systems.\cite{gavini-rt-tddft}  In a related approximate direction,
+Wong and co-workers have developed a velocity-gauge real-time TD-DFTB
+implementation for periodic condensed-matter systems based on the DFTB+
+framework.\cite{Xu-Wong-RT-TDDFTB-2023,DFTB+}
+These developments show that periodic real-time response is an active
+area with multiple complementary implementations; the present work adds
+the particular combination of periodic current response, collinear spin
+resolution, finite active-space density-matrix propagation, and
+real-space multigrid scalability in \texttt{RMG}.
 
-The remainder of this paper is organized as follows.
-Section~\ref{sec:theory} develops the theoretical framework, beginning
-with the interaction of matter with electromagnetic radiation in the
-long-wavelength approximation, proceeding through the gauge
-transformation from length to velocity gauge, the definition of the
-current operator including nonlocal pseudopotential contributions, the
-density matrix propagation scheme, the spin-collinear extension, and
-the postprocessing route from current to optical conductivity.
-Section~\ref{sec:implementation} describes the algorithm as implemented
-in \texttt{RMG} and identifies the key approximations and their
-physical justification.
-Section~\ref{sec:results} presents benchmarking calculations for
-one-dimensional (H$_2$ chain), two-dimensional (hexagonal BN),
-and three-dimensional (Si) periodic systems, followed by spin-polarized
-calculations for \ch{CrI3}, with comparisons to \texttt{Octopus} in
-all cases.
-The section concludes with the NV-center in diamond scalability
-demonstration.
-The paper concludes with a Summary and Outlook.
+Building on our previous finite-system \texttt{RMG} RT-TDDFT
+implementation, which demonstrated real-time simulations of systems
+containing up to approximately 24,000 electrons on massively parallel
+architectures,\cite{jakowski-rmg-tddft-2025} the present work extends
+the framework to periodic boundary conditions and collinear
+spin-polarized response.  This extension is not only a change of
+boundary conditions.  Periodic materials require Bloch-orbital and
+k-point resolution, a current-based optical observable, and careful
+treatment of nonlocal pseudopotential contributions to the current
+operator.  Spin-polarized systems further require separate density
+matrices and self-consistent densities for the two collinear spin
+channels.  The implementation also builds on the real-space multigrid
+infrastructure of \texttt{RMG}, which is designed for large-scale
+parallel calculations on modern CPU and GPU architectures.\cite{rmg-dft-2024}
+
+The main contributions of this paper are as follows.  We formulate
+periodic RT-TDDFT for homogeneous optical response in the velocity
+gauge, with the macroscopic response expressed through the current.  We
+derive the periodic current operator, including the contribution from
+norm-conserving nonlocal pseudopotentials.  We extend the density-matrix
+propagation scheme to finite active spaces resolved by Bloch wave vector
+and collinear spin channel.  We then describe the corresponding
+implementation in \texttt{RMG}, including k-point, spin-channel,
+real-space, and distributed-matrix parallel organization.
+
+We validate the periodic and spin-polarized implementation by comparing
+current-derived optical spectra from \texttt{RMG} with independent
+RT-TDDFT calculations for a sequence of increasingly demanding systems:
+a one-dimensional periodic hydrogen-dimer reference, pristine monolayer
+hBN, bulk Si, and spin-polarized \ch{CrI3}.  These comparisons test the
+principal spectral structure rather than absolute optical intensity.  As
+a large-scale scientific demonstration, we apply the method to the
+negatively charged nitrogen-vacancy center in diamond, a spin-polarized
+defect whose optical response probes local defect orbitals,
+polarization selection rules, spin-channel selectivity, active-space
+convergence, and defect-concentration effects.\cite{NV-Doherty-2013,NV-Gali-2019}
+The largest calculation contains a single NV$^{-}$ center in a 4096-site
+diamond framework, corresponding to 4095 atoms after defect formation,
+and approaches the dilute-defect limit.
+
+The remainder of the manuscript is organized as follows.
+Section~\ref{sec:methodology} develops the periodic velocity-gauge
+formalism, the current operator including nonlocal pseudopotential
+contributions, density-matrix propagation, the collinear spin extension,
+and the formal current-based optical response.
+Section~\ref{sec:implementation} describes the current numerical
+realization in \texttt{RMG}, including implementation-specific choices
+in the perturbation, current evaluation, propagation, parallel
+organization, and spectral processing.  Section~\ref{sec:results}
+presents the H$_2$, hBN, Si, and \ch{CrI3} validation benchmarks.
+Section~\ref{sec:nv} presents the NV$^{-}$-center application, including
+selection-rule tests, active-space dependence, concentration effects,
+the 4095-atom single-defect calculation, and collinear magnetic
+configuration comparisons.
