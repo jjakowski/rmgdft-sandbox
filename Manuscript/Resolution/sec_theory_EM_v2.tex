@@ -1,0 +1,635 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% sec_theory_EM_v2.tex
+%%
+%% Sections 2.2 -- 2.4 for paperH_HLmain.tex
+%% RMG Periodic RT-TDDFT -- Paper 2
+%% REVISED April 2026: clean separation of EM-field perturbations
+%% (gauge-dependent, Track A) from scalar-potential perturbations
+%% (gauge-independent, Track B).
+%%
+%% Subsection structure:
+%%   2.2  Interaction with electromagnetic radiation
+%%        2.2.1  Plane wave and minimal coupling
+%%        2.2.2  Multipole expansion and long-wavelength approximation
+%%        2.2.3  Crystal momentum conservation: vertical transitions
+%%        2.2.4  Beyond the optical limit: scalar-potential perturbations
+%%   2.3  Gauge transformation: length to velocity gauge
+%%        2.3.1  Why the length gauge fails for periodic systems
+%%        2.3.2  The Goppert-Mayer transformation
+%%        2.3.3  The velocity-gauge TDKS Hamiltonian
+%%        2.3.4  The perturbative momentum kick
+%%   2.4  Vector potential and magnetic perturbations
+%%        2.4.1  Electric perturbation: spatially uniform A(t)
+%%        2.4.2  Magnetic perturbation: spatially varying A(r)
+%%        2.4.3  Scope of the present implementation
+%%
+%% CONVENTIONS (all from notation.tex):
+%%   Atomic units: hbar = m_e = e = 4*pi*eps_0 = 1
+%%   Electron charge = -1  (e > 0 is elementary charge magnitude)
+%%   Imaginary unit: \imath  (dotless i, consistent with paper 1)
+%%   \myblue{} for all annotations and placeholders -- NEVER \myred{}
+%%
+%% SOURCES:
+%%   NEAT-notes-RMG_main.tex lines 116-716 (primary)
+%%   NEAT-project-notes_main.tex lines 256-716 (supplementary)
+%%   Physics discussion notes, April 2026
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%--------------------------------------------------------------------
+\subsection{Interaction of Matter with Electromagnetic Radiation}
+\label{sec:em-interaction}
+%--------------------------------------------------------------------
+
+The starting point for any RT-TDDFT calculation is the coupling of
+the electronic system to an external time-dependent perturbation.
+Two physically distinct classes of perturbation are relevant to this
+work and to its natural extensions:
+\emph{electromagnetic field perturbations}, in which the coupling
+enters through the vector potential in the kinetic energy operator
+and whose treatment requires a choice of gauge
+(Sections~\ref{sec:plane-wave}--\ref{sec:vertical}); and
+\emph{scalar potential perturbations}, in which a time-dependent
+external potential is added directly to the Kohn-Sham effective
+potential without any gauge considerations
+(Section~\ref{sec:scalar-pert}).
+The present work employs the electromagnetic coupling exclusively;
+the scalar perturbation framework is described briefly to place the
+implementation in context and to indicate natural extensions.
+
+
+%....................................................................
+\subsubsection{The electromagnetic plane wave and minimal coupling}
+\label{sec:plane-wave}
+%....................................................................
+
+A monochromatic electromagnetic plane wave propagating in direction
+$\hat{\mathbf{q}}$ with polarization $\hat{\varepsilon}$ is described
+in the Coulomb gauge ($\nabla\cdot\Avec=0$, $\phi=0$) by the
+vector potential
+\begin{equation}
+  \Avec(\mathbf{r},t)
+  = A_0\,\hat{\varepsilon}\,
+    e^{\imath(\mathbf{q}\cdot\mathbf{r}-\omega t)}
+    + \text{c.c.},
+  \label{eq:plane-wave-A}
+\end{equation}
+where $|\mathbf{q}|=\omega/c$ and $A_0$ is the field amplitude.
+The Coulomb gauge condition $\nabla\cdot\Avec=0$ requires
+$\hat{\varepsilon}\cdot\mathbf{q}=0$: the polarization is
+perpendicular to the propagation direction (transversality).
+The electric and magnetic fields follow from the potentials,
+\begin{align}
+  \Evec(\mathbf{r},t)
+  &= -\frac{\partial\Avec}{\partial t}
+   = \imath\omega A_0\,\hat{\varepsilon}\,
+     e^{\imath(\mathbf{q}\cdot\mathbf{r}-\omega t)}
+     + \text{c.c.},
+  \label{eq:plane-wave-E}
+  \\
+  \Bvec(\mathbf{r},t)
+  &= \nabla\times\Avec
+   = \imath\mathbf{q}\times(A_0\hat{\varepsilon})\,
+     e^{\imath(\mathbf{q}\cdot\mathbf{r}-\omega t)}
+     + \text{c.c.},
+  \label{eq:plane-wave-B}
+\end{align}
+where in eq.~(\ref{eq:plane-wave-B}) we used
+$\nabla e^{\imath\mathbf{q}\cdot\mathbf{r}}
+=\imath\mathbf{q}\,e^{\imath\mathbf{q}\cdot\mathbf{r}}$.
+Both $\Evec$ and $\Bvec$ carry the same spatial phase factor
+$e^{\imath\mathbf{q}\cdot\mathbf{r}}$ as $\Avec$.
+
+The coupling of the plane wave to a Kohn-Sham electron is introduced
+through minimal substitution
+$\hat{\mathbf{p}}\to\hat{\mathbf{p}}+\Avec(\mathbf{r},t)$,
+giving the time-dependent Kohn-Sham Hamiltonian
+\begin{equation}
+  \hat{H}(t)
+  = \frac{1}{2}
+    \!\left(\hat{\mathbf{p}}+\Avec(\mathbf{r},t)\right)^{\!2}
+    + V_\mathrm{KS}(\mathbf{r},t).
+  \label{eq:H-minimal}
+\end{equation}
+Expanding the kinetic term in powers of $A_0$:
+\begin{equation}
+  \hat{H}(t)
+  = \underbrace{
+      -\frac{\nabla^2}{2}+V_\mathrm{KS}
+    H_HL{\hat{HH_HL0}
+  + \underbrace{
+      \Avec(\mathbf{r},t)\cdot\hat{\mathbf{p}}
+    H_HL{\hat{H}^{(1)},\;\mathcal{O}(A_0)}
+  + \underbrace{
+      \tfrac{1}{2}\Avec^2
+    H_HL{\hat{H}^{(2)},\;\mathcal{O}(A_0^2)}.
+  \label{eq:H-expand}
+\end{equation}
+In the linear response regime the diamagnetic $\Avec^2$ term is
+second order in the field amplitude and is
+neglected.\cite{yabana-bertsch-1996,Mattiat-Luber-2022}
+The electromagnetic interaction Hamiltonian is therefore
+\begin{equation}
+  \hat{HH_HL\mathrm{int}(\mathbf{r},t)
+  = \Avec(\mathbf{r},t)\cdot\hat{\mathbf{p}}
+  = A_0\,\hat{\varepsilon}\cdot\hat{\mathbf{p}}\;
+    e^{\imath(\mathbf{q}\cdot\mathbf{r}-\omega t)}
+    + \text{c.c.}
+  \label{eq:Hint-exact}
+\end{equation}
+The spatial dependence of $\hat{HH_HL\mathrm{int}}$ enters entirely
+through the phase factor $e^{\imath\mathbf{q}\cdot\mathbf{r}}$,
+which couples the field to the electronic system.
+Because this coupling appears in the \emph{kinetic energy} operator
+through minimal substitution, the treatment of the
+interaction~(\ref{eq:Hint-exact}) requires a choice of gauge ---
+in contrast to the scalar potential perturbations discussed in
+Section~\ref{sec:scalar-pert}, which carry no gauge ambiguity.
+
+
+%....................................................................
+\subsubsection{The multipole expansion and the long-wavelength
+  approximation}
+\label{sec:multipole}
+%....................................................................
+
+Expanding the spatial phase factor in eq.~(\ref{eq:Hint-exact})
+as a Taylor series about $\mathbf{q}\cdot\mathbf{r}=0$:
+\begin{equation}
+  e^{\imath\mathbf{q}\cdot\mathbf{r}}
+  = 1
+  + \imath(\mathbf{q}\cdot\hat{\mathbf{r}})
+  + \tfrac{1}{2}[\imath(\mathbf{q}\cdot\hat{\mathbf{r}})]^2
+  + \cdots,
+  \label{eq:multipole}
+\end{equation}
+the matrix element of $\hat{HH_HL\mathrm{int}$ between Kohn-Sham
+orbitals $|\psi_a\rangle$ and $|\psi_b\rangle$ becomes:
+\begin{equation}
+  \langle\psi_b|\hat{HH_HL\mathrm{int}|\psi_a\rangle
+  \propto
+  \underbrace{
+    \langle\psi_b|\hat{\varepsilon}\cdot\hat{\mathbf{p}}|\psi_a\rangle
+  H_HL{\text{E1: electric dipole, velocity form}}
+  + \imath\!
+  \underbrace{
+    \langle\psi_b|(\mathbf{q}\cdot\hat{\mathbf{r}})
+    (\hat{\varepsilon}\cdot\hat{\mathbf{p}})|\psi_a\rangle
+  H_HL{\text{M1}+\text{E2: magnetic dipole + electric quadrupole}}
+  + \cdots
+  \label{eq:multipole-me}
+\end{equation}
+Each successive term carries an additional factor of $|\mathbf{q}|\,a_0$
+relative to the preceding one.
+For near-ultraviolet radiation at $\lambda=400$~nm,
+$|\mathbf{q}|=2\pi/\lambda\approx 8\times10^{-4}\,a_0^{-1}$, so
+that $|\mathbf{q}|\,a\approx 1.5\times10^{-2}$ for a unit cell of
+linear dimension $a=10$~\AA.
+The multipole series converges rapidly and the
+\emph{long-wavelength (electric dipole) approximation}
+\begin{equation}
+  e^{\imath\mathbf{q}\cdot\mathbf{r}} \approx 1,
+  \qquad |\mathbf{q}|\,a \ll 1,
+  \label{eq:LWA}
+\end{equation}
+is quantitatively excellent for all optical and UV spectroscopy.
+Under this approximation $\Avec(\mathbf{r},t)\to\Avec(t)$ becomes
+spatially uniform, and the interaction Hamiltonian reduces to
+\begin{equation}
+  \hat{HH_HL\mathrm{int}(t)
+  = \Avec(t)\cdot\hat{\mathbf{p}},
+  \label{eq:Hint-LWA}
+\end{equation}
+which no longer contains $\hat{\mathbf{r}}$ and is the starting
+point for the velocity-gauge formulation of Section~\ref{sec:gauge}.
+
+
+%....................................................................
+\subsubsection{Crystal momentum conservation: vertical transitions}
+\label{sec:vertical}
+%....................................................................
+
+For a periodic crystal with Bloch states
+$|\psi_{n\mathbf{k}}\rangle$, the matrix element of
+$\hat{HH_HL\mathrm{int}$ contains the overlap integral of the Bloch
+factors $e^{\imath\mathbf{k}\cdot\mathbf{r}}$,
+$e^{\imath\mathbf{k}'\cdot\mathbf{r}}$, and
+$e^{\imath\mathbf{q}\cdot\mathbf{r}}$ over the unit cell.
+This integral vanishes unless $\mathbf{k}'=\mathbf{k}+\mathbf{q}$,
+expressing crystal momentum conservation:
+\begin{equation}
+  \langle\psi_{m\mathbf{k}'}|
+  e^{\imath\mathbf{q}\cdot\mathbf{r}}\hat{\varepsilon}\cdot\hat{\mathbf{p}}
+  |\psi_{n\mathbf{k}}\rangle
+  \propto \delta_{\mathbf{k}',\mathbf{k}+\mathbf{q}}.
+  \label{eq:k-conservation}
+\end{equation}
+The photon deposits its wavevector $\mathbf{q}$ into the electronic
+system, inducing transitions with $\Delta\mathbf{k}=\mathbf{q}$.
+In the long-wavelength limit $\mathbf{q}\to\mathbf{0}$,
+eq.~(\ref{eq:k-conservation}) reduces to $\delta_{\mathbf{k}',\mathbf{k}}$:
+all transitions are \emph{vertical} ($\Delta\mathbf{k}=0$) in the
+Brillouin zone.
+For optical photons the shift $|\mathbf{q}|/(\pi/a)
+\approx 10^{-3}$ is negligible on the scale of the Brillouin zone,
+confirming that the long-wavelength approximation is well-controlled
+and quantifiable, not an assumption of unknown accuracy.
+
+
+%....................................................................
+\subsubsection{Beyond the optical limit: scalar-potential perturbations
+  and finite-wavevector response}
+\label{sec:scalar-pert}
+%....................................................................
+
+A physically distinct class of perturbations is obtained by adding
+a time-dependent potential directly to the Kohn-Sham effective
+potential, without any reference to an electromagnetic field:
+\begin{equation}
+  V_\mathrm{KS}(\mathbf{r},t)
+  \to V_\mathrm{KS}(\mathbf{r},t)
+     + \delta V(\mathbf{r},t).
+  \label{eq:scalar-pert}
+\end{equation}
+Because $\delta V$ enters as a scalar potential, no vector potential
+is introduced, no gauge transformation is required, and the
+discussion of Sections~\ref{sec:gauge}--\ref{sec:vector-potential}
+does not apply to perturbations of this type.
+The Coulomb gauge is maintained throughout; the separation of the
+EM field discussion from the scalar potential discussion is exact,
+not approximate.
+
+The specific choice
+\begin{equation}
+  \delta V(\mathbf{r},t)
+  = V_0\,e^{\imath\mathbf{q}\cdot\mathbf{r}}\,\delta(t),
+  \label{eq:density-wave-kick}
+\end{equation}
+with $\mathbf{q}$ a free parameter independent of $\omega$,
+excites a density wave at wavevector $\mathbf{q}$ and all
+frequencies simultaneously.
+The Fourier component of the density response,
+$\delta\rho(\mathbf{q},t) =
+\int_\Omega\delta\rho(\mathbf{r},t)\,e^{-\imath\mathbf{q}\cdot\mathbf{r}}
+\,d^3r$,
+yields the density--density response function
+\begin{equation}
+  \chi(\mathbf{q},\omega)
+  = \frac{\widetilde{\delta\rho}(\mathbf{q},\omega)}{V_0},
+  \qquad
+  S(\mathbf{q},\omega) \propto \mathrm{Im}\,\chi(\mathbf{q},\omega),
+  \label{eq:chi-q}
+\end{equation}
+after Fourier transformation in time.
+Repeating for a sequence of wavevectors $\mathbf{q}$ commensurate
+with the simulation cell gives access to the full dynamic structure
+factor $S(\mathbf{q},\omega)$, from which plasmon dispersion curves,
+interband transitions at finite momentum transfer, and quantities
+measurable by inelastic X-ray scattering or electron energy loss
+spectroscopy (EELS) can be extracted.\myblue{[cite: EELS and IXS
+RT-TDDFT references]}
+
+A closely related scalar perturbation is the Coulomb potential of a
+point charge placed at position $\mathbf{R}$ in the simulation cell,
+\begin{equation}
+  \delta V_\mathrm{Coul}(\mathbf{r})
+  = \frac{V_0}{|\mathbf{R}-\mathbf{r}|},
+  \label{eq:Coulomb-pert}
+\end{equation}
+which was implemented and validated in ref.~\cite{jakowski-tddft-coulomb-2019}
+\myblue{[confirm cite key in references.bib]} as a model for a focused
+electron beam at position $\mathbf{R}$.
+Via the Fourier expansion
+$1/|\mathbf{R}-\mathbf{r}|
+=(4\pi/\Omega)\sum_{\mathbf{q}\neq\mathbf{0}}
+e^{\imath\mathbf{q}\cdot(\mathbf{r}-\mathbf{R})}/|\mathbf{q}|^2$,
+the Coulomb perturbation is a superposition of all plane-wave
+components~(\ref{eq:density-wave-kick}) weighted by $1/|\mathbf{q}|^2$:
+it samples $\chi(\mathbf{q},\omega)$ at all wavevectors simultaneously
+but emphasizes the long-wavelength ($|\mathbf{q}|\to0$) components,
+consistent with the long-range nature of the Coulomb interaction.
+
+Both scalar perturbations~(\ref{eq:density-wave-kick}) and
+(\ref{eq:Coulomb-pert}) share the spatial factor
+$e^{\imath\mathbf{q}\cdot\mathbf{r}}$ with the EM
+interaction~(\ref{eq:Hint-exact}), but the physical content is
+different: the EM coupling probes the \emph{current--current}
+response $\sigma(\omega)$ and requires gauge-consistent treatment,
+while the scalar perturbations probe the \emph{density--density}
+response $\chi(\mathbf{q},\omega)$ with no gauge involvement.
+The extension of the present \texttt{RMG} implementation to
+scalar-potential perturbations~(\ref{eq:density-wave-kick}) is
+deferred to future work; in this paper we restrict to the
+electromagnetic coupling in the long-wavelength limit throughout.
+
+
+%--------------------------------------------------------------------
+\subsection{Gauge Transformation: Length to Velocity Gauge}
+\label{sec:gauge}
+%--------------------------------------------------------------------
+
+%....................................................................
+\subsubsection{Why the length gauge fails for periodic systems}
+\label{sec:LG-failure}
+%....................................................................
+
+In the long-wavelength limit the two standard gauge choices for the
+electromagnetic coupling are:
+\begin{alignat}{2}
+  &\text{Length gauge (LG):}\quad
+  &&\Avec^\mathrm{LG} = \mathbf{0},\quad
+  \phi^\mathrm{LG}(\mathbf{r},t) = -\hat{\mathbf{r}}\cdot\Evec(t),
+  \label{eq:LG}
+  \\
+  &\text{Velocity gauge (VG):}\quad
+  &&\Avec^\mathrm{VG}(t)
+    = -\!\int_{-\infty}^{t}\!\Evec(t')\,dt',\quad
+  \phi^\mathrm{VG} = 0.
+  \label{eq:VG}
+\end{alignat}
+In the length gauge the interaction Hamiltonian is
+$\hat{HH_HL\mathrm{int}^\mathrm{LG} = \hat{\mathbf{r}}\cdot\Evec(t)$,
+which requires evaluating matrix elements
+$\langle\psi_a|\hat{rH_HL\alpha|\psi_b\rangle$ of the position
+operator between the propagated Kohn-Sham orbitals.
+
+The motivation for the gauge transformation from LG to VG is
+precisely to eliminate $\hat{\mathbf{r}}$ from the interaction.
+For a finite molecular system, as in paper~1,
+\cite{jakowski-rmg-tddft-2025}
+the position operator is well-defined and the length gauge is the
+natural choice.
+For a periodic system with Born--von K\'{a}rm\'{a}n boundary
+conditions, the position operator is incompatible with the periodicity
+of the Bloch states: the expectation value
+$\langle\psi_{n\mathbf{k}}|\hat{rH_HL\alpha|\psi_{m\mathbf{k}}\rangle$
+is not translationally invariant and is ill-defined for extended
+states.\cite{resta-1998,king-smith-vanderbilt-1993}
+The velocity gauge eliminates this problem by replacing $\hat{\mathbf{r}}$
+with the momentum operator $\hat{\mathbf{p}}$, whose matrix elements
+between Bloch states are well-defined.
+We emphasize that this gauge motivation is specific to the
+electromagnetic coupling: the scalar-potential perturbations of
+Section~\ref{sec:scalar-pert} do not contain $\hat{\mathbf{r}}$
+and are free of this difficulty for any $\mathbf{q}\neq\mathbf{0}$.
+
+
+%....................................................................
+\subsubsection{The G\"{o}ppert-Mayer gauge transformation}
+\label{sec:GM}
+%....................................................................
+
+The length and velocity gauges are connected by the gauge function
+\begin{equation}
+  \chi(\mathbf{r},t) = -\hat{\mathbf{r}}\cdot\Avec^\mathrm{VG}(t),
+  \label{eq:chi}
+\end{equation}
+which generates the G\"{o}ppert-Mayer
+transformation.\cite{goeppert-mayer-1931}
+Under a gauge transformation with function $\chi$, the potentials
+transform according to
+\begin{equation}
+  \Avec\to\Avec+\nabla\chi,
+  \qquad
+  \phi\to\phi-\frac{\partial\chi}{\partial t},
+  \label{eq:gauge-rules}
+\end{equation}
+and the wavefunction acquires a local phase,
+\begin{equation}
+  \Psi(\mathbf{r},t)
+  \to \Psi'(\mathbf{r},t)
+  = \hat{U}(\mathbf{r},t)\,\Psi(\mathbf{r},t),
+  \qquad
+  \hat{U} = e^{-\imath\chi(\mathbf{r},t)}
+           = e^{\imath\hat{\mathbf{r}}\cdot\Avec(t)},
+  \label{eq:psi-gt}
+\end{equation}
+where $\hat{U}$ is unitary ($|\Psi'|^2=|\Psi|^2$: charge density
+is gauge invariant).
+The Hamiltonian transforms as
+\begin{equation}
+  \hat{H}
+  \to \hat{H}'
+  = \hat{U}\hat{H}\hat{U}^\dagger
+    - \imath\hat{U}\frac{\partial\hat{U}^\dagger}{\partial t}.
+  \label{eq:H-gt}
+\end{equation}
+
+
+%....................................................................
+\subsubsection{The velocity-gauge Kohn-Sham Hamiltonian}
+\label{sec:H-VG}
+%....................................................................
+
+We apply the transformation~(\ref{eq:H-gt}) to the length-gauge
+Hamiltonian
+$H_{LG} = -\nabla^2/2 + V_\mathrm{KS} + \Vnl
++ \hat{\mathbf{r}}\cdot\Evec(t)$,
+evaluating each term in turn.
+
+\paragraph{Kinetic energy.}
+Acting on a test function $g(\mathbf{r})$:
+\begin{align}
+  \hat{U}\hat{pH_HL\alpha\hat{U}^\dagger\,g
+  &= e^{\imath\mathbf{r}\cdot\Avec}
+     (-\imath\nabla_\alpha)
+     \!\left(e^{-\imath\mathbf{r}\cdot\Avec}\,g\right)
+  \nonumber\\
+  &= e^{\imath\mathbf{r}\cdot\Avec}
+     (-\imath)
+     \!\left[(-\imath A_\alpha)
+       e^{-\imath\mathbf{r}\cdot\Avec}\,g
+     + e^{-\imath\mathbf{r}\cdot\Avec}\nabla_\alpha g
+     \right]
+   = (\hat{pH_HL\alpha - A_\alpha)\,g,
+  \label{eq:U-p}
+\end{align}
+so $\hat{U}\hat{\mathbf{p}}\hat{U}^\dagger = \hat{\mathbf{p}}-\Avec$
+and the kinetic energy transforms as
+$\hat{U}(-\nabla^2/2)\hat{U}^\dagger
+= \frac{1}{2}(\hat{\mathbf{p}}-\Avec)^2$.
+For an electron with charge $-1$, carrying the sign through the
+minimal substitution gives the VG kinetic term
+$\frac{1}{2}(\hat{\mathbf{p}}+\Avec)^2$ (see footnote in
+Section~\ref{sec:plane-wave}).
+
+\paragraph{Time-derivative term.}
+\begin{equation}
+  -\imath\hat{U}\frac{\partial\hat{U}^\dagger}{\partial t}
+  = -\imath\,e^{\imath\mathbf{r}\cdot\Avec}
+    \frac{\partial}{\partial t}
+    e^{-\imath\mathbf{r}\cdot\Avec}
+  = -\mathbf{r}\cdot\dot{\Avec}(t)
+  = +\mathbf{r}\cdot\Evec(t),
+  \label{eq:dt-term}
+\end{equation}
+where $\Evec=-\partial\Avec/\partial t$.
+This term $+\mathbf{r}\cdot\Evec$ exactly cancels the length-gauge
+interaction $+\mathbf{r}\cdot\Evec$ in $\H_{LG}$:
+the G\"{o}ppert-Mayer transformation is designed precisely so that
+this cancellation occurs.
+
+\paragraph{Local potential.}
+$V_\mathrm{KS}(\mathbf{r})$ commutes with $\hat{U}(\mathbf{r},t)$
+since both are diagonal in position space:
+$\hat{U}V_\mathrm{KS}\hat{U}^\dagger = V_\mathrm{KS}$.
+
+\paragraph{Nonlocal pseudopotential.}
+The nonlocal pseudopotential $\Vnl$ is not diagonal in position
+space, so $[\hat{U},\Vnl]\neq0$.
+Expanding to first order in $A_0$:
+\begin{equation}
+  \hat{U}\Vnl\hat{U}^\dagger
+  = e^{\imath\hat{\mathbf{r}}\cdot\Avec}\Vnl
+    e^{-\imath\hat{\mathbf{r}}\cdot\Avec}
+  \approx \Vnl
+  + \imath\Avec(t)\cdot[\hat{\mathbf{r}},\Vnl]
+  + \mathcal{O}(A_0^2).
+  \label{eq:Vnl-gt}
+\end{equation}
+The correction $\imath\Avec\cdot[\hat{\mathbf{r}},\Vnl]$ is
+identical to the Starace commutator that appears in the velocity
+operator (Section~\ref{sec:current}): the gauge-transformation
+and Heisenberg-equation-of-motion routes to the nonlocal
+correction are equivalent, providing an internal consistency
+check.\cite{starace-1971,Mattiat-Luber-2022}
+The full algebra for the Kleinman-Bylander form of $\Vnl$ is
+given in Appendix~\ref{app:gauge_nlpp}.
+
+\paragraph{Full velocity-gauge Hamiltonian.}
+Collecting all contributions and noting the cancellation of the
+length-gauge coupling:
+\begin{equation}
+  \boxed{
+  \HVG(t)
+  = \frac{1}{2}\!\left(\hat{\mathbf{p}}+\Avec(t)\right)^{\!2}
+  + V_\mathrm{KS}(\mathbf{r},t)
+  + \Vnl
+  + \imath\Avec(t)\cdot\!\left[\hat{\mathbf{r}},\Vnl\right],
+  }
+  \label{eq:H-VG}
+\end{equation}
+which contains no position operator $\hat{\mathbf{r}}$ in the
+interaction and is therefore well-defined for periodic
+systems.\cite{Mattiat-Luber-2022,pickard-mauri-2001}
+For a periodic system with Bloch ansatz
+$\psi_{n\mathbf{k}}=e^{\imath\mathbf{k}\cdot\mathbf{r}}u_{n\mathbf{k}}$,
+the gradient acting on the Bloch factor contributes an additional
+$+\mathbf{k}$ shift to the canonical momentum
+(Section~\ref{sec:current-bloch}), giving the $\mathbf{k}$-dependent
+form
+\begin{equation}
+  \hat{H}^\mathrm{VGH_HL\mathbf{k}(t)
+  = \frac{1}{2}
+    \!\left(-\imath\nabla+\mathbf{k}+\Avec(t)\right)^{\!2}
+  + V_\mathrm{KS}(\mathbf{r},t)
+  + \Vnl
+  + \imath\Avec(t)\cdot\!\left[\hat{\mathbf{r}},\Vnl\right].
+  \label{eq:H-VG-k}
+\end{equation}
+
+
+%....................................................................
+\subsubsection{The perturbative momentum kick}
+\label{sec:delta-kick}
+%....................................................................
+
+In the linear response regime the vector potential is applied as a
+single instantaneous impulse at $t=0$:
+\begin{equation}
+  \Avec(t) = A_0\,\hat{\varepsilon}\,\delta(t),
+  \label{eq:delta-kick}
+\end{equation}
+corresponding to a constant spectral amplitude
+$\widetilde{\Evec}(\omega)=A_0\hat{\varepsilon}$ for all
+frequencies.\cite{yabana-bertsch-1996}
+After the kick ($t>0$), $\Avec=0$ and $\HVG$ reduces to
+$\hat{HH_HL0+V_\mathrm{KS}[\rho(t)]$; the subsequent time evolution
+is driven entirely by the self-consistent density response.
+In the small-amplitude limit $|A_0|\ll1$, the kick imparts a
+uniform phase to each orbital,
+\begin{equation}
+  \psi_{n\mathbf{k}}(\mathbf{r},0^+)
+  \approx
+  \left(1+\imath A_0\hat{\varepsilon}\cdot\hat{\mathbf{p}}\right)
+  \psi_{n\mathbf{k}}^{(0)}(\mathbf{r}),
+  \label{eq:kick-phase}
+\end{equation}
+exciting all frequencies simultaneously.
+The full optical conductivity tensor
+$\sigma_{\alpha\beta}(\omega)$ is recovered from three independent
+simulations with kick directions
+$\hat{\varepsilon}\in\{\hat{x},\hat{y},\hat{z}\}$,
+as described in Section~\ref{sec:postproc}.
+
+
+%--------------------------------------------------------------------
+\subsection{Vector Potential and Magnetic Perturbations}
+\label{sec:vector-potential}
+%--------------------------------------------------------------------
+
+The velocity-gauge Hamiltonian~(\ref{eq:H-VG}) provides a unified
+framework for both electric and magnetic perturbations, distinguished
+solely by the spatial structure of $\Avec(\mathbf{r},t)$.
+
+%....................................................................
+\subsubsection{Electric perturbation: spatially uniform \texorpdfstring{$\Avec(t)$}{A(t)}}
+\label{sec:electric}
+%....................................................................
+
+In the long-wavelength approximation, $\Avec(\mathbf{r},t)\to\Avec(t)$
+is spatially uniform.
+The magnetic field of a spatially uniform vector potential vanishes
+identically,
+\begin{equation}
+  \Bvec(t) = \nabla\times\Avec(t) = \mathbf{0},
+  \label{eq:B-zero}
+\end{equation}
+so the perturbation is purely electric.
+This is the regime of the present work.
+
+%....................................................................
+\subsubsection{Magnetic perturbation: spatially varying
+  \texorpdfstring{$\Avec(\mathbf{r})$}{A(r)}}
+\label{sec:magnetic}
+%....................................................................
+
+A static or time-dependent magnetic field $\Bvec$ is represented by
+a spatially varying vector potential.
+In the symmetric gauge centered at origin $\mathbf{RH_HLG$:
+\begin{equation}
+  \Avec(\mathbf{r})
+  = \tfrac{1}{2}\Bvec\times(\mathbf{r}-\mathbf{RH_HLG),
+  \label{eq:sym-gauge}
+\end{equation}
+from which $\nabla\times\Avec=\Bvec$ follows directly.
+The orbital magnetic coupling
+$\Avec(\mathbf{r},t)\cdot\hat{\mathbf{p}}$ in eq.~(\ref{eq:H-VG})
+is then spatially dependent and drives magnetically induced transitions.
+This framework is the theoretical foundation for computing
+magnetically induced circular dichroism (ECD/MCD) spectra from
+first principles.\cite{Mattiat-Luber-2022}
+The gauge origin $\mathbf{RH_HLG$ in eq.~(\ref{eq:sym-gauge}) introduces
+a formal ambiguity: for a complete basis physical observables are
+independent of $\mathbf{RH_HLG$, while for a finite basis residual
+dependence appears and vanishes in the limit of fine grid spacing.
+\myblue{[cite: gauge-origin discussion, Mattiat Luber 2022 and
+Pickard Mauri 2001 for real-space grids]}
+
+%....................................................................
+\subsubsection{Scope of the present implementation}
+\label{sec:scope}
+%....................................................................
+
+All calculations in this work employ the electric perturbation of
+Section~\ref{sec:electric}: a spatially uniform delta-kick vector
+potential~(\ref{eq:delta-kick}) with $\Bvec=0$ for all $t>0$.
+The diamagnetic term $\Avec^2/2$ in eq.~(\ref{eq:H-expand}) and the
+diamagnetic current $\Jdia=\Avec|\psi|^2$ both vanish identically
+after the kick (Section~\ref{sec:para-dia}), consistent with the
+linear-response regime.
+Extensions to the magnetic perturbation~(\ref{eq:sym-gauge}) for
+ECD and MCD spectroscopy, and to the scalar-potential
+perturbation~(\ref{eq:density-wave-kick}) for finite-wavevector
+response functions, are natural next steps within the same
+implementation framework and are left for future work.

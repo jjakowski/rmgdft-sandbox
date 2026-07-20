@@ -1,0 +1,55 @@
+description="input.xyz"  
+#******** REAL SPACE GRID ********   
+wavefunction_grid="16 16 144"  
+potential_grid_refinement="2"  
+  
+#******* CONTROL OPTIONS ******* 
+start_mode          ="LCAO Start"   
+calculation_mode    ="TDDFT "  
+kohn_sham_solver    ="davidson"  
+subdiag_driver      ="auto"    
+tddft_steps = "40000"  
+tddft_time_step = "0.200000"   
+#electric field in unit of Hatree/bohr  
+tddft_mode = "vector potential"
+electric_field_tddft = "0.001 0 0"  
+unoccupied_states_per_kpoint = "16" 
+interpolation_type = "prolong"
+restart_tddft = "false"  
+tddft_noscf = "False"  
+
+BerryPhase = "false"
+BerryPhaseDirection = "0"
+
+use_symmetry = "1"
+time_reversal = "true"
+  
+#********* K POINT SETUP *********  
+kpoint_mesh="36 36 1"  
+kpoint_is_shift="0 0 0"    
+kpoint_distribution = "16"
+  
+#******* Pseudopotentials *******   
+internal_pseudo_type = "sg15"  
+#use Optimized Norm-Conserving Vanderbilt (ONCV) pseudopotenitals  
+#those pseudopotentials are built in with RMG  
+write_pseudopotential_plots ="False"  
+  
+#*****Exchange Correlation ******  
+exchange_correlation_type="AUTO_XC"  
+#AUTO_XC: XC will be determined from pseudopotential  
+  
+#****  LATTICE and ATOMS  ****   
+bravais_lattice_type="None"  
+crds_units = "Angstrom"  
+lattice_units = "Angstrom"  
+lattice_vector="  
+ 2.508261330000e+00  0.000000000000e+00  0.000000000000e+00   
+ -1.254130660000e+00  2.172218030000e+00  0.000000000000e+00   
+ 0.000000000000e+00  0.000000000000e+00  2.200000000000e+01   
+"  
+atomic_coordinate_type = "Absolute"  
+atoms="  
+B  2.508261326380e+00 3.782124387400e-09 0.000000000000e+00  1 1 1   0.00   0.00   0.00  
+N  1.254130703500e+00 7.240726995590e-01 0.000000000000e+00  1 1 1   0.00   0.00   0.00  
+"  

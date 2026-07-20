@@ -1,0 +1,53 @@
+CalculationMode = td  
+UnitsOutput = eV_angstrom
+
+PeriodicDimensions = 3
+BoxShape = parallelepiped
+
+Spacing = 0.3
+
+a = 1.905*angstrom
+
+%LatticeParameters
+ a | 10*angstrom | 10*angstrom
+ 90| 90          | 90
+%
+
+ll = 0.846684*angstrom
+%Coordinates
+"H" | -ll/2 | 0.0 | 0.0
+"H" |  ll/2 | 0.0 | 0.0
+%
+
+%Species
+ "H" | species_pseudo | file | "H.UPF"
+%
+
+%KPointsGrid
+ 110 | 1 | 1
+%
+
+%TDExternalFields
+ vector_potential | 1.0 | 0.0 | 0.0 | 0.0 | "envelope_step"
+%
+
+%TDFunctions
+ "envelope_step" | tdf_from_expr | "0.01*step(t)"
+%
+
+%TDOutput
+ total_current
+%
+
+TDTimeStep = 0.2
+TDPropagator = aetrs
+TDMaxSteps = 200000
+TDExponentialMethod = lanczos
+TDExpOrder = 16
+
+ExperimentalFeatures = yes
+
+PropagationSpectrumDampMode = gaussian
+PropagationSpectrumMaxEnergy  = 10*eV
+
+

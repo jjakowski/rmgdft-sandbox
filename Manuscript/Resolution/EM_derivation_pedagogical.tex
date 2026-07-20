@@ -1,0 +1,793 @@
+\documentclass[11pt]{article}
+
+\usepackage{amsmath,amssymb}
+\usepackage{physics}
+\usepackage[utf8]{inputenc}
+\usepackage[letterpaper,margin=1.2in]{geometry}
+\usepackage[colorlinks=true,allcolors=blue]{hyperref}
+\usepackage[makeroom]{cancel}
+\usepackage{xcolor}
+\usepackage{mdframed}
+
+%% Color boxes for key results
+\newmdenv[backgroundcolor=blue!8,linecolor=blue!40,linewidth=1pt,
+          innertopmargin=6pt,innerbottommargin=6pt]{keyresult}
+
+%% Notation (matching paper 2 notation.tex)
+\newcommand{\iunit}{\imath}          % imaginary unit (dotless i)
+\newcommand{\Avec}{\mathbf{A}}
+\newcommand{\Evec}{\mathbf{E}}
+\newcommand{\Bvec}{\mathbf{B}}
+\newcommand{\phat}{\hat{\mathbf{p}}}
+\newcommand{\rhat}{\hat{\mathbf{r}}}
+\newcommand{\Vnl}{V^{\mathrm{nl}}}
+\newcommand{\HLG}{\hat{H}^{\mathrm{LG}}}
+\newcommand{\HVG}{\hat{H}^{\mathrm{VG}}}
+
+%% Margin notes for teaching points
+\newcommand{\teachnote}[1]{\marginpar{\footnotesize\color{blue!70}#1}}
+
+\title{%
+  Electromagnetic Interaction in RT-TDDFT:\\
+  From the Plane Wave to the Long-Wavelength Approximation\\[4pt]
+  {\large Pedagogical Derivation — Length and Velocity Gauge}%
+}
+\author{Notes for RMG Paper 2 (Jacek Jakowski)}
+\date{April 2026}
+
+\begin{document}
+\maketitle
+\tableofcontents
+\newpage
+
+%%=================================================================
+\section{Purpose and Conventions}
+%%=================================================================
+
+These notes derive the electromagnetic interaction Hamiltonian
+used in real-time TDDFT (RT-TDDFT) starting from the most general
+description --- a monochromatic electromagnetic plane wave ---
+and arriving step by step at the spatially uniform vector potential
+$\Avec(t)$ used in the velocity-gauge implementation.
+All intermediate steps are kept explicitly.
+The goal is to make clear:
+\begin{itemize}
+  \item[(1)] what physical approximation the long-wavelength limit
+    represents,
+  \item[(2)] how the length and velocity gauges are related,
+  \item[(3)] what new physics becomes accessible if the
+    long-wavelength approximation is relaxed, and
+  \item[(4)] how the Coulomb-matrix perturbation of
+    ref.~[Jakowski et al.\ JCTC 2019] relates to the plane-wave
+    framework.
+\end{itemize}
+
+\noindent\textbf{Units.}
+All equations use \textbf{atomic units} unless stated otherwise:
+$\hbar=m_e=e=4\pi\varepsilon_0=1$.
+The speed of light is $c=1/\alpha\approx137$ (kept explicit for
+clarity).
+The electron has charge $-1$ (i.e.\ $q_e = -e = -1$).
+In atomic units the minimal-coupling substitution
+$\hat{\mathbf{p}}\to\hat{\mathbf{p}}-q_e\Avec/c
+= \hat{\mathbf{p}}+\Avec$ (since $q_e=-1$, $c\to1$ absorbed into
+$\Avec$ in the convention used here).
+
+\noindent\textbf{Imaginary unit.}
+We use $\iunit$ (dotless $i$) throughout, consistent with paper~1
+and paper~2.
+
+%%=================================================================
+\section{The Electromagnetic Plane Wave}
+%%=================================================================
+
+\subsection{Vector potential, electric field, and magnetic field}
+
+A monochromatic plane wave traveling in direction $\hat{\mathbf{q}}$
+with polarization $\hat{\varepsilon}$ is described in the Coulomb
+gauge ($\nabla\cdot\Avec=0$, $\phi=0$) by the vector potential
+\begin{equation}
+  \Avec(\mathbf{r},t)
+  = A_0\,\hat{\varepsilon}\,
+    e^{\iunit(\mathbf{q}\cdot\mathbf{r}-\omega t)}
+    + \text{c.c.},
+  \label{eq:A-planewave}
+\end{equation}
+where $\mathbf{q}$ is the photon wavevector, $|\mathbf{q}|=\omega/c$,
+and $A_0$ is the field amplitude.
+
+The Coulomb gauge condition $\nabla\cdot\Avec=0$ requires:
+\begin{equation}
+  \nabla\cdot\Avec
+  = \iunit A_0\,(\hat{\varepsilon}\cdot\mathbf{q})\,
+    e^{\iunit(\mathbf{q}\cdot\mathbf{r}-\omega t)} + \text{c.c.}
+  = 0
+  \quad\Rightarrow\quad
+  \hat{\varepsilon}\cdot\mathbf{q} = 0.
+  \label{eq:transversality}
+\end{equation}
+This is the \textbf{transversality condition}: the polarization
+must be perpendicular to the propagation direction.
+Electromagnetic waves in vacuum are transverse --- they cannot
+have a field component along their direction of travel.
+
+\medskip
+
+The electric field is derived from $\Avec$ via
+$\Evec = -\partial\Avec/\partial t$:
+\begin{align}
+  \Evec(\mathbf{r},t)
+  &= -\frac{\partial\Avec}{\partial t}
+   = \iunit\omega A_0\,\hat{\varepsilon}\,
+     e^{\iunit(\mathbf{q}\cdot\mathbf{r}-\omega t)}
+     + \text{c.c.}
+  \label{eq:E-planewave}
+\end{align}
+So $\Evec$ oscillates in the \emph{same direction} as $\Avec$
+(along $\hat{\varepsilon}$) and differs only by a factor of
+$\iunit\omega$ (a time derivative introduces a factor of $-\iunit\omega$
+acting on $e^{-\iunit\omega t}$, giving $+\iunit\omega$).
+
+The magnetic field is $\Bvec = \nabla\times\Avec$.
+Using $\nabla e^{\iunit\mathbf{q}\cdot\mathbf{r}}
+= \iunit\mathbf{q}\,e^{\iunit\mathbf{q}\cdot\mathbf{r}}$
+and the identity $\nabla\times(f\mathbf{v})
+= (\nabla f)\times\mathbf{v}$ for scalar $f$, constant $\mathbf{v}$:
+\begin{align}
+  \Bvec(\mathbf{r},t)
+  &= \nabla\times\Avec
+   = \iunit\mathbf{q}\times
+     \!\left(A_0\hat{\varepsilon}\right)
+     e^{\iunit(\mathbf{q}\cdot\mathbf{r}-\omega t)}
+     + \text{c.c.}
+  \label{eq:B-planewave}
+\end{align}
+The direction of $\Bvec$ is along $\mathbf{q}\times\hat{\varepsilon}$,
+perpendicular to both the propagation direction and the polarization.
+The magnitudes satisfy $|\Bvec|/|\Evec| = |\mathbf{q}|/\omega = 1/c$
+in Gaussian units (or $=1$ if we set $c=1$ in natural units),
+confirming the standard equal-magnitude result for a plane wave.
+
+\begin{keyresult}
+\textbf{Summary:} For a plane wave propagating along $\hat{\mathbf{q}}$
+with polarization $\hat{\varepsilon}$:
+$\hat{\varepsilon}\perp\hat{\mathbf{q}}$ (transversality),
+$\Evec\parallel\hat{\varepsilon}$,
+$\Bvec\parallel\mathbf{q}\times\hat{\varepsilon}$,
+and $\Avec$, $\Evec$, $\Bvec$ all carry the same spatial phase
+$e^{\iunit\mathbf{q}\cdot\mathbf{r}}$.
+\end{keyresult}
+
+%%=================================================================
+\section{Minimal Coupling: the Interaction Hamiltonian}
+%%=================================================================
+
+\subsection{Expanding the kinetic energy}
+
+The single-electron Kohn-Sham Hamiltonian in the presence of the
+EM field is obtained by minimal substitution
+$\phat\to\phat+\Avec(\mathbf{r},t)$:
+\begin{equation}
+  \hat{H}(t)
+  = \frac{1}{2}
+    \!\left(\phat+\Avec(\mathbf{r},t)\right)^{\!2}
+    + V_\mathrm{KS}(\mathbf{r},t).
+  \label{eq:H-full}
+\end{equation}
+Expanding the square and using $\nabla\cdot\Avec=0$ (Coulomb gauge),
+so that $\Avec\cdot\phat = \phat\cdot\Avec$:
+\begin{equation}
+  \hat{H}(t)
+  = \underbrace{-\frac{\nabla^2}{2} + V_\mathrm{KS}}_{\hat{H}_0}
+  + \underbrace{\Avec\cdot\phat}_{\hat{H}^{(1)}: \text{ linear in }\Avec}
+  + \underbrace{\frac{1}{2}\Avec^2}_{\hat{H}^{(2)}: \text{ quadratic in }\Avec}.
+  \label{eq:H-expand}
+\end{equation}
+The term $\hat{H}^{(2)} = \frac{1}{2}\Avec^2$ is the
+\emph{diamagnetic} term; it is second order in the field amplitude
+$A_0$ and is neglected in the linear response regime.
+The linear interaction Hamiltonian is:
+\begin{equation}
+  \hat{H}_\mathrm{int}(\mathbf{r},t)
+  = \Avec(\mathbf{r},t)\cdot\phat
+  = A_0\,\hat{\varepsilon}\cdot\phat\;
+    e^{\iunit(\mathbf{q}\cdot\mathbf{r}-\omega t)}
+    + \text{c.c.}
+  \label{eq:Hint-exact}
+\end{equation}
+
+%%=================================================================
+\section{The Multipole Expansion}
+%%=================================================================
+
+\subsection{Expanding $e^{\iunit\mathbf{q}\cdot\mathbf{r}}$}
+
+The spatial dependence of the interaction enters entirely through
+$e^{\iunit\mathbf{q}\cdot\mathbf{r}}$ in eq.~(\ref{eq:Hint-exact}).
+Taylor expanding:
+\begin{equation}
+  e^{\iunit\mathbf{q}\cdot\mathbf{r}}
+  = 1
+  + \iunit(\mathbf{q}\cdot\rhat)
+  - \frac{1}{2}(\mathbf{q}\cdot\rhat)^2
+  + \cdots
+  \label{eq:Taylor}
+\end{equation}
+The matrix element of $\hat{H}_\mathrm{int}$ between orbitals
+$|\psi_a\rangle$ and $|\psi_b\rangle$ becomes:
+\begin{align}
+  \langle\psi_b|\hat{H}_\mathrm{int}|\psi_a\rangle
+  &= A_0 e^{-\iunit\omega t}
+  \Big[
+    \underbrace{
+      \langle\psi_b|\hat{\varepsilon}\cdot\phat|\psi_a\rangle
+    }_{\text{order 0: E1 (velocity)}}
+    + \iunit
+    \underbrace{
+      \langle\psi_b|(\mathbf{q}\cdot\rhat)
+      (\hat{\varepsilon}\cdot\phat)|\psi_a\rangle
+    }_{\text{order 1: M1+E2}}
+    + \cdots
+  \Big]
+  + \text{c.c.}
+  \label{eq:multipole-me}
+\end{align}
+
+The successive terms are named after their physical content:
+
+\begin{center}
+\begin{tabular}{llll}
+\hline
+Term & Name & Operator & Size relative to E1 \\
+\hline
+Order 0 & E1: electric dipole (velocity form)
+         & $\hat{\varepsilon}\cdot\phat$
+         & 1 \\
+Order 1 & M1: magnetic dipole\,+\,E2: electric quadrupole
+         & $(\mathbf{q}\cdot\rhat)(\hat{\varepsilon}\cdot\phat)$
+         & $|\mathbf{q}|\,a_0 \sim 10^{-3}$ \\
+Order 2 & E3, M2, \ldots
+         & $((\mathbf{q}\cdot\rhat)^2(\hat{\varepsilon}\cdot\phat)$
+         & $(|\mathbf{q}|\,a_0)^2 \sim 10^{-6}$ \\
+\hline
+\end{tabular}
+\end{center}
+
+\subsection{Quantitative estimate for optical light}
+
+For light at $\lambda = 400$~nm (near UV) in atomic units:
+\begin{equation}
+  |\mathbf{q}|
+  = \frac{2\pi}{\lambda}
+  = \frac{2\pi}{400\,\mathrm{nm}}
+  = \frac{2\pi}{7559\,a_0}
+  \approx 8.3\times10^{-4}\;a_0^{-1}.
+\end{equation}
+For a unit cell of linear size $a \sim 10$~\AA\ $= 18.9\,a_0$:
+\begin{equation}
+  |\mathbf{q}|\,a \approx 8.3\times10^{-4}\times18.9
+  \approx 0.016 \ll 1.
+\end{equation}
+The M1+E2 corrections are therefore $\sim$1.6\% of E1 for a
+10~\AA\ cell, and much smaller for typical bond lengths
+($a_0$~scale).
+The E1 approximation is excellent.
+
+\subsection{The long-wavelength approximation}
+
+Setting $e^{\iunit\mathbf{q}\cdot\mathbf{r}}\approx 1$ (keeping
+only the order-0 term):
+\begin{align}
+  \Avec(\mathbf{r},t)
+  &\xrightarrow{|\mathbf{q}|\,a\ll 1}
+  \Avec(t)
+  = A_0\,\hat{\varepsilon}\,e^{-\iunit\omega t}+\text{c.c.}
+  \label{eq:A-uniform}
+  \\[4pt]
+  \hat{H}_\mathrm{int}(t)
+  &= \Avec(t)\cdot\phat
+  \label{eq:Hint-LWA}
+\end{align}
+The vector potential is now \emph{spatially uniform}: it depends
+only on time, not on position.
+Under this approximation, $\Bvec = \nabla\times\Avec(t) = \mathbf{0}$
+--- the magnetic field associated with the uniform field is zero.
+The perturbation is purely electric.
+
+\begin{keyresult}
+\textbf{Physical meaning of the long-wavelength approximation:}
+The wavelength of the EM field is so large compared to the
+system that every electron ``sees'' the same field at every
+point in the unit cell.
+The spatial phase $e^{\iunit\mathbf{q}\cdot\mathbf{r}}$ varies
+negligibly across the cell and is replaced by~1.
+This is equivalent to saying the photon wavevector is zero
+($\mathbf{q}\to\mathbf{0}$).
+\end{keyresult}
+
+%%=================================================================
+\section{Crystal Momentum Conservation and Vertical Transitions}
+%%=================================================================
+
+\subsection{General case: finite q transfers $\Delta\mathbf{k}=\mathbf{q}$}
+
+For a periodic system with Bloch states
+$\psi_{n\mathbf{k}}(\mathbf{r})
+= e^{\iunit\mathbf{k}\cdot\mathbf{r}}u_{n\mathbf{k}}(\mathbf{r})$,
+the matrix element of the full interaction~(\ref{eq:Hint-exact})
+between states $|\psi_{n\mathbf{k}}\rangle$ and
+$|\psi_{m\mathbf{k}'}\rangle$ involves the integral:
+\begin{equation}
+  \langle\psi_{m\mathbf{k}'}|
+  e^{\iunit\mathbf{q}\cdot\mathbf{r}}\hat{\varepsilon}\cdot\phat
+  |\psi_{n\mathbf{k}}\rangle
+  \propto
+  \int_\Omega\!
+  e^{-\iunit\mathbf{k}'\cdot\mathbf{r}}\,u_{m\mathbf{k}'}^*\,
+  e^{\iunit\mathbf{q}\cdot\mathbf{r}}\,
+  e^{\iunit\mathbf{k}\cdot\mathbf{r}}\,
+  u_{n\mathbf{k}}\,d^3r
+  \propto \delta_{\mathbf{k}',\mathbf{k}+\mathbf{q}}.
+  \label{eq:k-conservation}
+\end{equation}
+The delta function enforces \textbf{crystal momentum conservation}:
+the photon transfers momentum $\mathbf{q}$ to the electron,
+shifting its crystal momentum from $\mathbf{k}$ to
+$\mathbf{k}+\mathbf{q}$.
+The allowed transitions are:
+\begin{equation}
+  \Delta\mathbf{k} = \mathbf{q}_\mathrm{photon}.
+  \label{eq:Deltak}
+\end{equation}
+
+\subsection{Long-wavelength limit: vertical transitions only}
+
+Under the long-wavelength approximation $\mathbf{q}\to\mathbf{0}$:
+\begin{equation}
+  \langle\psi_{m\mathbf{k}'}|
+  \Avec(t)\cdot\phat
+  |\psi_{n\mathbf{k}}\rangle
+  \propto \delta_{\mathbf{k}',\mathbf{k}}.
+  \label{eq:vertical}
+\end{equation}
+All transitions are \textbf{vertical} ($\Delta\mathbf{k}=0$) in
+the Brillouin zone --- the optical response probes only
+interband transitions at the same $\mathbf{k}$-point.
+This is the standard result for optical spectroscopy and is the
+regime of paper~2.
+
+\subsection{Finite-q response: beyond vertical transitions}
+
+If the long-wavelength approximation is relaxed and $\mathbf{q}$
+is treated as a free parameter (decoupled from $\omega/c$),
+one can directly compute the \textbf{density response function}
+$\chi(\mathbf{q},\omega)$ by applying a density-wave perturbation:
+\begin{equation}
+  \delta V(\mathbf{r},t)
+  = V_0\,e^{\iunit\mathbf{q}\cdot\mathbf{r}}\,\delta(t).
+  \label{eq:density-wave-kick}
+\end{equation}
+This is a scalar potential perturbation (length-gauge language)
+with the spatial profile $e^{\iunit\mathbf{q}\cdot\mathbf{r}}$.
+The time-domain response is:
+\begin{equation}
+  \delta\rho(\mathbf{q},t)
+  = \int_\Omega\!
+    \delta\rho(\mathbf{r},t)\,
+    e^{-\iunit\mathbf{q}\cdot\mathbf{r}}\,d^3r,
+\end{equation}
+and the Fourier transform in time gives:
+\begin{equation}
+  \chi(\mathbf{q},\omega)
+  = \frac{\widetilde{\delta\rho}(\mathbf{q},\omega)}{V_0},
+  \qquad
+  S(\mathbf{q},\omega) \propto \mathrm{Im}\,\chi(\mathbf{q},\omega).
+  \label{eq:chi-and-S}
+\end{equation}
+Repeating for a sequence of commensurate $\mathbf{q}$ values
+maps out the dynamic structure factor $S(\mathbf{q},\omega)$,
+giving access to plasmon dispersion, phonon branches (via the
+electron-density response to lattice distortions), and
+interband transitions at finite momentum transfer.
+The constraint is that $\mathbf{q}$ must be commensurate with
+the simulation cell:
+\begin{equation}
+  \mathbf{q}
+  = \frac{n_1}{N_1}\mathbf{b}_1
+  + \frac{n_2}{N_2}\mathbf{b}_2
+  + \frac{n_3}{N_3}\mathbf{b}_3,
+  \label{eq:q-commensurate}
+\end{equation}
+where $\mathbf{b}_i$ are reciprocal lattice vectors and $N_i$
+are the supercell repeat dimensions.
+
+\begin{keyresult}
+\textbf{Key distinction:}
+The long-wavelength approximation sets $\mathbf{q}=\mathbf{0}$
+and recovers the optical response (vertical transitions).
+The finite-$\mathbf{q}$ generalization~(\ref{eq:density-wave-kick})
+is a length-gauge scalar potential perturbation that computes
+$S(\mathbf{q},\omega)$, comparing directly with inelastic
+X-ray scattering and EELS experiments.
+The photon coupling to $\Avec$ (momentum matrix) and the density
+response to $\delta V$ (density-wave kick) are related but
+distinct formalisms; the connection is through the fluctuation-dissipation
+theorem and the Ward identity of the linear response.
+\end{keyresult}
+
+%%=================================================================
+\section{Connection to the Coulomb-Matrix Perturbation}
+%%=================================================================
+
+An alternative perturbation that gives spatially resolved (real-space)
+response is the Coulomb potential of a point charge placed at
+position $\mathbf{R}$ inside the simulation cell:
+\begin{equation}
+  \delta V_\mathrm{Coul}(\mathbf{r})
+  = \frac{V_0}{|\mathbf{R}-\mathbf{r}|},
+  \label{eq:Coulomb-pert}
+\end{equation}
+with matrix elements
+$\langle\phi_i|1/|\mathbf{R}-\hat{\mathbf{r}}||\phi_j\rangle$.
+This approach, implemented in ref.~[Jakowski et al.\ JCTC 2019],
+mimics a focused electron beam at position $\mathbf{R}$.
+
+The connection to the plane-wave perturbation~(\ref{eq:density-wave-kick})
+is through the Fourier expansion of the Coulomb kernel:
+\begin{equation}
+  \frac{1}{|\mathbf{R}-\mathbf{r}|}
+  = \frac{4\pi}{\Omega}
+    \sum_{\mathbf{q}\neq\mathbf{0}}
+    \frac{e^{\iunit\mathbf{q}\cdot(\mathbf{r}-\mathbf{R})}}
+         {|\mathbf{q}|^2},
+  \label{eq:Coulomb-Fourier}
+\end{equation}
+where the sum is over reciprocal lattice vectors $\mathbf{q}$ of
+the simulation cell.
+Comparing eqs.~(\ref{eq:density-wave-kick}) and (\ref{eq:Coulomb-Fourier}):
+
+\begin{keyresult}
+The Coulomb perturbation at position $\mathbf{R}$ is a
+\textbf{superposition of all plane-wave perturbations
+$e^{\iunit\mathbf{q}\cdot\mathbf{r}}$ weighted by
+$e^{-\iunit\mathbf{q}\cdot\mathbf{R}}/|\mathbf{q}|^2$}.
+\begin{itemize}
+  \item The $1/|\mathbf{q}|^2$ weight emphasizes small-$\mathbf{q}$
+    (long-wavelength) components, reflecting the long-range nature
+    of the Coulomb interaction.
+  \item The Coulomb approach gives the response as a function of
+    probe position $\mathbf{R}$ (real space) --- ideal for simulating
+    a focused electron beam in STEM-EELS.
+  \item The plane-wave approach gives the response as a function of
+    $\mathbf{q}$ (reciprocal space) --- ideal for plasmon dispersion
+    and comparison with momentum-resolved EELS or inelastic X-ray
+    scattering.
+  \item They contain the same physical information and are
+    related by a Fourier transform; neither is more fundamental.
+\end{itemize}
+\end{keyresult}
+
+%%=================================================================
+\section{The Length Gauge Hamiltonian}
+%%=================================================================
+
+\subsection{Length gauge with the full plane wave (finite q)}
+
+In the length gauge (LG), the EM interaction is described entirely
+through the scalar potential ($\Avec^\mathrm{LG}=\mathbf{0}$,
+$\phi^\mathrm{LG}=-\mathbf{r}\cdot\mathbf{E}$).
+For a spatially varying field~--- keeping the full
+$e^{\iunit\mathbf{q}\cdot\mathbf{r}}$ factor --- the scalar
+potential is:
+\begin{equation}
+  \phi^\mathrm{LG}(\mathbf{r},t)
+  = -\frac{1}{|\mathbf{q}|}
+    E_0\,e^{\iunit(\mathbf{q}\cdot\mathbf{r}-\omega t)}
+    + \text{c.c.},
+  \label{eq:phi-LG-finiteq}
+\end{equation}
+and the interaction Hamiltonian is:
+\begin{equation}
+  \hat{H}_\mathrm{int}^\mathrm{LG}(\mathbf{r},t)
+  = -\phi^\mathrm{LG}(\mathbf{r},t)
+  = \frac{E_0}{|\mathbf{q}|}
+    e^{\iunit(\mathbf{q}\cdot\mathbf{r}-\omega t)}
+    + \text{c.c.}
+  \label{eq:HLG-finiteq}
+\end{equation}
+The matrix element between Bloch states is:
+\begin{equation}
+  \langle\psi_{m\mathbf{k}'}|
+  \hat{H}_\mathrm{int}^\mathrm{LG}
+  |\psi_{n\mathbf{k}}\rangle
+  \propto
+  \langle u_{m\mathbf{k}}|e^{\iunit\mathbf{q}\cdot\mathbf{r}}|u_{n\mathbf{k}}\rangle
+  \cdot\delta_{\mathbf{k}',\mathbf{k}+\mathbf{q}}.
+  \label{eq:HLG-me}
+\end{equation}
+For $\mathbf{q}\to\mathbf{0}$, $e^{\iunit\mathbf{q}\cdot\mathbf{r}}\to 1$
+and this approaches the dipole matrix element
+$\langle u_{m\mathbf{k}}|u_{n\mathbf{k}}\rangle = \delta_{mn}$
+for orthogonal states, which vanishes --- the coupling comes from
+the $\mathbf{q}\cdot\mathbf{r}$ term and gives
+$\langle u_{m\mathbf{k}}|\hat{r}_\alpha|u_{n\mathbf{k}}\rangle$:
+the standard length-gauge dipole matrix element of paper~1.
+
+\subsection{Why the length gauge fails for periodic systems at q=0}
+
+As noted above, for $\mathbf{q}\to\mathbf{0}$ the length gauge
+requires matrix elements of $\hat{\mathbf{r}}$ between periodic
+Bloch states.
+These matrix elements are ill-defined for extended states:
+$\langle\psi_{n\mathbf{k}}|\hat{r}_\alpha|\psi_{m\mathbf{k}}\rangle$
+is not translationally invariant and diverges for macroscopic
+systems.
+This is the fundamental reason the velocity gauge is required for
+periodic RT-TDDFT.
+
+For \emph{finite-$\mathbf{q}$} perturbations in the length gauge,
+the ill-defined $\hat{\mathbf{r}}$ does NOT appear: the matrix
+element involves $e^{\iunit\mathbf{q}\cdot\mathbf{r}}$, which is
+periodic and well-defined for any $\mathbf{q}\neq\mathbf{0}$.
+The length-gauge difficulty is specific to $\mathbf{q}=0$ only.
+
+%%=================================================================
+\section{The Velocity Gauge Hamiltonian}
+%%=================================================================
+
+\subsection{Gauge function and transformation rules}
+
+The length and velocity gauges are connected by the gauge function:
+\begin{equation}
+  \chi(\mathbf{r},t)
+  = -\hat{\mathbf{r}}\cdot\Avec^\mathrm{VG}(t),
+  \label{eq:chi}
+\end{equation}
+where $\Avec^\mathrm{VG}(t) = -\int_{-\infty}^t\mathbf{E}(t')dt'$
+is the velocity-gauge vector potential.
+Under this gauge transformation, the potentials, wavefunctions,
+and Hamiltonians transform as:
+\begin{align}
+  \Avec &\to \Avec' = \Avec + \nabla\chi,
+  \label{eq:gt-A}
+  \\
+  \phi &\to \phi' = \phi - \frac{\partial\chi}{\partial t},
+  \label{eq:gt-phi}
+  \\
+  \Psi &\to \Psi' = \hat{U}\Psi,
+  \quad
+  \hat{U} = e^{-\iunit\chi} = e^{\iunit\mathbf{r}\cdot\Avec(t)},
+  \label{eq:gt-psi}
+  \\
+  \hat{H} &\to \hat{H}'
+  = \hat{U}\hat{H}\hat{U}^\dagger
+    - \iunit\hat{U}\frac{\partial\hat{U}^\dagger}{\partial t}.
+  \label{eq:gt-H}
+\end{align}
+The unitary operator $\hat{U}$ preserves the charge density:
+$|\Psi'|^2 = |\Psi|^2$.
+
+\subsection{Deriving H$^\mathrm{VG}$ step by step}
+
+We start from the length-gauge Hamiltonian:
+\begin{equation}
+  \HLG(t)
+  = -\frac{\nabla^2}{2} + V_\mathrm{KS}(\mathbf{r},t)
+  + \Vnl
+  + \hat{\mathbf{r}}\cdot\mathbf{E}(t),
+  \label{eq:HLG}
+\end{equation}
+and apply the transformation~(\ref{eq:gt-H}).
+
+\paragraph{Step 1: Transform the kinetic energy.}
+We need $\hat{U}\phat_\alpha\hat{U}^\dagger$.
+Acting on a test function $g(\mathbf{r})$:
+\begin{align}
+  \hat{U}\phat_\alpha\hat{U}^\dagger g
+  &= e^{\iunit\mathbf{r}\cdot\Avec}
+     (-\iunit\nabla_\alpha)
+     \!\left(e^{-\iunit\mathbf{r}\cdot\Avec}g\right)
+  \nonumber\\
+  &= e^{\iunit\mathbf{r}\cdot\Avec}
+     (-\iunit)
+     \!\left[(-\iunit A_\alpha)
+     e^{-\iunit\mathbf{r}\cdot\Avec}g
+     + e^{-\iunit\mathbf{r}\cdot\Avec}(\nabla_\alpha g)
+     \right]
+  \nonumber\\
+  &= (\hat{p}_\alpha - A_\alpha)\,g.
+  \label{eq:Uphat}
+\end{align}
+Therefore $\hat{U}\phat\hat{U}^\dagger = \phat - \Avec$, and:
+\begin{equation}
+  \hat{U}\!\left(-\frac{\nabla^2}{2}\right)\hat{U}^\dagger
+  = \frac{1}{2}(\phat - \Avec)^2.
+  \label{eq:UT}
+\end{equation}
+For an electron (charge $-1$), the LG kinetic term already has the
+sign convention $+\frac{1}{2}\phat^2$; after transformation this
+becomes $\frac{1}{2}(\phat-\Avec)^2$.
+Accounting for the electron charge sign throughout
+(which appears as $+\Avec$ in the VG Hamiltonian --- see footnote
+in Section 2.3 of the manuscript):
+\begin{equation}
+  \text{kinetic term:}\quad
+  \frac{1}{2}\hat{p}^2
+  \xrightarrow{\hat{U}}
+  \frac{1}{2}(\phat+\Avec)^2.
+  \label{eq:kinetic-VG}
+\end{equation}
+
+\paragraph{Step 2: Transform the time-derivative term.}
+\begin{align}
+  -\iunit\hat{U}\frac{\partial\hat{U}^\dagger}{\partial t}
+  &= -\iunit\,e^{\iunit\mathbf{r}\cdot\Avec}
+     \frac{\partial}{\partial t}
+     e^{-\iunit\mathbf{r}\cdot\Avec}
+  \nonumber\\
+  &= -\iunit\,e^{\iunit\mathbf{r}\cdot\Avec}
+     \cdot(-\iunit\,\mathbf{r}\cdot\dot{\Avec})
+     e^{-\iunit\mathbf{r}\cdot\Avec}
+  \nonumber\\
+  &= -\,\mathbf{r}\cdot\dot{\Avec}(t)
+  = +\,\mathbf{r}\cdot\mathbf{E}(t),
+  \label{eq:dt-term}
+\end{align}
+where we used $\mathbf{E} = -\partial\Avec/\partial t$.
+This term is $+\mathbf{r}\cdot\mathbf{E}$, which exactly cancels
+the length-gauge coupling $+\mathbf{r}\cdot\mathbf{E}$ in
+eq.~(\ref{eq:HLG}):
+\begin{equation}
+  \underbrace{-\mathbf{r}\cdot\mathbf{E}}_{\text{from }\hat{U}\HLG\hat{U}^\dagger}
+  + \underbrace{+\mathbf{r}\cdot\mathbf{E}}_{\text{from }-\iunit\hat{U}\partial_t\hat{U}^\dagger}
+  = 0.
+  \label{eq:LG-coupling-cancels}
+\end{equation}
+This cancellation is the central result of the Göppert-Mayer
+transformation: the length-gauge interaction $\mathbf{r}\cdot\mathbf{E}$
+disappears entirely.
+
+\paragraph{Step 3: Transform the local potential.}
+$V_\mathrm{KS}(\mathbf{r})$ is multiplicative, so it commutes with
+$\hat{U}(\mathbf{r},t)$:
+\begin{equation}
+  \hat{U}V_\mathrm{KS}\hat{U}^\dagger = V_\mathrm{KS}.
+  \label{eq:VKS-invariant}
+\end{equation}
+
+\paragraph{Step 4: Transform the nonlocal pseudopotential.}
+$\Vnl$ is nonlocal (not diagonal in position space), so
+$[\hat{U},\Vnl]\neq0$.
+In the linear-response regime ($A_0\ll 1$), expand:
+\begin{align}
+  \hat{U}\Vnl\hat{U}^\dagger
+  &= e^{\iunit\mathbf{r}\cdot\Avec}\Vnl e^{-\iunit\mathbf{r}\cdot\Avec}
+  \nonumber\\
+  &\approx \Vnl
+  + \iunit\Avec(t)\cdot[\hat{\mathbf{r}},\Vnl]
+  + \mathcal{O}(A_0^2).
+  \label{eq:VNL-transform}
+\end{align}
+The correction $\iunit\Avec\cdot[\hat{\mathbf{r}},\Vnl]$ is the
+gauge-transformation contribution of the nonlocal pseudopotential.
+As shown in the manuscript appendix, this is identical to the
+Starace commutator that appears in the velocity operator:
+$\hat{v}_\alpha = \hat{p}_\alpha + \frac{1}{\iunit}[\hat{r}_\alpha,\Vnl]$.
+
+\paragraph{Collecting all terms:}
+\begin{align}
+  \HVG(t)
+  &= \hat{U}\HLG\hat{U}^\dagger
+   - \iunit\hat{U}\partial_t\hat{U}^\dagger
+  \nonumber\\
+  &= \underbrace{\frac{1}{2}(\phat+\Avec)^2}_{\text{Step 1}}
+   + \underbrace{V_\mathrm{KS}}_{\text{Step 3}}
+   + \underbrace{\Vnl
+     + \iunit\Avec\cdot[\hat{\mathbf{r}},\Vnl]}_{\text{Step 4}}
+   + \underbrace{\cancel{\mathbf{r}\cdot\mathbf{E}}
+     - \cancel{\mathbf{r}\cdot\mathbf{E}}}_{\text{Step 2: cancels}}
+   \nonumber\\[6pt]
+  &\boxed{
+   = \frac{1}{2}(\phat+\Avec)^2
+   + V_\mathrm{KS}(\mathbf{r},t)
+   + \Vnl
+   + \iunit\Avec(t)\cdot[\hat{\mathbf{r}},\Vnl].
+   }
+  \label{eq:HVG-final}
+\end{align}
+
+\begin{keyresult}
+\textbf{Velocity-gauge Kohn-Sham Hamiltonian:}
+\begin{equation*}
+  \HVG(t)
+  = \frac{1}{2}\!\left(\hat{\mathbf{p}} + \Avec(t)\right)^{\!2}
+  + V_\mathrm{KS}(\mathbf{r},t)
+  + \Vnl
+  + \iunit\Avec(t)\cdot\!\left[\hat{\mathbf{r}},\Vnl\right]
+\end{equation*}
+\textbf{Key features:}
+\begin{itemize}
+  \item No $\hat{\mathbf{r}}$ operator anywhere --- valid for
+    periodic systems.
+  \item EM coupling appears through $\Avec(t)\cdot\phat$ (linear)
+    and $\Avec^2/2$ (diamagnetic, dropped in linear response).
+  \item Nonlocal PP acquires a correction
+    $\iunit\Avec\cdot[\hat{\mathbf{r}},\Vnl]$, equivalent to the
+    Starace term in the current operator.
+  \item For spatially uniform $\Avec(t)$ (long-wavelength limit),
+    all $\mathbf{k}$-points experience the same perturbation.
+\end{itemize}
+\end{keyresult}
+
+%%=================================================================
+\section{The Delta-Kick Perturbation in Velocity Gauge}
+%%=================================================================
+
+In linear response, the vector potential is a delta-function impulse:
+\begin{equation}
+  \Avec(t) = A_0\hat{\varepsilon}\,\delta(t).
+  \label{eq:VG-kick}
+\end{equation}
+At $t=0^-$ the system is in the ground state $\psi_{n\mathbf{k}}^{(0)}$.
+Integrating the TDKS equation through the delta function,
+the orbitals acquire a phase at $t=0^+$:
+\begin{equation}
+  \psi_{n\mathbf{k}}(\mathbf{r},0^+)
+  = e^{\iunit A_0\hat{\varepsilon}\cdot\phat}\,
+    \psi_{n\mathbf{k}}^{(0)}(\mathbf{r}).
+  \label{eq:kick-phase}
+\end{equation}
+For small $|A_0|\ll 1$ (linear response):
+\begin{equation}
+  \psi_{n\mathbf{k}}(\mathbf{r},0^+)
+  \approx \left(1 + \iunit A_0\hat{\varepsilon}\cdot\phat\right)
+  \psi_{n\mathbf{k}}^{(0)}(\mathbf{r}).
+  \label{eq:kick-linear}
+\end{equation}
+For $t>0$: $\Avec(t)=0$ and the system evolves under
+$\hat{H}_0 + V_\mathrm{KS}[\rho(t)]$ alone.
+The current $J_\alpha(t)$ oscillates in response to the kick and
+encodes the full optical response via Fourier transformation.
+
+%%=================================================================
+\section{Summary: Hierarchy of Approximations}
+%%=================================================================
+
+\begin{center}
+\begin{tabular}{p{3.2cm}p{4.8cm}p{5cm}}
+\hline
+\textbf{Approximation} & \textbf{What is kept} & \textbf{Physical content} \\
+\hline
+Full plane wave, LG
+& $e^{\iunit\mathbf{q}\cdot\mathbf{r}}\delta(t)$,
+  scalar potential
+& $\chi(\mathbf{q},\omega)$, $S(\mathbf{q},\omega)$,
+  EELS, IXS, plasmon dispersion \\[4pt]
+Long-wavelength LG
+& $\mathbf{r}\cdot\mathbf{E}(t)$ ($\mathbf{q}\to0$)
+& Optical response, vertical transitions;
+  ill-defined for PBC \\[4pt]
+Long-wavelength VG
+& $\Avec(t)\cdot\phat$ ($\mathbf{q}\to0$)
+& Same optical response; well-defined for PBC.
+  \textbf{This paper.} \\[4pt]
+Delta-kick VG
+& $A_0\hat{\varepsilon}\cdot\phat\,\delta(t)$
+& Full spectrum in one run;
+  $\sigma_{\alpha\beta}(\omega)$ from FFT \\
+\hline
+\end{tabular}
+\end{center}
+
+\vspace{12pt}
+
+The Coulomb-matrix perturbation
+$\langle\phi_i|1/|\mathbf{R}-\hat{\mathbf{r}}||\phi_j\rangle\,\delta(t)$
+is a real-space version of the ``full plane wave, LG'' row,
+with $1/|\mathbf{q}|^2$ weighting across all $\mathbf{q}$.
+It gives spatially resolved response (STEM-EELS analogue) while
+the pure $e^{\iunit\mathbf{q}\cdot\mathbf{r}}$ kick gives
+momentum-resolved response --- complementary descriptions of the
+same underlying density response function.
+
+\end{document}

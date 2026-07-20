@@ -1,0 +1,420 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% app_gauge_nlpp.tex
+%%
+%% Appendix: Gauge Transformation of the Nonlocal Pseudopotential and
+%%           Explicit Evaluation of [r_alpha, V^nl] for KB Pseudopotentials
+%%
+%% \input{app_gauge_nlpp} goes in the appendix section of paper2_main.tex.
+%%
+%% Structure:
+%%   A. Gauge transformation V^nl under LG -> VG: derives the coupling
+%%      -i A_alpha [r_alpha, V^nl] that appears in H^VG
+%%   B. Explicit algebra of [r_alpha, V^nl] for single-projector KB PP
+%%   C. Generalization to multiple projectors per channel
+%%   D. Nonlocal current density J_nl from the commutator
+%%   E. Connection to AppNls_0xyz() in RMG
+%%
+%% CONVENTIONS: same as sec_theory_current.tex (atomic units, e_electron=-1)
+%% KEY SOURCE: NEAT-project-notes_main.tex lines 785-851 (Starace derivation)
+%%             Kleinman-Bylander (1982); Mattiat-Luber (2022) eq.12
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Gauge Transformation of the Nonlocal Pseudopotential
+  and the Commutator $[\hat{r}_\alpha, \Vnl]$}
+\label{app:gauge_nlpp}
+
+This appendix derives two connected results:
+(A)~the transformation of the nonlocal Kleinman-Bylander (KB)
+pseudopotential from the length gauge to the velocity gauge,
+establishing why the commutator $[\hat{r}_\alpha, \Vnl]$ enters the
+velocity gauge Hamiltonian; and (B)~the explicit algebraic evaluation
+of the commutator for a separable pseudopotential, providing the
+formula implemented in \texttt{AppNls\_0xyz()} in \texttt{RMG}.
+
+%--------------------------------------------------------------------
+\subsection*{A.\; Gauge Transformation of $\Vnl$ from Length to
+  Velocity Gauge}
+\label{app:gauge-transform-Vnl}
+%--------------------------------------------------------------------
+
+Under the gauge transformation from length gauge (LG) to velocity
+gauge (VG), the wavefunction and all operators transform by the
+unitary operator\cite{Luber-rt-tddft,Mattiat-Luber-2022}
+\begin{equation}
+  U(\mathbf{r},t)
+  = \exp\!\left(\imath\frac{q}{\hbar c}\chi(\mathbf{r},t)\right)
+  \stackrel{\mathrm{a.u.}}{=}
+  \exp(-\imath\chi(\mathbf{r},t)),
+  \label{eq:U-gauge}
+\end{equation}
+where in atomic units with $\hbar = c = 1$ and $q = -1$ for
+electrons, $q/\hbar c = -1$.
+The gauge function for the LG $\to$ VG transformation is
+\begin{equation}
+  \chi(\mathbf{r},t) = -\mathbf{r}\cdot\Avec(t),
+  \label{eq:chi-vg}
+\end{equation}
+where $\Avec(t) = -\int_0^t \mathbf{E}(t')\,\mathrm{d}t'$ is the
+vector potential chosen so that $\phi'=0$ in the velocity
+gauge.\cite{Luber-rt-tddft,rt-DFTB-Wong-2023}
+With $\chi = -\mathbf{r}\cdot\Avec$, the transformation operator is
+\begin{equation}
+  U(\mathbf{r},t)
+  = e^{-\imath(-\mathbf{r}\cdot\Avec)}
+  = e^{\imath\mathbf{r}\cdot\Avec(t)}.
+  \label{eq:U-explicit}
+\end{equation}
+
+Any operator $\hat{O}$ transforms as $\hat{O}' = U\hat{O}U^\dag$.
+For a \emph{local} operator $f(\mathbf{r})$, the transformation is
+trivial: $U f(\mathbf{r})U^\dag = f(\mathbf{r})$, because
+$U(\mathbf{r})$ commutes with any function of $\mathbf{r}$.
+
+For the \emph{nonlocal} pseudopotential $\Vnl$, the two operators
+$U$ and $\Vnl$ do not commute, and the transformed potential is
+\begin{equation}
+  \tilde{V}^{\mathrm{nl}}
+  = U\Vnl U^\dag
+  = e^{\imath\mathbf{r}\cdot\Avec}\Vnl
+    e^{-\imath\mathbf{r}\cdot\Avec}.
+  \label{eq:Vnl-transformed}
+\end{equation}
+To extract the first-order coupling to $\Avec$, we use the
+Baker-Campbell-Hausdorff (BCH) expansion truncated at first order
+in $\Avec$ (valid within linear response):
+\begin{align}
+  e^{\imath\mathbf{r}\cdot\Avec}\Vnl e^{-\imath\mathbf{r}\cdot\Avec}
+  &= \Vnl
+   + \imath[\mathbf{r}\cdot\Avec,\, \Vnl]
+   + \mathcal{O}(\Avec^2)
+  \nonumber \\
+  &= \Vnl
+   + \imath A_\alpha(t)[\hat{r}_\alpha,\Vnl]
+   + \mathcal{O}(\Avec^2),
+  \label{eq:Vnl-BCH}
+\end{align}
+where repeated Cartesian index $\alpha$ is summed.
+The velocity gauge Hamiltonian therefore differs from the length
+gauge Hamiltonian by the first-order correction
+\begin{equation}
+  H^{\mathrm{VG}} - H^{\mathrm{LG}}
+  \supset \imath A_\alpha(t)[\hat{r}_\alpha,\Vnl]
+  + \mathcal{O}(\Avec^2).
+  \label{eq:H-VG-correction}
+\end{equation}
+This correction is the origin of the nonlocal pseudopotential term
+in the velocity gauge Hamiltonian.
+When combined with the paramagnetic coupling
+$-\Avec\cdot\hat{\mathbf{p}}$ (from the kinetic energy), the
+total field-electron coupling in the velocity gauge is
+\begin{equation}
+  V_{\mathrm{field}}^{\mathrm{VG}}
+  = -A_\alpha(t)\hat{p}_\alpha
+    + \imath A_\alpha(t)[\hat{r}_\alpha,\Vnl]
+  = A_\alpha(t)\!\left(-\hat{p}_\alpha
+    + \imath[\hat{r}_\alpha,\Vnl]\right),
+  \label{eq:V-field-VG}
+\end{equation}
+which can be written as $-A_\alpha(t)\hat{v}_\alpha$ upon
+identifying $\hat{v}_\alpha = \hat{p}_\alpha -
+\imath[\hat{r}_\alpha,\Vnl] = \hat{p}_\alpha +
+\frac{1}{\imath}[\hat{r}_\alpha,\Vnl]\cdot(-1)$.
+(The sign is consistent with $\hat{v}_\alpha = \hat{p}_\alpha +
+\frac{1}{\imath}[\hat{r}_\alpha,\Vnl]$ at $A=0$, as derived in
+Section~\ref{sec:velocity-eom}.)
+
+%--------------------------------------------------------------------
+\subsection*{B.\; Explicit Evaluation of $[\hat{r}_\alpha, \Vnl]$
+  for Kleinman-Bylander Pseudopotentials}
+\label{app:KB-commutator}
+%--------------------------------------------------------------------
+
+The Kleinman-Bylander separable pseudopotential for atom $I$ in the
+single-projector-per-channel approximation
+is\cite{kleinman-bylander-1982}
+\begin{equation}
+  \Vnl = \sum_I\sum_{l,m}
+  |\beta^{lm}_I\rangle\, h^l_I\,
+  \langle\beta^{lm}_I|,
+  \label{eq:KB-def}
+\end{equation}
+where $|\beta^{lm}_I\rangle$ is the KB projector for atom $I$
+with angular momentum quantum numbers $(l,m)$, centered at
+$\mathbf{R}_I$, and $h^l_I$ is the (real, scalar) strength
+coefficient for angular momentum channel $l$.
+In position representation, the projector wavefunction is
+$\beta^{lm}_I(\mathbf{r}) = \langle\mathbf{r}|\beta^{lm}_I\rangle$.
+The sum over $(l,m)$ runs over all angular momentum channels and
+magnetic quantum numbers included in the pseudopotential.
+
+We evaluate the commutator $[\hat{r}_\alpha, \Vnl]$ by direct
+computation, acting on an arbitrary state $|\psi\rangle$:
+\begin{align}
+  [\hat{r}_\alpha, \Vnl]|\psi\rangle
+  &= \hat{r}_\alpha\left(\Vnl|\psi\rangle\right)
+   - \Vnl\left(\hat{r}_\alpha|\psi\rangle\right).
+  \label{eq:comm-expand}
+\end{align}
+
+\paragraph{First term: $\hat{r}_\alpha(\Vnl|\psi\rangle)$.}
+Inserting the KB form of $\Vnl$:
+\begin{align}
+  \hat{r}_\alpha\left(\Vnl|\psi\rangle\right)
+  &= \hat{r}_\alpha\sum_{I,l,m}
+     |\beta^{lm}_I\rangle\, h^l_I\,
+     \langle\beta^{lm}_I|\psi\rangle
+  \nonumber \\
+  &= \sum_{I,l,m}
+     \hat{r}_\alpha|\beta^{lm}_I\rangle\, h^l_I\,
+     \langle\beta^{lm}_I|\psi\rangle,
+  \label{eq:term1}
+\end{align}
+where $\hat{r}_\alpha$ acts on the ket $|\beta^{lm}_I\rangle$
+(multiplying the position wavefunction $\beta^{lm}_I(\mathbf{r})$
+by $r_\alpha$), while the scalar overlap
+$c_{I,lm} \equiv \langle\beta^{lm}_I|\psi\rangle
+= \int\beta^{lm*}_I(\mathbf{r}')\psi(\mathbf{r}')\,\mathrm{d}^3r'$
+is unaffected.
+
+\paragraph{Second term: $\Vnl(\hat{r}_\alpha|\psi\rangle)$.}
+\begin{align}
+  \Vnl\left(\hat{r}_\alpha|\psi\rangle\right)
+  &= \sum_{I,l,m}
+     |\beta^{lm}_I\rangle\, h^l_I\,
+     \langle\beta^{lm}_I|\hat{r}_\alpha|\psi\rangle.
+  \label{eq:term2}
+\end{align}
+Since $\hat{r}_\alpha$ is Hermitian,
+$\langle\beta^{lm}_I|\hat{r}_\alpha|\psi\rangle
+= \langle\hat{r}_\alpha\beta^{lm}_I|\psi\rangle
+= \int r_\alpha\,\beta^{lm*}_I(\mathbf{r})\,\psi(\mathbf{r})\,
+\mathrm{d}^3r$.
+We denote this as $\langle r_\alpha\beta^{lm}_I|\psi\rangle$,
+where $r_\alpha\beta^{lm}_I$ means the function
+$r_\alpha\beta^{lm*}_I(\mathbf{r})$ in position space.
+
+\paragraph{The commutator.}
+Subtracting eq.~(\ref{eq:term2}) from eq.~(\ref{eq:term1}):
+\begin{align}
+  [\hat{r}_\alpha,\Vnl]|\psi\rangle
+  &= \sum_{I,l,m} h^l_I
+     \Big[
+     \hat{r}_\alpha|\beta^{lm}_I\rangle\,\langle\beta^{lm}_I|\psi\rangle
+   - |\beta^{lm}_I\rangle\,\langle\hat{r}_\alpha\beta^{lm}_I|\psi\rangle
+     \Big].
+  \label{eq:comm-intermediate}
+\end{align}
+Using the shorthand $|r_\alpha\beta^{lm}_I\rangle \equiv
+\hat{r}_\alpha|\beta^{lm}_I\rangle$ for the position-weighted
+projector ket, this is
+\begin{equation}
+  \boxed{
+  [\hat{r}_\alpha,\Vnl]|\psi\rangle
+  = \sum_{I,l,m} h^l_I\!\left[
+    |r_\alpha\beta^{lm}_I\rangle\langle\beta^{lm}_I|\psi\rangle
+  - |\beta^{lm}_I\rangle\langle r_\alpha\beta^{lm}_I|\psi\rangle
+    \right].
+  }
+  \label{eq:comm-result}
+\end{equation}
+This is a rank-2 update (in the language of matrix algebra): the
+commutator of a separable operator with $\hat{r}_\alpha$ is
+again separable, but now involves two types of projectors — one
+weighted by $r_\alpha$ in the ket, one in the bra.
+
+Equation~(\ref{eq:comm-result}) has a transparent structure:
+\begin{itemize}
+  \item The \emph{first term}
+    $|r_\alpha\beta^{lm}_I\rangle\langle\beta^{lm}_I|\psi\rangle$
+    keeps the unmodified projector in the bra and weights the ket
+    by $r_\alpha$.
+    Physically: the electron is projected onto the original KB
+    projector at $\mathbf{r}'$ and then the result is multiplied
+    by $r_\alpha$ at the field point $\mathbf{r}$.
+  \item The \emph{second term}
+    $|\beta^{lm}_I\rangle\langle r_\alpha\beta^{lm}_I|\psi\rangle$
+    keeps the unmodified projector ket but weights the bra by
+    $r_\alpha$.
+    Physically: the electron is projected onto the
+    $r_\alpha$-weighted projector (measuring overlap with the
+    position-weighted projector) and the result propagates with
+    the original projector shape.
+\end{itemize}
+The two terms have opposite signs and together ensure that the
+commutator operator is anti-Hermitian, consistent with
+$[\hat{r}_\alpha, \Vnl]^\dag = -[\hat{r}_\alpha, \Vnl]$ for
+Hermitian $\hat{r}_\alpha$ and $\Vnl$.
+
+\paragraph{Matrix element between Kohn-Sham orbitals.}
+Taking the matrix element of eq.~(\ref{eq:comm-result}) between
+$\langle\psi_a|$ and $|\psi_b\rangle$:
+\begin{align}
+  \langle\psi_a|[\hat{r}_\alpha,\Vnl]|\psi_b\rangle
+  &= \sum_{I,l,m} h^l_I
+     \Big[
+       \underbrace{\langle\psi_a|r_\alpha\beta^{lm}_I\rangle}_{
+         \displaystyle A^{lm}_{I,a}}
+       \underbrace{\langle\beta^{lm}_I|\psi_b\rangle}_{
+         \displaystyle B^{lm}_{I,b}}
+     - \underbrace{\langle\psi_a|\beta^{lm}_I\rangle}_{
+         \displaystyle \overline{B^{lm}_{I,a}}}
+       \underbrace{\langle r_\alpha\beta^{lm}_I|\psi_b\rangle}_{
+         \displaystyle \overline{A^{lm}_{I,b}}}
+     \Big],
+  \label{eq:comm-matrix-element}
+\end{align}
+where we introduced the notation
+\begin{align}
+  B^{lm}_{I,b}
+  &= \langle\beta^{lm}_I|\psi_b\rangle
+   = \int \beta^{lm*}_I(\mathbf{r})\,\psi_b(\mathbf{r})
+     \,\mathrm{d}^3r,
+  \label{eq:B-overlap}
+  \\
+  A^{lm}_{I,b}
+  &= \langle r_\alpha\beta^{lm}_I|\psi_b\rangle
+   = \int r_\alpha\,\beta^{lm*}_I(\mathbf{r})\,\psi_b(\mathbf{r})
+     \,\mathrm{d}^3r.
+  \label{eq:A-overlap}
+\end{align}
+Here $A^{lm}_{I,b}$ is the overlap of the $\alpha$-position-weighted
+projector $r_\alpha\beta^{lm}_I$ with the orbital $\psi_b$, and
+$B^{lm}_{I,b}$ is the standard KB projector overlap.
+Both are computed as spatial integrals over the real-space grid.
+
+Equation~(\ref{eq:comm-matrix-element}) therefore requires two types
+of integrals per projector per orbital: the standard KB overlap
+$B^{lm}_{I,b}$ (already available from the usual nonlocal PP force
+evaluation) and the new position-weighted overlap $A^{lm}_{I,b}$.
+
+%--------------------------------------------------------------------
+\subsection*{C.\; Generalization to Multiple Projectors per Channel}
+\label{app:multi-projector}
+%--------------------------------------------------------------------
+
+In the general KB form with multiple projectors per angular momentum
+channel (eq.~11 of Kleinman and Bylander\cite{kleinman-bylander-1982}),
+\begin{equation}
+  \Vnl = \sum_I\sum_{l,m}\sum_{i,j}
+  |\beta^{lm}_{I,i}\rangle\, h^l_{I,ij}\,
+  \langle\beta^{lm}_{I,j}|,
+  \label{eq:KB-general}
+\end{equation}
+where $i,j$ are radial projector indices and $h^l_{I,ij}$ is the
+(generally non-diagonal) strength matrix.
+The commutator result of eq.~(\ref{eq:comm-result}) extends directly
+to
+\begin{equation}
+  [\hat{r}_\alpha,\Vnl]|\psi\rangle
+  = \sum_{I,l,m}\sum_{i,j} h^l_{I,ij}\!\left[
+    |r_\alpha\beta^{lm}_{I,i}\rangle
+    \langle\beta^{lm}_{I,j}|\psi\rangle
+  - |\beta^{lm}_{I,i}\rangle
+    \langle r_\alpha\beta^{lm}_{I,j}|\psi\rangle
+    \right].
+  \label{eq:comm-result-general}
+\end{equation}
+The algebraic structure is identical; only the matrix of strength
+coefficients $h^l_{I,ij}$ becomes non-diagonal in the projector
+indices.
+For the norm-conserving pseudopotentials used in \texttt{RMG}, the
+single-projector case (eq.~\ref{eq:comm-result}) applies.
+
+%--------------------------------------------------------------------
+\subsection*{D.\; Nonlocal Contribution to the Current Density}
+\label{app:Jnl-expression}
+%--------------------------------------------------------------------
+
+The nonlocal current density contribution to
+eq.~(\ref{eq:J-total}) is defined through
+eq.~(\ref{eq:Jnl-continuity}).
+We now verify that this definition is consistent with the velocity
+operator result by showing that the volume integral of
+$\mathbf{J}_\mathrm{nl}$ gives the expected macroscopic contribution.
+
+Using the single-particle density matrix $P(\mathbf{r},\mathbf{r}')
+= \sum_n f_n \psi_n(\mathbf{r})\psi_n^*(\mathbf{r}')$, the
+nonlocal contribution to the macroscopic current along direction
+$\alpha$ is
+\begin{align}
+  J_{\mathrm{nl},\alpha}(t)
+  &= \int_\Omega\!
+     \operatorname{Re}\!\left[
+       \psi^*(\mathbf{r},t)\,
+       \frac{1}{\imath}[\hat{r}_\alpha,\Vnl]\,
+       \psi(\mathbf{r},t)
+     \right]\mathrm{d}^3r
+  \nonumber \\
+  &= \frac{1}{\imath}\sum_{I,l,m} h^l_I\,
+     \operatorname{Re}\!\Bigg[
+       \int\!\psi^*(\mathbf{r})\,r_\alpha\,\beta^{lm}_I(\mathbf{r})
+       \,\mathrm{d}^3r
+       \cdot
+       \int\!\beta^{lm*}_I(\mathbf{r}')\,\psi(\mathbf{r}')
+       \,\mathrm{d}^3r'
+  \nonumber \\
+  &\qquad\qquad\qquad\quad
+   - \int\!\psi^*(\mathbf{r})\,\beta^{lm}_I(\mathbf{r})
+     \,\mathrm{d}^3r
+     \cdot
+     \int\!r_\alpha\,\beta^{lm*}_I(\mathbf{r}')\,\psi(\mathbf{r}')
+     \,\mathrm{d}^3r'
+     \Bigg].
+  \label{eq:Jnl-full}
+\end{align}
+In the density matrix notation of Section~\ref{sec:current-dm-sec},
+this is evaluated as the matrix element
+$\langle\psi_a|\frac{1}{\imath}[\hat{r}_\alpha,\Vnl]|\psi_b\rangle$
+from eq.~(\ref{eq:comm-matrix-element}), contracted with $P_{ab}(t)$.
+No additional real-space integration is required at each time step
+beyond what is already computed in building $\Jmat{\alpha}_{ab}$.
+
+%--------------------------------------------------------------------
+\subsection*{E.\; Connection to \texttt{AppNls\_0xyz()} in RMG}
+\label{app:code-connection}
+%--------------------------------------------------------------------
+
+In \texttt{RMG}, the commutator $[\hat{r}_\alpha,\Vnl]|\psi_b\rangle$
+is evaluated by the function \texttt{AppNls\_0xyz()}, called from
+\texttt{CurrentNlpp()} for directions $\alpha \in \{x,y,z\}$.
+
+The function computes exactly eq.~(\ref{eq:comm-result}) on the
+real-space grid.
+For each orbital $\psi_b$ and each atom $I$, it evaluates:
+\begin{enumerate}
+  \item The standard projector overlap
+    $B^{lm}_{I,b} = \langle\beta^{lm}_I|\psi_b\rangle$
+    (a sum over grid points in the support of $\beta^{lm}_I$);
+  \item The position-weighted overlap
+    $A^{lm}_{I,b} = \langle r_\alpha\beta^{lm}_I|\psi_b\rangle$
+    (the same sum but with each grid point contribution weighted
+    by its $r_\alpha$ coordinate relative to atom $I$);
+  \item The output array as
+    $[\hat{r}_\alpha,\Vnl]\psi_b(\mathbf{r})
+    = \sum_{I,l,m} h^l_I\!\left[
+      r_\alpha\beta^{lm}_I(\mathbf{r})\cdot B^{lm}_{I,b}
+      - \beta^{lm}_I(\mathbf{r})\cdot A^{lm}_{I,b}
+    \right]$,
+    stored in the work array \texttt{nv[]}.
+\end{enumerate}
+The result is passed to \texttt{CurrentNlpp()}, which computes the
+matrix element $\langle\psi_a|\texttt{nv}\rangle$ via a BLAS
+\texttt{gemm} operation, multiplies by \texttt{I\_t} $= \imath$,
+and adds the result to \texttt{Palpha\_matrix}.
+As shown in Section~\ref{sec:imath-convention}, the combined factor
+$\imath \times \frac{1}{\imath} = 1$ ensures that the nonlocal PP
+correction enters the total current matrix
+$\boldsymbol{\mathcal{J}}^\alpha$ with unit weight, consistent with
+eq.~(\ref{eq:Jmat-full}).
+
+A self-consistency check: at the ground state, when all orbitals
+$\psi_n$ are real-valued eigenstates, the density matrix is
+$P_{ab} = f_a\delta_{ab}$ and the imaginary part of
+$\langle\psi_a|\frac{1}{\imath}[\hat{r}_\alpha,\Vnl]|\psi_a\rangle$
+should vanish because $[\hat{r}_\alpha,\Vnl]$ is anti-Hermitian
+(the diagonal elements of an anti-Hermitian operator are purely
+imaginary for complex orbitals and zero for real orbitals).
+Thus $J_\mathrm{nl}(t=0) = 0$, consistent with vanishing ground-state
+current.
+This provides a simple numerical test that can be run on the
+ground-state density matrix before starting the RT-TDDFT propagation.
