@@ -1,231 +1,486 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% sec_implementation.tex
-%% Section 3: Implementation
-%% RMG Periodic RT-TDDFT — Paper 2
+%% Section 3: Implementation in RMG
+%% RMG Periodic RT-TDDFT -- Paper 2
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%\section{Implementation}
-%\label{sec:implementation}
-
-The implementation of the periodic and spin-polarized RT-TDDFT
-presented in this work is built on the existing finite-system
-RT-TDDFT module of \texttt{RMG},\cite{jakowski-rmg-tddft-2025}
-which is described in detail in the accompanying paper.
-Here we focus on the extensions required for periodic boundary
-conditions and spin-polarized calculations, the key approximations
-and their physical justification, and the computational organization
-of the velocity gauge propagation.
+The formal theory in
+Sec.~\ref{sec:periodic-velocity-gauge}--\ref{sec:optical-response}
+defines the periodic velocity-gauge RT-TDDFT formulation and the
+corresponding physical response functions.  This section describes the
+current numerical realization in \texttt{RMG}.  The implementation
+inherits the density-matrix propagation strategy of the previous
+finite-system RT-TDDFT module,\cite{jakowski-rmg-tddft-2025} and extends
+it to periodic boundary conditions, k-point sampling, collinear spin
+polarization, and current-based response analysis.
 
 %--------------------------------------------------------------------
-\subsection{Algorithm}
-\label{sec:algorithm}
+\subsection{Numerical Implementation and Density-Matrix Propagation}
+\label{sec:implementation-density-matrix}
 %--------------------------------------------------------------------
 
-The computational scheme for periodic RT-TDDFT in \texttt{RMG}
-is summarized in Algorithm~\ref{alg:tddft-periodic}.
-It follows the same density matrix propagation framework as the
-finite-system implementation~\cite{jakowski-rmg-tddft-2025} but
-with three key modifications: (1) the perturbation is applied as
-a momentum kick via the vector potential $\mathbf{A}$ rather than
-an electric field dipole kick; (2) the current operator matrix
-replaces the dipole matrix as the primary observable; and (3)
-the Hamiltonian matrix is evaluated at each k-point over the
-Brillouin zone.
+A periodic RT-TDDFT calculation begins from a converged ground-state
+Kohn--Sham calculation.  For each sampled $\mathbf k$ point and
+collinear spin channel $\sigma$, the ground-state cell-periodic Bloch
+orbitals are retained as a fixed basis for the real-time propagation.
+In this basis, RMG constructs and propagates finite active-space
+Hamiltonian and density matrices,
+$\mathbf H_{\mathbf k}^{\sigma}(t)$ and
+$\mathbf P_{\mathbf k}^{\sigma}(t)$, as introduced formally in
+Sec.~\ref{sec:density-matrix-propagation}.  General $\mathbf k$ points
+lead to complex Hermitian matrices, while $\Gamma$-point calculations
+may use real-valued paths where applicable.
 
-\begin{algorithm}[h!]
-\caption{Periodic RT-TDDFT Algorithm (VECTOR\_POT mode)}
-\label{alg:tddft-periodic}
-\begin{algorithmic}[1]
-\scriptsize
+The implementation equations are evaluated internally in atomic units,
+with $\hbar=m_e=e=1$ and $q_e=-1$.  The speed of light is not set to
+unity by this convention.  The relation between the explicit
+electromagnetic quantities in Sec.~\ref{sec:periodic-velocity-gauge}
+and the numerical coefficient used by the \texttt{VECTOR\_POT} mode is
+therefore treated separately in
+Sec.~\ref{sec:implementation-perturbation-current}.  The present
+periodic RT-TDDFT path is restricted to norm-conserving
+pseudopotentials.
 
-\item[{\bf /* Ground state DFT calculations: */}]
-\State Generate Bloch orbitals $|\psi_{n,\mathbf{k}}\rangle$,
-       Kohn-Sham Hamiltonian $\vb{H}^\sigma_{0,\mathbf{k}}$
-       for each k-point $\mathbf{k}$ and spin $\sigma$
-\State Select active space: $N_{\mathrm{occ}}$ occupied +
-       $N_{\mathrm{virt}}$ virtual orbitals
-\item[]
-
-\item[{\bf /* Build current operator matrices (once, before time loop): */}]
-\State For each k-point $\mathbf{k}$ and spin $\sigma$:
-\State \quad Build paramagnetic current matrix:
-\item[] \quad $J^\alpha_{ab} \leftarrow
-         \langle\psi_a|(-\imath\nabla_\alpha + k_\alpha)|\psi_b\rangle$
-       \quad [VecPHmatrix()]
-\State \quad Add nonlocal PP correction:
-\item[] \quad $J^\alpha_{ab} \leftarrow J^\alpha_{ab} +
-         \langle\psi_a|[\hat{r}_\alpha, \Vnl]|\psi_b\rangle$
-       \quad [CurrentNlpp()]
-\State \quad Add $\mathbf{A}(t_0)\cdot\mathbf{J}$ to $\vb{H}_{-1,\mathbf{k}}$
-       to encode the perturbation kick at $t=0$
-\item[]
-
-\item[{\bf /* Initialize density matrix: */}]
-\State $\vb{P}^0_{\mathbf{k}} \leftarrow \mathrm{diag}(f_{n,\mathbf{k}})$
-       \quad (occupation numbers on diagonal)
-\State $\vb{H}_{-1,\mathbf{k}} \leftarrow \vb{H}_{0,\mathbf{k}}$
-       (extrapolation seed)
-\item[]
-
-\item[{\bf /* Time loop: */}]
-\For{$j = 1$ to $N_{\mathrm{steps}}$}
-  \State $t \leftarrow t_0 + j \cdot \Delta t$
-  \State \textbf{Extrapolate:}
-         $\vb{H}_{1,\mathbf{k}} \leftarrow 2\vb{H}_{0,\mathbf{k}}
-          - \vb{H}_{-1,\mathbf{k}}$ \quad [extrapolate\_Hmatrix()]
-  \item[]
-  \item[{\bf /* Self-consistent Hamiltonian loop: */}]
-  \While{$\|\vb{H}_{1}^{\mathrm{new}} - \vb{H}_{1}^{\mathrm{old}}\|_\infty
-          > H_{\mathrm{thrs}}$}
-    \State \textbf{Magnus operator:}
-           $\vb{\Omega}_\mathbf{k} \leftarrow
-            -\imath\cdot\tfrac{1}{2}(\vb{H}_{0,\mathbf{k}}
-            + \vb{H}_{1,\mathbf{k}})\Delta t$
-           \quad [magnus()]
-    \State \textbf{Propagate density matrix:}
-           $\vb{P}^1_\mathbf{k} \leftarrow
-            \vb{P}^0_\mathbf{k} + [\vb{\Omega}_\mathbf{k}, \vb{P}^0_\mathbf{k}]
-            + \ldots$ \quad [eldyn\_ort() / commutp()]
-    \State \textbf{Update density:}
-           $\rho^\sigma(\mathbf{r}) \leftarrow \rho^\sigma_{\mathrm{gs}}(\mathbf{r})
-            + \sum_\mathbf{k} w_\mathbf{k}
-              \sum_{n} P^1_{nn,\mathbf{k}} |\psi_{n,\mathbf{k}}(\mathbf{r})|^2$
-           \quad [GetNewRho\_rmgtddft()]
-    \State \textbf{Update potentials:}
-           $V_{\mathrm{H}}[\rho]$, $V^\sigma_{\mathrm{xc}}[\rho^\uparrow,\rho^\downarrow]$
-    \State \textbf{Update Hamiltonian:}
-           $\vb{H}_{1,\mathbf{k}}^{\mathrm{new}} \leftarrow
-            \langle\psi_a|\hat{H}[\rho]|\psi_b\rangle$
-           \quad [HmatrixUpdate()]
-  \EndWhile
-  \item[]
-  \State \textbf{Extract current:}
-         $J_\alpha(t) \leftarrow
-          \mathrm{Re}\sum_{\mathbf{k}} w_\mathbf{k}\,
-          \mathrm{Tr}[\vb{P}^1_\mathbf{k}\cdot\vb{J}^\alpha_\mathbf{k}]$
-  \State (Optional) \textbf{Berry phase polarization:}
-         $P_{\mathrm{BP},\alpha}(t) \leftarrow
-          \mathrm{Tr}[\vb{P}^1_\mathbf{k}\cdot\vb{X}^\alpha_\mathbf{k}]$
-  \State \textbf{Advance:}
-         $\vb{P}^0 \leftarrow \vb{P}^1$;\;
-         $\vb{H}_{-1} \leftarrow \vb{H}_{0}$;\;
-         $\vb{H}_{0} \leftarrow \vb{H}_{1}$
-\EndFor
-\item[]
-\item[{\bf /* Postprocessing: */}]
-\State Fourier transform $J_\alpha(t)$ for each Cartesian direction $\alpha$
-\State Compute $\sigma_{\alpha\beta}(\omega)$,
-       $\varepsilon_{\alpha\beta}(\omega)$
-
-\end{algorithmic}
-\end{algorithm}
-
-
-%--------------------------------------------------------------------
-\subsection{Key Approximations and Their Justification}
-\label{sec:approximations}
-%--------------------------------------------------------------------
-
-The implementation described in Algorithm~\ref{alg:tddft-periodic}
-embodies several approximations with respect to the full theory
-presented in Section~\ref{sec:theory}.
-We discuss each in turn.
-
-\paragraph{Perturbative momentum kick.}
-The full velocity gauge Hamiltonian (eq.~\ref{eq:tdks-velocity})
-contains the vector potential $\mathbf{A}(t)$ at every time step,
-requiring the $\mathbf{A}(t)\cdot\hat{\mathbf{p}}$ term to be
-re-evaluated throughout the propagation.
-In the present implementation, we instead apply $\mathbf{A}(t)$
-as a delta-function kick at $t=0$ only: the momentum kick is encoded
-in the initial Hamiltonian $\vb{H}_{-1}$ by adding the
-$\mathbf{A}(t_0)\cdot\vb{J}^\alpha$ matrix (step 6 in
-Algorithm~\ref{alg:tddft-periodic}), after which $\mathbf{A}=0$
-for all $t>0$.
-This approach is equivalent to first-order perturbation theory in
-$|\mathbf{A}_0|$, and it provides the full linear optical response
-of the system through the free oscillations of the current density
-$\mathbf{J}(t)$ following the kick.
-The linear response regime is valid as long as the kick amplitude
-is small enough that the system does not leave the linear regime,
-which is straightforwardly verified by checking that the response
-is proportional to $|\mathbf{A}_0|$.
-
-\paragraph{Diamagnetic current term.}
-The full current density contains both paramagnetic and diamagnetic
-contributions (Section~\ref{sec:current}).
-In the present implementation, the diamagnetic term
-$\mathbf{J}_{\mathrm{dia}} \propto \mathbf{A}(t)|\psi|^2$
-is identically zero for all $t>0$ because $\mathbf{A}(t>0)=0$
-in the perturbative kick scheme.
-This is consistent with the linear response regime: the diamagnetic
-contribution to the linear response function is implicitly accounted
-for by the sum rule, and the paramagnetic current alone gives the
-correct optical conductivity.\cite{yabana-bertsch-1996,Mattiat-Luber-2022}
-Simulations with a continuously applied driving field
-(e.g., a CW laser or a Gaussian pulse) would require retaining
-$\mathbf{A}(t)$ throughout the propagation and are beyond the scope
-of the present work.
-
-\paragraph{First-order Magnus expansion.}
-As in the finite-system implementation,\cite{jakowski-rmg-tddft-2025}
-the Magnus operator is truncated to first order:
+The propagated orbital subspace is selected from the ground-state
+Kohn--Sham states.  Its lower boundary is specified by the input
+parameter \texttt{tddft\_start\_state}; states below this boundary are
+not included in the propagated density matrix.  Let $\{n_a\}$ denote
+the ground-state band indices retained in the active subspace and let
+$N_{\rm prop}$ be the number of propagated states.  At the beginning of
+the real-time calculation,
 \begin{equation}
-  \vb{\Omega} \approx \vb{\Omega}_1
-  = -\imath \cdot \tfrac{1}{2}(\vb{H}_0 + \vb{H}_1)\Delta t.
-  \label{eq:magnus-1st}
+  H_{ab,\mathbf k}^{\sigma}(0)
+  =
+  \epsilon_{n_a\mathbf k}^{\sigma}\delta_{ab},
+  \qquad
+  P_{ab,\mathbf k}^{\sigma}(0)
+  =
+  f_{n_a\mathbf k}^{\sigma}\delta_{ab},
+  \label{eq:impl_initial_h_p}
 \end{equation}
-The second-order correction $\vb{\Omega}_2 = \frac{1}{12}\Delta t^2
-[\vb{H}_0, \vb{H}_1]$ is not included.
-The accuracy and stability of this scheme for the time steps used
-here was validated in paper~1 through energy conservation tests,
-and we demonstrate analogous stability for the periodic case in
-Section~\ref{sec:results}.
+where $\epsilon_{n_a\mathbf k}^{\sigma}$ and
+$f_{n_a\mathbf k}^{\sigma}$ are the ground-state eigenvalue and
+occupation of state $n_a$.  Occupied states below the active lower
+boundary remain frozen at their ground-state density contribution.
+Occupied and unoccupied states inside the active subspace are included
+in $\mathbf P_{\mathbf k}^{\sigma}(t)$ and can participate in the
+real-time response.
 
-\paragraph{Norm-conserving pseudopotentials only.}
-The current implementation supports only norm-conserving
-pseudopotentials (NCPP).\cite{kleinman-bylander-1982,hamann-1989}
-Ultrasoft pseudopotentials (USPP)\cite{vanderbilt-1990} introduce
-a non-trivial overlap matrix $\mathbf{S} \neq \mathbf{I}$ into
-the density matrix propagation (the nonorthogonal basis path),
-which requires the generalized propagation scheme described in
-Appendix A of paper~1.
-This extension is planned for future work.
+For a time step $\Delta t$, RMG uses the first term of the Magnus
+expansion with an endpoint-averaged Hamiltonian.  In atomic units, the
+mathematically equivalent generator is
+\begin{equation}
+  \boldsymbol{\Omega}_{\mathbf k}^{\sigma}(t+\Delta t,t)
+  \simeq
+  -\frac{\imath\Delta t}{2}
+  \left[
+    \mathbf H_{\mathbf k}^{\sigma}(t)
+    +
+    \mathbf H_{\mathbf k}^{\sigma}(t+\Delta t)
+  \right].
+  \label{eq:impl_endpoint_magnus}
+\end{equation}
+The code stores the Hermitian Hamiltonian integral separately from the
+factor of $-\imath$ used in the commutator propagation, but the
+resulting update is equivalent to
+\begin{equation}
+  \mathbf P_{\mathbf k}^{\sigma}(t+\Delta t)
+  =
+  e^{\boldsymbol{\Omega}_{\mathbf k}^{\sigma}}
+  \mathbf P_{\mathbf k}^{\sigma}(t)
+  e^{-\boldsymbol{\Omega}_{\mathbf k}^{\sigma}} .
+  \label{eq:impl_density_update}
+\end{equation}
+This unitary transformation is applied through the BCH
+nested-commutator expansion.  The complex periodic implementation uses
+this BCH propagation route.
 
-\paragraph{BCH propagator for complex Hamiltonians.}
-For k-points away from the $\Gamma$ point, the Hamiltonian matrix
-$\vb{H}_\mathbf{k}$ is complex Hermitian.
-In this case, the BCH commutator expansion propagator (Ieldyn=1)
-is used throughout; the diagonalization-based propagator (Ieldyn=2)
-is not currently supported for complex matrices.
-The BCH expansion is unconditionally stable and has been shown to
-give results equivalent to exact diagonalization within the
-convergence threshold,\cite{jakowski-rmg-tddft-2025} and we find
-no practical limitation from this choice.
+The endpoint Hamiltonian
+$\mathbf H_{\mathbf k}^{\sigma}(t+\Delta t)$ is obtained
+self-consistently.  RMG first predicts the endpoint Hamiltonian from
+the preceding Hamiltonian history.  With this trial endpoint,
+Eq.~\eqref{eq:impl_endpoint_magnus} is used to propagate the density
+matrix, the real-space spin density is reconstructed, and the Hartree
+and spin-dependent exchange--correlation potentials are updated.  The
+matrix elements of the resulting change in the local effective
+potential are then added to the endpoint Hamiltonian, and the cycle is
+repeated until the endpoint Hamiltonian is self consistent:
+\[
+  \mathbf H(t+\Delta t)
+  \rightarrow
+  \boldsymbol{\Omega}
+  \rightarrow
+  \mathbf P(t+\Delta t)
+  \rightarrow
+  \rho^\sigma(\mathbf r,t+\Delta t)
+  \rightarrow
+  V_{\rm H}[\rho],
+  V_{\rm xc}^{\sigma}[\rho^\uparrow,\rho^\downarrow]
+  \rightarrow
+  \mathbf H(t+\Delta t).
+\]
+The two collinear spin channels are propagated as separate density
+matrices, but the potentials are coupled through the total density
+entering the Hartree term and through the spin dependence of the
+exchange--correlation functional.
+
+The real-space density reconstruction follows the active-space form of
+Sec.~\ref{sec:density-matrix-propagation}.  RMG forms the active
+density-matrix change
+\begin{equation}
+  \Delta P_{ab,\mathbf k}^{\sigma}(t)
+  =
+  P_{ab,\mathbf k}^{\sigma}(t)
+  -
+  f_{n_a\mathbf k}^{\sigma}\delta_{ab},
+  \label{eq:impl_delta_p_active}
+\end{equation}
+and reconstructs
+\begin{equation}
+  \rho^\sigma(\mathbf r,t)
+  =
+  \rho_{\rm gs}^{\sigma}(\mathbf r)
+  +
+  \sum_{\mathbf k}
+  w_{\mathbf k}
+  \sum_{ab=1}^{N_{\rm prop}}
+  u_{n_a\mathbf k}^{\sigma}(\mathbf r)
+  \Delta P_{ab,\mathbf k}^{\sigma}(t)
+  u_{n_b\mathbf k}^{\sigma *}(\mathbf r).
+  \label{eq:impl_density_reconstruction}
+\end{equation}
+The ordering of the orbital factors in
+Eq.~\eqref{eq:impl_density_reconstruction} matches the density-matrix
+convention of Sec.~\ref{sec:density-matrix-propagation}: the
+ground-state density supplies the frozen occupied contribution and the
+reference occupation of the active subspace, while
+$\Delta\mathbf P_{\mathbf k}^{\sigma}(t)$ supplies the time-dependent
+active-space density change.  This construction makes convergence with
+respect to the number of included virtual states an explicit numerical
+parameter of the RT-TDDFT calculation.
+
+Exact unitary propagation preserves the trace, Hermiticity, and
+eigenvalues of each density matrix.  In practical calculations these
+properties are maintained up to errors from the Magnus truncation, the
+finite BCH expansion, and the convergence tolerance of the endpoint
+self-consistency cycle.
 
 %--------------------------------------------------------------------
-\subsection{Software Optimization and Parallelization}
-\label{sec:optimization}
+\subsection{External Perturbation and Current Evaluation}
+\label{sec:implementation-perturbation-current}
 %--------------------------------------------------------------------
 
-\myblue{[Content outline -- adapt from paper 1 Section 3.2 with ]} 
-additions for the periodic case:
-- Same MPI + OpenMP + GPU parallelization as paper 1
-- k-point parallelization: each MPI group handles a subset of k-points
-  (pct.kpsub\_comm); current is summed over k-points with weights
-  (MPI\_Allreduce over kpsub\_comm, lines 828-829 in RmgTddft.cpp)
-- Spin parallelization: separate MPI communicator groups per spin channel
-  (pct.spin\_comm); spin channels communicate only for XC update
-  (MPI\_Allreduce over spin\_comm, line 767)
-- The density matrix P and Hamiltonian H are distributed using
-  ScaLAPACK layout (Sp object); size is numst x numst where
-  numst = N\_occ + N\_virt
-- For VECTOR\_POT mode: momentum matrix J\_alpha is complex even at
-  Gamma point (stored as complex<double> in Pxmatrix\_cpu etc.)
-- The BCH commutator $[\Omega, P]$ dominates $O(N^3)$; same optimization
-  as paper 1 (real/imaginary decomposition, BLAS ZGEMM/DGEMM)
-- Timing data for benchmark systems: \myblue{[add when available]}%]}
+In the formal velocity-gauge theory, a prescribed homogeneous vector
+potential $\mathbf A(t)$ remains in the Hamiltonian for all times
+required by the external field.  The present RMG \texttt{VECTOR\_POT}
+mode implements a more specific discrete momentum-coupled excitation
+used to initiate the real-time response.  We denote by
+$\kappa_\alpha$ the Cartesian numerical coefficient obtained from the
+\texttt{electric\_field\_tddft} input after the code's coordinate
+conversion.  This symbol denotes the coefficient actually used by the
+implementation; it is not identified here uniquely with a physical
+electric-field amplitude, vector-potential amplitude, $A_\alpha/c$, or
+$eA_\alpha/c$.
 
-\myblue{[Note: include a brief timing comparison table analogous to
-Table 1 in paper 1, but for one or more periodic benchmark systems
-(e.g., Si supercells of increasing size) to demonstrate scaling.]}
+Before applying the perturbation, RMG constructs the kinetic/Bloch
+momentum-like matrix
+\begin{equation}
+  M_{ab,\mathbf k,\alpha}^{\rm kin,\sigma}
+  =
+  \imath
+  \left\langle
+    \left(\nabla_\alpha+\imath k_\alpha\right)
+    u_{n_a\mathbf k}^{\sigma}
+    \middle|
+    u_{n_b\mathbf k}^{\sigma}
+  \right\rangle_{\rm cell}.
+  \label{eq:impl_mkin}
+\end{equation}
+Using integration by parts under periodic boundary conditions, this is
+equivalent to the cell-periodic matrix element of
+$-\imath\nabla_\alpha+k_\alpha$ in atomic units.  The explicit
+$\mathbf k$ term is the Bloch contribution to the momentum operator.
+
+The implemented initial perturbation is then
+\begin{equation}
+  \Delta\mathbf H_{\mathbf k}^{\rm code,\sigma}
+  =
+  \sum_\alpha
+  \kappa_\alpha
+  \mathbf M_{\mathbf k,\alpha}^{\rm kin,\sigma}.
+  \label{eq:impl_vector_pot_kick}
+\end{equation}
+The verified construction order is
+\[
+  \texttt{VecPHmatrix()}
+  \rightarrow
+  \texttt{VECTOR\_POT\ perturbation}
+  \rightarrow
+  \texttt{CurrentNlpp()} .
+\]
+Consequently, the perturbing operator in
+Eq.~\eqref{eq:impl_vector_pot_kick} contains the kinetic/Bloch
+contribution only.  The nonlocal-pseudopotential commutator correction
+does not enter the initial perturbing kick in the present
+implementation.
+
+The perturbing contribution enters the first accepted midpoint
+propagator through the initial Hamiltonian endpoint and is absent from
+the converged self-consistent Hamiltonian without the external
+perturbing term at subsequent times.  Since the first Magnus generator
+uses an endpoint-averaged Hamiltonian, the effective integrated
+first-order numerical action of the perturbation is
+\begin{equation}
+  \int dt\,
+  \Delta\mathbf H_{\mathbf k}^{\rm code,\sigma}(t)
+  \approx
+  \frac{\Delta t}{2}
+  \sum_\alpha
+  \kappa_\alpha
+  \mathbf M_{\mathbf k,\alpha}^{\rm kin,\sigma}.
+  \label{eq:impl_first_step_action}
+\end{equation}
+Equation~\eqref{eq:impl_first_step_action} describes the current
+discrete numerical realization.  It should not be read as a statement
+that the code applies a mathematically exact Dirac-delta vector
+potential or the formally persistent step-like vector potential of
+Sec.~\ref{sec:optical-response}.
+
+After the perturbation is applied, RMG adds the nonlocal
+pseudopotential contribution to the matrices used for current
+evaluation.  The routine \texttt{CurrentNlpp()} calls the same
+directional nonlocal-operator path used for the projector commutator.
+Expressed in the sign convention of Sec.~\ref{sec:current-nlpp}, the
+atomic-unit nonlocal velocity contribution is
+$\imath[\hat V_{\rm NL},\hat r_\alpha]$, or equivalently
+$(1/\imath)[\hat r_\alpha,\hat V_{\rm NL}]$.  The corresponding raw
+matrix contribution is written as
+\begin{equation}
+  M_{ab,\mathbf k,\alpha}^{\rm NL,\sigma}
+  =
+  \frac{1}{\imath}
+  \left\langle
+    u_{n_a\mathbf k}^{\sigma}
+    \left|
+    \left[
+      \hat r_\alpha,\hat V_{{\rm NL},\mathbf k}^{\sigma}
+    \right]
+    \right|
+    u_{n_b\mathbf k}^{\sigma}
+  \right\rangle_{\rm cell}.
+  \label{eq:impl_mnl}
+\end{equation}
+Equivalently, this term may be written as
+$\imath\langle u_{n_a\mathbf k}^{\sigma}|
+[\hat V_{{\rm NL},\mathbf k}^{\sigma},\hat r_\alpha]
+|u_{n_b\mathbf k}^{\sigma}\rangle_{\rm cell}$.
+This is the same sign convention used in the formal current matrix of
+Eq.~\eqref{eq:bloch_current_matrix}, excluding the charge factor
+$q_e$ and the volume normalization that are not included in the raw
+RMG matrix.
+
+Thus the raw current-evaluation matrix used by RMG is
+\begin{equation}
+  \mathbf M_{\mathbf k,\alpha}^{\rm raw,\sigma}
+  =
+  \mathbf M_{\mathbf k,\alpha}^{\rm kin,\sigma}
+  +
+  \mathbf M_{\mathbf k,\alpha}^{\rm NL,\sigma}.
+  \label{eq:impl_mraw}
+\end{equation}
+For calculations using the simple DFT+U implementation, the same
+directional operator-construction path also includes the corresponding
+Hubbard-projector contribution,
+\begin{equation}
+  \mathbf M_{\mathbf k,\alpha}^{\rm raw,\sigma}
+  =
+  \mathbf M_{\mathbf k,\alpha}^{\rm kin,\sigma}
+  +
+  \mathbf M_{\mathbf k,\alpha}^{\rm NL,\sigma}
+  +
+  \mathbf M_{\mathbf k,\alpha}^{U,\sigma}.
+  \label{eq:impl_mraw_ldau}
+\end{equation}
+This statement identifies the implemented code path; it does not by
+itself establish that the DFT+U contribution has been independently
+proven to be the full gauge-consistent commutator for a Hubbard
+functional.
+
+The distinction between perturbation and measurement is therefore
+important.  The current RMG \texttt{VECTOR\_POT} perturbation uses the
+kinetic/Bloch momentum-like matrix in
+Eq.~\eqref{eq:impl_vector_pot_kick}, whereas the matrix subsequently
+used to evaluate the current-like response contains the nonlocal
+pseudopotential correction and, where active, the simple DFT+U
+projector contribution.  The implementation also does not explicitly
+construct the $A$-dependent diamagnetic current operator appearing in
+the formal charge-current operator of Sec.~\ref{sec:current-nlpp}.
+
+%--------------------------------------------------------------------
+\subsection{Periodic, Spin-Resolved, and Parallel Implementation}
+\label{sec:implementation-periodic-spin-parallel}
+%--------------------------------------------------------------------
+
+The periodic implementation propagates a separate active-space
+Hamiltonian and density matrix for each local $\mathbf k$ point and
+collinear spin channel.  Thus
+$\mathbf H_{\mathbf k}^{\sigma}(t)$,
+$\mathbf P_{\mathbf k}^{\sigma}(t)$, and the corresponding
+momentum/current-like matrices are stored and updated independently for
+each $\mathbf k$ handled by a given MPI task group.  General
+$\mathbf k$ points require complex Bloch orbitals and complex
+Hermitian matrices, while $\Gamma$-point calculations may use
+real-valued orbital and matrix paths where applicable.  The Bloch
+$\mathbf k$ contribution to the kinetic momentum matrix is included in
+the operator construction described in
+Sec.~\ref{sec:implementation-perturbation-current}.
+
+The density and observable reductions use the Brillouin-zone weights
+associated with the sampled $\mathbf k$ points.  During the
+self-consistent endpoint update, RMG reconstructs a density
+contribution from each local $\mathbf k$ point, multiplies it by the
+corresponding weight, and sums over the distributed $\mathbf k$ set.
+The same weighted reduction is used for current-like vector
+observables.  After the k-point and matrix-distribution reductions,
+the vector current is passed through the RMG symmetry machinery for
+vector symmetrization.
+
+For collinear spin-polarized calculations, RMG propagates the two spin
+channels as separate matrix problems.  Each spin channel has its own
+$\mathbf P_{\mathbf k}^{\uparrow}$ or
+$\mathbf P_{\mathbf k}^{\downarrow}$ and its own spin-dependent
+Hamiltonian.  The implementation does not introduce off-diagonal
+spinor blocks, spin flips, transverse spin dynamics, or spin-orbit
+induced spin mixing in the collinear RT-TDDFT path used here.  The
+channels are nevertheless coupled self-consistently: after the
+k-weighted density reconstruction, the spin density available on a
+given spin partition is combined with the opposite-spin density before
+the Hartree and exchange--correlation potentials are evaluated.  The
+Hartree update depends on the total density, while the
+exchange--correlation update uses the spin-dependent functional form
+with both spin densities.
+
+Current-like observables are accumulated separately for each spin
+channel in the implementation.  In the notation of
+Secs.~\ref{sec:collinear-spin-extension} and~\ref{sec:optical-response},
+the physical total charge-current response is obtained from the
+spin-channel contributions,
+\begin{equation}
+  \Delta J_\alpha(t)
+  =
+  \Delta J_\alpha^\uparrow(t)
+  +
+  \Delta J_\alpha^\downarrow(t).
+  \label{eq:impl_spin_sum_current}
+\end{equation}
+The separate spin-channel traces can also be retained for
+spin-resolved analysis within the fixed collinear basis.  This
+organization is used later to analyze the spin-up and spin-down
+optical channels of the NV$^{-}$ center.
+
+The parallel decomposition combines the real-space domain
+decomposition inherited from ground-state RMG with additional
+parallelism over k points, spin channels, and dense active-space
+matrices.  Real-space operations such as density reconstruction,
+application of local potentials, and grid integrations are distributed
+over the real-space grid.  The active-space Hamiltonian and density
+matrices are distributed using the matrix backend selected for the
+run, including ScaLAPACK and tiled matrix-multiplication paths.  The
+refactored \texttt{rmg::tddft<OrbitalType,MatrixType>} class provides
+CPU and GPU execution paths through templated orbital and matrix
+types.
+
+This organization exposes independent work over $\mathbf k$ points and
+spin channels while retaining the locality of the real-space RMG
+operations and the efficiency of distributed dense matrix algebra.  It
+is this combination of real-space decomposition, k/spin decomposition,
+matrix parallelism, and accelerator support that makes the periodic
+density-matrix RT-TDDFT implementation applicable to large supercells,
+including the 4095-atom NV$^{-}$-center calculations discussed below.
+
+%--------------------------------------------------------------------
+\subsection{Optical Spectra and Implementation-Specific Processing}
+\label{sec:implementation-optical-processing}
+%--------------------------------------------------------------------
+
+The formal response relations in Sec.~\ref{sec:optical-response}
+define the optical conductivity and dielectric tensor in terms of the
+physical macroscopic charge-current density.  RMG writes
+spin-resolved raw current-like traces, for which the available
+current-postprocessing workflow produces optical spectra in arbitrary
+units.
+
+Using the raw current-evaluation matrix defined in
+Sec.~\ref{sec:implementation-perturbation-current}, the quantity
+written by RMG for spin channel $\sigma$ can be represented
+schematically as
+\begin{equation}
+  R_\alpha^\sigma(t_n)
+  =
+  {\cal S}_\alpha
+  \left\{
+  \sum_{\mathbf k}
+  w_{\mathbf k}\,
+  {\rm Re}\,
+  {\rm Tr}
+  \left[
+    \mathbf P_{\mathbf k}^{\sigma}(t_n)
+    \mathbf M_{\mathbf k,\alpha}^{\rm raw,\sigma}
+  \right]
+  \right\},
+  \label{eq:impl_raw_current_trace}
+\end{equation}
+where ${\cal S}$ denotes the vector symmetrization applied after the
+parallel reductions.  The raw trace includes k-point weights and the
+reduction over distributed k-point and matrix partitions.  It is
+written separately for each spin channel and does not explicitly
+include multiplication by $q_e$, division by $V_{\rm cell}$, or the
+sum over spin channels.
+
+Consequently, $R_\alpha^\sigma(t)$ should not be identified directly
+with the physical macroscopic charge-current density
+$J_\alpha^\sigma(t)$ of Sec.~\ref{sec:current-nlpp}.  If the raw
+matrix is interpreted as a zero-field velocity-like matrix in atomic
+units, conversion to the formal current density would require, at
+minimum, the electron-charge factor, the cell-volume normalization,
+the spin summation for the total current, and the corresponding unit
+conversion:
+\begin{equation}
+  J_\alpha(t)
+  \sim
+  \frac{q_e}{V_{\rm cell}}
+  \sum_{\sigma=\uparrow,\downarrow}
+  R_\alpha^\sigma(t),
+  \label{eq:impl_raw_to_current_schematic}
+\end{equation}
+with $q_e=-1$ in the internal atomic-unit convention.  This is a
+schematic relation identifying missing normalization factors, not an
+operation currently applied by the RMG current-output routine.  The
+code also prints a ground-state current as a diagnostic header entry,
+but this value is not directly subtracted from the written time trace.
+In a fresh calculation, the first numerical current row is written
+after the first accepted propagation step, using the step-counter time
+label.
+
+For current-based spectral analysis, the available RMG workflow first
+removes a numerical baseline from the sampled trace.  For current
+files, it then applies a cumulative summation of the current-like
+signal, which acts as an implementation-specific discrete
+current-to-polarization integration.  The resulting time series may be
+detrended and damped or windowed, Fourier transformed, normalized by
+the raw perturbation coefficient, and smoothed to produce the plotted
+spectrum.  This processing is useful for comparing spectral shapes and
+peak positions, but the available workflow does not preserve the full
+signed complex phase of the response.  It therefore does not by itself
+produce a quantitatively normalized complex conductivity or dielectric
+function.
+
+The spectra presented below are reported in arbitrary units and are
+interpreted primarily through relative peak positions, spectral shape,
+polarization dependence, spin dependence, and active-space convergence
+rather than absolute optical intensities.  A fully normalized
+conductivity or dielectric response can be obtained from the formal
+relations of Sec.~\ref{sec:optical-response}, but doing so requires
+retaining the complex Fourier response and applying the physical
+charge, volume, spin-summation, field-normalization, and unit-conversion
+factors explicitly.
