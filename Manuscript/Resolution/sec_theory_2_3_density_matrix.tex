@@ -3,12 +3,14 @@
 \label{sec:density-matrix-propagation}
 %--------------------------------------------------------------------
 
-The time propagation used in this work follows the density-matrix
-RT-TDDFT formulation developed for the finite-system implementation in
-our previous work,\cite{jakowski-rmg-tddft-2025} with the extension that
-the propagated matrices are now resolved by crystal momentum and
-collinear spin channel.  For each $\mathbf k$ and spin $\sigma$, the
-propagation is carried out in a finite subspace
+The time propagation used in this work builds on the Liouville-von
+Neumann density-matrix propagation framework introduced in earlier
+work\cite{lvnmd} and on the finite-system \texttt{RMG} RT-TDDFT
+implementation developed in our previous
+work,\cite{jakowski-rmg-tddft-2025} with the extension that the
+propagated matrices are now resolved by crystal momentum and collinear
+spin channel.  For each $\mathbf k$ and spin $\sigma$, the propagation
+is carried out in a finite subspace
 $\mathcal A_{\mathbf k}^{\sigma}$ spanned by ground-state Kohn--Sham
 Bloch orbitals,
 \begin{equation}
