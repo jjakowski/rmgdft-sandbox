@@ -1,0 +1,280 @@
+%--------------------------------------------------------------------
+\subsection{Periodic RT-TDDFT and the Velocity Gauge}
+\label{sec:periodic-velocity-gauge}
+%--------------------------------------------------------------------
+
+The starting point for the present periodic RT-TDDFT formulation is
+the time-dependent Kohn--Sham equation in the presence of an external
+electromagnetic perturbation,
+\begin{equation}
+  \imath\hbar \frac{\partial}{\partial t}\Psi_j(\mathbf r,t)
+  =
+  \hat H(t)\Psi_j(\mathbf r,t),
+  \label{eq:tdks_em_general}
+\end{equation}
+where
+\begin{equation}
+  \hat H(t)
+  =
+  \frac{1}{2m_e}
+  \left[
+    \hat{\mathbf p}
+    -
+    \frac{q_e}{c}\mathbf A(\mathbf r,t)
+  \right]^2
+  + q_e\Phi(\mathbf r,t)
+  + \hat V_{\rm KS}[\rho](t).
+  \label{eq:tdks_minimal_coupling}
+\end{equation}
+Here $q_e=-e$ is the electron charge, with $e>0$, $m_e$ is the
+electron mass, $c$ is the speed of light, and
+\begin{equation}
+  \hat{\mathbf p}=-\imath\hbar\nabla
+  \label{eq:canonical_momentum}
+\end{equation}
+is the canonical momentum operator.  Thus, for an electron, the vector
+potential enters the kinetic momentum as $\hat{\mathbf p}+e\mathbf A/c$.
+In the norm-conserving pseudopotential formulation used here, the
+Kohn--Sham potential is decomposed as
+\begin{equation}
+  \hat V_{\rm KS}[\rho](t)
+  =
+  \hat V_{\rm ion}^{\rm loc}
+  + \hat V_{\rm NL}
+  + \hat V_{\rm H}[\rho](t)
+  + \hat V_{\rm xc}[\rho](t),
+  \label{eq:vks_decomposition}
+\end{equation}
+where $\hat V_{\rm ion}^{\rm loc}$ is the local ionic pseudopotential,
+$\hat V_{\rm NL}$ is the nonlocal pseudopotential operator,
+$\hat V_{\rm H}$ is the Hartree potential, and $\hat V_{\rm xc}$ is the
+exchange-correlation potential.
+
+The physical electric and magnetic fields are obtained from the
+electromagnetic potentials according to
+\begin{equation}
+  \mathbf E(\mathbf r,t)
+  =
+  -\nabla\Phi(\mathbf r,t)
+  -
+  \frac{1}{c}
+  \frac{\partial\mathbf A(\mathbf r,t)}{\partial t},
+  \qquad
+  \mathbf B(\mathbf r,t)
+  =
+  \nabla\times\mathbf A(\mathbf r,t).
+  \label{eq:fields_from_potentials}
+\end{equation}
+Different choices of $\Phi$ and $\mathbf A$ related by a gauge
+transformation describe the same electromagnetic fields.  This gauge
+freedom should be distinguished from the long-wavelength approximation
+used for optical response.  In the present work we consider the
+homogeneous-field limit, in which the spatial variation of the external
+field over the simulation cell is neglected.  This approximation
+corresponds to the optical, $\mathbf q\rightarrow 0$, limit and leads to
+vertical transitions at fixed crystal momentum.  The
+$\mathbf q\rightarrow 0$ restriction therefore arises from the
+homogeneous-field approximation, not from the choice of velocity gauge.
+
+For finite systems, a spatially uniform electric field is commonly
+represented in the length gauge by setting
+\begin{equation}
+  \mathbf A_L(\mathbf r,t)=0,
+  \qquad
+  \Phi_L(\mathbf r,t)=-\mathbf r\cdot\mathbf E(t).
+  \label{eq:length_gauge_potentials}
+\end{equation}
+The corresponding scalar-potential energy for an electron is
+$q_e\Phi_L(\mathbf r,t)=e\,\mathbf r\cdot\mathbf E(t)$.  This
+representation is well suited to finite molecular systems, where the
+time-dependent dipole moment is a well-defined observable.  Under
+periodic boundary conditions, however, the position operator is not
+compatible with Born--von Karman periodicity: $\mathbf r$ and
+$\mathbf r+\mathbf L$ represent equivalent points of the crystal but
+give different values of the scalar potential in
+Eq.~\eqref{eq:length_gauge_potentials}.  The length-gauge scalar
+potential is therefore not a periodic operator.
+
+The same homogeneous electric field can be represented in the velocity
+gauge by a gauge transformation.  For a scalar gauge function
+$\chi(\mathbf r,t)$,
+\begin{equation}
+  \mathbf A'(\mathbf r,t)
+  =
+  \mathbf A(\mathbf r,t)+\nabla\chi(\mathbf r,t),
+  \qquad
+  \Phi'(\mathbf r,t)
+  =
+  \Phi(\mathbf r,t)
+  -
+  \frac{1}{c}
+  \frac{\partial\chi(\mathbf r,t)}{\partial t},
+  \label{eq:gauge_transformation_potentials}
+\end{equation}
+and the electronic wavefunction transforms as
+\begin{equation}
+  \Psi'(\mathbf r,t)
+  =
+  \exp\!\left[
+    \frac{\imath q_e}{\hbar c}\chi(\mathbf r,t)
+  \right]
+  \Psi(\mathbf r,t).
+  \label{eq:gauge_transformation_wavefunction}
+\end{equation}
+Starting from the length-gauge potentials in
+Eq.~\eqref{eq:length_gauge_potentials}, choose
+\begin{equation}
+  \chi(\mathbf r,t)=\mathbf r\cdot\mathbf A(t),
+  \qquad
+  \frac{d\mathbf A(t)}{dt}=-c\mathbf E(t).
+  \label{eq:goppert_mayer_chi}
+\end{equation}
+This gives
+\begin{equation}
+  \Phi_V(\mathbf r,t)=0,
+  \qquad
+  \mathbf A_V(\mathbf r,t)=\mathbf A(t),
+  \qquad
+  \mathbf E(t)=-\frac{1}{c}\frac{d\mathbf A(t)}{dt}.
+  \label{eq:velocity_gauge_potentials}
+\end{equation}
+For an electron, the corresponding unitary transformation is
+\begin{equation}
+  \hat U(t)
+  =
+  \exp\!\left[
+    -\frac{\imath e}{\hbar c}
+    \mathbf r\cdot\mathbf A(t)
+  \right],
+  \qquad
+  \Psi_V(\mathbf r,t)=\hat U(t)\Psi_L(\mathbf r,t).
+  \label{eq:goppert_mayer_unitary}
+\end{equation}
+Because $\mathbf A(t)$ is spatially uniform,
+$\nabla\times\mathbf A(t)=0$; the homogeneous velocity-gauge field is
+therefore the gauge-equivalent representation of the electric-dipole
+field, not a full finite-$\mathbf q$ transverse electromagnetic wave.
+Finite-$\mathbf q$ response functions lie outside the homogeneous-field
+formulation considered here.
+
+This relation also fixes the formal connection between a conventional
+broadband electric-field kick and the corresponding velocity-gauge vector
+potential.  For an impulsive perturbation,
+\begin{equation}
+  \mathbf E(t)=\mathbf E_0\delta(t),
+  \label{eq:delta_electric_kick}
+\end{equation}
+integration of Eq.~\eqref{eq:velocity_gauge_potentials} gives, for
+$\mathbf A(t<0)=0$ under the sign conventions established above,
+\begin{equation}
+  \mathbf A(t)=-c\mathbf E_0\Theta(t).
+  \label{eq:step_vector_potential}
+\end{equation}
+The particular impulsive realization used in RMG is described separately
+in Sec.~\ref{sec:implementation}.
+
+In the formal velocity-gauge representation, the periodic TDKS
+Hamiltonian for an electron is
+\begin{equation}
+  \hat H_V(t)
+  =
+  \frac{1}{2m_e}
+  \left[
+    \hat{\mathbf p}
+    -
+    \frac{q_e}{c}\mathbf A(t)
+  \right]^2
+  + \hat V_{\rm loc}[\rho](t)
+  + \hat V_{\rm NL}^{V}(t).
+  \label{eq:velocity_gauge_hamiltonian}
+\end{equation}
+Here
+\begin{equation}
+  \hat V_{\rm loc}[\rho](t)
+  =
+  \hat V_{\rm ion}^{\rm loc}
+  + \hat V_{\rm H}[\rho](t)
+  + \hat V_{\rm xc}[\rho](t)
+  \label{eq:vloc_definition}
+\end{equation}
+contains all local terms, while the nonlocal pseudopotential is written
+separately.  Since $q_e=-e$, the kinetic momentum in
+Eq.~\eqref{eq:velocity_gauge_hamiltonian} is
+$\hat{\mathbf p}+e\mathbf A(t)/c$ for an electron.  If a nonlocal
+pseudopotential is present, it must be transformed consistently with the
+same unitary gauge transformation,
+\begin{equation}
+  \hat V_{\rm NL}^{V}(t)
+  =
+  \hat U(t)\hat V_{\rm NL}\hat U^\dagger(t),
+  \qquad
+  \hat U(t)
+  =
+  \exp\!\left[
+    \frac{\imath q_e}{\hbar c}
+    \mathbf r\cdot\mathbf A(t)
+  \right].
+  \label{eq:gauge_transformed_nlpp}
+\end{equation}
+The detailed consequences of Eq.~\eqref{eq:gauge_transformed_nlpp} for
+the current operator are discussed in Sec.~\ref{sec:current-nlpp}.
+
+For a periodic system, the time-dependent Kohn--Sham orbitals are
+written in Bloch form,
+\begin{equation}
+  \Psi_{n\mathbf k}(\mathbf r,t)
+  =
+  e^{\imath\mathbf k\cdot\mathbf r}
+  u_{n\mathbf k}(\mathbf r,t),
+  \label{eq:bloch_orbital_td}
+\end{equation}
+where $u_{n\mathbf k}(\mathbf r,t)$ has the periodicity of the unit
+cell.  Acting on a Bloch orbital, the canonical momentum becomes
+\begin{equation}
+  \hat{\mathbf p}\Psi_{n\mathbf k}
+  =
+  e^{\imath\mathbf k\cdot\mathbf r}
+  \left(
+    -\imath\hbar\nabla+\hbar\mathbf k
+  \right)
+  u_{n\mathbf k}.
+  \label{eq:bloch_momentum_operator}
+\end{equation}
+The corresponding cell-periodic equation is
+\begin{equation}
+  \imath\hbar\frac{\partial}{\partial t}
+  u_{n\mathbf k}(\mathbf r,t)
+  =
+  \hat H_{\mathbf k}^{V}(t)
+  u_{n\mathbf k}(\mathbf r,t),
+  \label{eq:tdks_cell_periodic}
+\end{equation}
+with
+\begin{equation}
+  \hat H_{\mathbf k}^{V}(t)
+  =
+  \frac{1}{2m_e}
+  \left[
+    -\imath\hbar\nabla
+    +\hbar\mathbf k
+    -
+    \frac{q_e}{c}\mathbf A(t)
+  \right]^2
+  + \hat V_{\rm loc}[\rho](t)
+  + \hat V_{{\rm NL},\mathbf k}^{V}(t).
+  \label{eq:velocity_gauge_hamiltonian_k}
+\end{equation}
+Equivalently, using $q_e=-e$, the kinetic operator contains
+$-\imath\hbar\nabla+\hbar\mathbf k+e\mathbf A(t)/c$.
+Equation~\eqref{eq:velocity_gauge_hamiltonian_k} is the periodic
+counterpart of the finite-system length-gauge RT-TDDFT formulation used
+in our previous work,\cite{jakowski-rmg-tddft-2025} but with the position-dependent
+dipole perturbation replaced by a periodic velocity-gauge coupling.
+
+Because the dipole moment is not a well-defined bulk observable under
+periodic boundary conditions, the natural time-dependent observable for
+periodic optical response is the macroscopic current rather than the
+molecular dipole moment.  The construction of the current operator,
+including the nonlocal pseudopotential contribution, is given in
+Sec.~\ref{sec:current-nlpp}; the extraction of optical response functions
+from the real-time current is described in Sec.~\ref{sec:optical-response}.
