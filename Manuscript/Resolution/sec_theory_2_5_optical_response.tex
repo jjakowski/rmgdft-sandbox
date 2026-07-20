@@ -1,0 +1,248 @@
+%--------------------------------------------------------------------
+\subsection{Optical Response and Postprocessing}
+\label{sec:optical-response}
+%--------------------------------------------------------------------
+
+The velocity-gauge formulation developed above is not restricted to an
+impulsive perturbation.  For a prescribed spatially homogeneous vector
+potential $\mathbf A(t)$, the formal Hamiltonian retains the external
+field for all times at which the chosen electromagnetic perturbation
+requires it,
+\begin{equation}
+  \hat H_V(t)
+  =
+  \frac{1}{2m_e}
+  \left[
+    \hat{\mathbf p}
+    -
+    \frac{q_e}{c}\mathbf A(t)
+  \right]^2
+  + \hat V_{\rm loc}[\rho](t)
+  + \hat V_{\rm NL}^{V}(t).
+  \label{eq:optical_response_vg_hamiltonian}
+\end{equation}
+Thus the same formal propagation can describe an impulsive excitation,
+a finite-duration pulse, or a persistent time-dependent driving field,
+provided the corresponding $\mathbf A(t)$ is used in the Hamiltonian and
+in the current operator of Sec.~\ref{sec:current-nlpp}.
+
+We use the Fourier-transform convention
+\begin{equation}
+  f(\omega)
+  =
+  \int_{-\infty}^{\infty}
+  f(t)e^{-\imath\omega t}\,dt,
+  \qquad
+  f(t)
+  =
+  \frac{1}{2\pi}
+  \int_{-\infty}^{\infty}
+  f(\omega)e^{\imath\omega t}\,d\omega .
+  \label{eq:fourier_convention}
+\end{equation}
+With this convention,
+\begin{equation}
+  \mathcal F\!\left[
+    \frac{df}{dt}
+  \right]
+  =
+  \imath\omega f(\omega),
+  \label{eq:fourier_derivative_convention}
+\end{equation}
+assuming that boundary terms vanish or are treated separately.  In the
+homogeneous velocity gauge,
+\begin{equation}
+  \mathbf E(t)
+  =
+  -\frac{1}{c}\frac{d\mathbf A(t)}{dt},
+  \qquad
+  \mathbf A(t)
+  =
+  \mathbf A(t_0)
+  -
+  c\int_{t_0}^{t}\mathbf E(t')\,dt',
+  \label{eq:e_a_time_relation_optical}
+\end{equation}
+and therefore
+\begin{equation}
+  E_\alpha(\omega)
+  =
+  -\frac{\imath\omega}{c}
+  A_\alpha(\omega).
+  \label{eq:e_a_frequency_relation_optical}
+\end{equation}
+
+A conventional broadband electric-field kick used in real-time linear
+response calculations\cite{bertsch-96,jakowski-rmg-tddft-2025} is
+\begin{equation}
+  E_\beta(t)
+  =
+  E_{0,\beta}\delta(t).
+  \label{eq:delta_electric_field_optical}
+\end{equation}
+For $A_\beta(t<0)=0$, Eq.~\eqref{eq:e_a_time_relation_optical} gives
+\begin{equation}
+  A_\beta(t)
+  =
+  -cE_{0,\beta}\Theta(t).
+  \label{eq:step_vector_potential_optical}
+\end{equation}
+Thus, in the formally equivalent velocity-gauge representation, the
+vector potential remains at its post-kick value after the instantaneous
+electric-field impulse.
+
+The time-dependent observable is the physical macroscopic charge-current
+density defined in Sec.~\ref{sec:current-nlpp}.  We write the induced
+current as
+\begin{equation}
+  \Delta J_\alpha(t)
+  =
+  J_\alpha(t)-J_\alpha^{\rm eq},
+  \label{eq:induced_current_definition}
+\end{equation}
+where $J_\alpha^{\rm eq}$ is the equilibrium current before the external
+perturbation.  For the non-current-carrying equilibrium states considered
+here, the macroscopic equilibrium current vanishes in the exact ground
+state.  Retaining the induced-current notation is nevertheless useful in
+numerical calculations, where finite $\mathbf k$-point sampling and
+numerical errors may produce a small residual baseline.
+
+In the linear-response regime,
+\begin{equation}
+  \Delta J_\alpha(\omega)
+  =
+  \sum_\beta
+  \sigma_{\alpha\beta}(\omega)
+  E_\beta(\omega),
+  \label{eq:conductivity_linear_response}
+\end{equation}
+which defines the optical conductivity tensor
+$\sigma_{\alpha\beta}(\omega)$.  Separate perturbations along linearly
+independent Cartesian directions may be used to construct the full
+tensor.  For the electric-field impulse of
+Eq.~\eqref{eq:delta_electric_field_optical},
+$E_\beta(\omega)=E_{0,\beta}$, and therefore
+\begin{equation}
+  \sigma_{\alpha\beta}(\omega)
+  =
+  \frac{\Delta J_\alpha^{(\beta)}(\omega)}
+       {E_{0,\beta}},
+  \label{eq:conductivity_from_delta_kick}
+\end{equation}
+where $\Delta J_\alpha^{(\beta)}$ denotes the current response to a kick
+polarized along direction $\beta$.
+
+The dielectric response follows from the relation between current and
+macroscopic polarization.  Defining the induced polarization by
+\begin{equation}
+  \Delta J_\alpha(t)
+  =
+  \frac{d\Delta P_\alpha(t)}{dt},
+  \label{eq:current_polarization_time}
+\end{equation}
+one obtains
+\begin{equation}
+  \Delta J_\alpha(\omega)
+  =
+  \imath\omega\Delta P_\alpha(\omega),
+  \qquad
+  \Delta P_\alpha(\omega)
+  =
+  \frac{\Delta J_\alpha(\omega)}{\imath\omega}.
+  \label{eq:current_polarization_frequency}
+\end{equation}
+Thus integration of the current in time corresponds formally to division
+by $\imath\omega$ in frequency space, with the zero-frequency component
+requiring separate treatment.
+
+Using Gaussian electromagnetic units, the displacement field satisfies
+\begin{equation}
+  D_\alpha(\omega)
+  =
+  E_\alpha(\omega)
+  +
+  4\pi P_\alpha(\omega)
+  =
+  \sum_\beta
+  \varepsilon_{\alpha\beta}(\omega)E_\beta(\omega).
+  \label{eq:gaussian_displacement_field}
+\end{equation}
+Combining Eqs.~\eqref{eq:conductivity_linear_response} and
+\eqref{eq:current_polarization_frequency} gives
+\begin{equation}
+  \varepsilon_{\alpha\beta}(\omega)
+  =
+  \delta_{\alpha\beta}
+  -
+  \frac{4\pi\imath}{\omega}
+  \sigma_{\alpha\beta}(\omega).
+  \label{eq:dielectric_from_conductivity}
+\end{equation}
+With the Fourier convention of Eq.~\eqref{eq:fourier_convention}, the
+dissipative diagonal response is represented by
+${\rm Re}\,\sigma_{\alpha\alpha}(\omega)$ or, equivalently, by
+$-{\rm Im}\,\varepsilon_{\alpha\alpha}(\omega)$.  The sign of the
+imaginary part follows from the $e^{-\imath\omega t}$ transform
+convention used here.
+
+The conversion from dielectric response to an absorption coefficient or
+absorbance depends on dimensionality and optical geometry.  For a
+homogeneous bulk three-dimensional medium, one may introduce a complex
+refractive index
+$N_\alpha(\omega)=n_\alpha(\omega)+\imath\kappa_\alpha(\omega)$ along a
+principal axis, with $N_\alpha^2=\varepsilon_{\alpha\alpha}$ and the
+sign of $\kappa_\alpha$ chosen to describe attenuation of the physical
+field.  The corresponding bulk absorption coefficient is
+\begin{equation}
+  \alpha_{{\rm abs},\alpha}^{\rm 3D}(\omega)
+  =
+  \frac{2\omega}{c}\kappa_\alpha(\omega).
+  \label{eq:bulk_absorption_coefficient}
+\end{equation}
+Absorbance additionally depends on the optical path length and sample
+geometry.  Low-dimensional periodic systems, such as monolayers treated
+with supercell boundary conditions, require the appropriate
+geometry-dependent conversion.  When only relative spectral features are
+compared, normalized absorption-like spectra should therefore be
+distinguished from quantitatively normalized conductivities, dielectric
+functions, absorption coefficients, or absorbances.
+
+In a finite real-time calculation, the Fourier transform is evaluated
+over a finite propagation interval and is commonly combined with a
+window or damping function to control ringing and define an effective
+spectral broadening.  A generic finite-time estimate of the induced
+current spectrum is
+\begin{equation}
+  \Delta J_\alpha^{T}(\omega)
+  =
+  \int_{0}^{T}
+  W(t)\Delta J_\alpha(t)e^{-\imath\omega t}\,dt,
+  \label{eq:finite_time_current_transform}
+\end{equation}
+where $W(t)$ is the chosen damping or window function.  The finite
+propagation time and the choice of $W(t)$ determine the practical
+frequency resolution and broadening of the computed spectrum.
+
+For collinear spin-polarized calculations, the total charge current is
+the sum of the spin-channel currents introduced in
+Sec.~\ref{sec:collinear-spin-extension},
+\begin{equation}
+  \Delta J_\alpha(t)
+  =
+  \sum_{\sigma=\uparrow,\downarrow}
+  \Delta J_\alpha^\sigma(t).
+  \label{eq:spin_sum_induced_current_optical}
+\end{equation}
+The total optical conductivity follows from the total charge current in
+Eq.~\eqref{eq:conductivity_linear_response}.  Spin-channel-resolved
+spectra may also be formed from the separate
+$\Delta J_\alpha^\sigma(t)$ responses within the fixed collinear spin
+basis; this does not imply spin-flip transitions or noncollinear spin
+dynamics.
+
+Equations~\eqref{eq:e_a_time_relation_optical}--\eqref{eq:finite_time_current_transform}
+define the formal current-based optical response used in the present
+periodic velocity-gauge RT-TDDFT theory.\cite{Luber-rt-tddft}  The
+numerical realization of the impulsive perturbation, the normalization
+of raw current traces, and the finite-time processing used in RMG are
+described in Sec.~\ref{sec:implementation}.
