@@ -1,231 +1,108 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% sec_benchmarks.tex
-%% Section 4: Numerical Results
-%% RMG Periodic RT-TDDFT — Paper 2
-%%
-%% All four benchmark figures are in paper2/Figs/:
-%%   out-h2.pdf   -- H2 chain (1D)
-%%   out-hBN.pdf  -- hexagonal BN (2D)
-%%   out-Si.pdf   -- Si crystal (3D)
-%%   out-CrI3.pdf -- CrI3 (spin-polarized)
+%% General validation benchmarks for periodic and spin-polarized RT-TDDFT
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\section{Numerical Results}
+\section{Validation of Periodic and Spin-Polarized RT-TDDFT}
 \label{sec:results}
 
-We benchmark the periodic and spin-polarized RT-TDDFT implementation
-in \texttt{RMG} against the \texttt{Octopus} code\cite{octopus} for
-four representative systems of increasing dimensionality and physical
-complexity: a one-dimensional hydrogen chain (H$_2$), a
-two-dimensional hexagonal boron nitride (hBN) monolayer, a
-three-dimensional silicon crystal, and the spin-polarized magnetic
-insulator \ch{CrI3}.
-These systems are chosen to isolate and validate specific aspects of
-the implementation: k-point sampling, anisotropic optical response,
-three-dimensional periodic boundaries, and spin-collinear propagation,
-respectively.
-The section concludes with a demonstration of the unique large-scale
-capability of \texttt{RMG} through calculations on nitrogen-vacancy
-(NV) centers in diamond at varying supercell sizes.
-
-In all calculations, a momentum kick of amplitude $E_0 =
-\myblue{[\mathrm{value}]}$~a.u.\ was applied at $t=0$ along each
-Cartesian direction independently, and the optical conductivity
-was obtained from the Fourier transform of the resulting current
-density.
-\myblue{[Add: common computational parameters -- time step, total
-propagation time, broadening gamma, XC functional, pseudopotential
-library used for all systems.]}
+We first validate the periodic and spin-polarized RT-TDDFT
+implementation in \texttt{RMG} by comparing current-derived optical
+spectra with independent real-time calculations performed with
+\texttt{Octopus}, an established real-space RT-TDDFT code for finite
+and extended systems.\cite{octopus-2020}  The benchmark set was chosen
+as a progression of increasing complexity: a one-dimensional periodic
+hydrogen-dimer reference, pristine monolayer hBN, bulk Si, and
+spin-polarized \ch{CrI3}.  The purpose of these comparisons is not to
+establish quantitatively normalized optical conductivities or
+dielectric functions, but to test whether RMG reproduces the principal
+spectral features obtained from an independent RT-TDDFT implementation
+at a comparable semilocal-DFT level.  Accordingly,
+Fig.~\ref{fig:benchmarks} reports optical spectra in arbitrary units
+and the comparison emphasizes peak positions, dominant spectral
+structures, overall spectral envelopes, and polarization or spin
+dependence where applicable.
 
 \begin{figure}[ht!]
-	\begin{tabular}{ll}
-   \includegraphics[width=0.5\columnwidth]{Figs/out-h2.pdf} & 
-   \includegraphics[width=0.5\columnwidth]{Figs/out-hBN.pdf} \\ 
-   a) & b) \\
-   \includegraphics[width=0.5\columnwidth]{Figs/out-Si.pdf} &
-   \includegraphics[width=0.5\columnwidth]{Figs/out-CrI3.pdf} \\
-   c) & d)
-	\end{tabular}
+  \centering
+  \begin{tabular}{@{}cc@{}}
+    \includegraphics[width=0.48\columnwidth]{Figs/out-h2.pdf} &
+    \includegraphics[width=0.48\columnwidth]{Figs/out-hBN.pdf} \\
+    (a) & (b) \\
+    \includegraphics[width=0.48\columnwidth]{Figs/out-Si.pdf} &
+    \includegraphics[width=0.48\columnwidth]{Figs/out-CrI3.pdf} \\
+    (c) & (d)
+  \end{tabular}
+  % CHECK WITH LIANGBO: confirm Octopus provenance and comparable PBE-level settings for all four benchmark reference curves.
   \caption{\footnotesize
-	\myblue{ Optical conductivity of (a) 1-D Hydrogen, (b) 2-D hexagonal Boron Nitride (c) 3-D  Silicon,
-	(d) spin polarized CrI3 from from RMG compared with Octopus
-	}
+    Optical spectra in arbitrary units from periodic RT-TDDFT
+    calculations with \texttt{RMG} and independent \texttt{Octopus}
+    reference calculations for systems of increasing complexity:
+    (a) a one-dimensional periodic hydrogen-dimer reference,
+    (b) pristine monolayer hBN, (c) bulk Si, and
+    (d) spin-polarized \ch{CrI3}.  The comparison emphasizes peak
+    positions and dominant spectral features rather than absolute
+    intensity.
   }
-  \label{fig:h2}
+  \label{fig:benchmarks}
 \end{figure}
 
-%--------------------------------------------------------------------
-\subsection{One-Dimensional Periodic System: Hydrogen Chain}
-\label{sec:h2}
-%--------------------------------------------------------------------
+The one-dimensional hydrogen-dimer system provides the simplest
+periodic reference.  The model consists of hydrogen dimers repeated
+along one lattice direction with large transverse vacuum, and therefore
+tests the basic k-resolved propagation and current-response machinery
+without the additional complications of a multidimensional crystal.
+RMG reproduces the sequence of major peaks obtained from the
+\texttt{Octopus} calculation over the plotted energy range, providing
+a basic cross-code validation of the periodic propagation and
+current-response implementation.
 
-As the simplest possible periodic test system, we consider an
-infinite chain of hydrogen molecules aligned along the $z$ axis
-with alternating bond lengths, modeled by a one-dimensional
-supercell with periodic boundary conditions.
-This system provides a stringent test of k-point sampling and the
-velocity gauge implementation in the limit of a quasi-one-dimensional
-geometry, where the longitudinal ($z$-direction) and transverse
-($x$, $y$-direction) optical responses differ substantially.
+Pristine monolayer hBN provides a genuinely two-dimensional periodic
+benchmark.  The RMG calculation uses a non-spin-polarized monolayer
+slab with vacuum normal to the layer and dense in-plane k-point
+sampling.  Similar monolayer hBN tests have been used in recent
+periodic velocity-gauge RT-TDDFT implementation
+work.\cite{Hanasaki-2023}  The RMG and \texttt{Octopus} spectra show
+a similar low-energy onset and similar dominant structures in the main
+spectral envelope, validating the two-dimensional periodic
+implementation and the in-plane current response for an insulating
+material.  As expected for semilocal PBE-level calculations, this
+benchmark should not be interpreted as a quantitative description of
+the strongly excitonic experimental optical spectrum of
+low-dimensional BN materials, where long-range electron-hole
+interactions are known to be important.\cite{Wirtz-BN-excitons-2006}
+Detailed spin-polarized RT-TDDFT applications to hBN color centers are
+treated separately in a companion study.
+% TODO: add citation to Liangbo companion hBN manuscript when bibliographic status is set.
 
-\myblue{[Computational details:
-- Supercell geometry: H--H bond length, H$_2$--H$_2$ separation
-- K-point sampling: \myblue{[N\_k points along z, Gamma in x and y]}
-- Grid spacing: \myblue{[value]} a$_0$
-- XC functional: \myblue{[PBE or LDA]}
-- Pseudopotential: \myblue{[type]}
-- Time step $\Delta t$: \myblue{[value]} a.u.
-- Total simulation time: \myblue{[value]} a.u.
-- Broadening $\gamma$: \myblue{[value]} eV]}
+Bulk Si then tests the full three-dimensional periodic implementation,
+including dense k-point sampling and the complex matrix path required
+away from $\Gamma$.  The spectra from RMG and \texttt{Octopus} show
+similar low-energy behavior and reproduce the dominant structure in
+the approximately 3--4 eV region, while somewhat larger differences
+are visible in the higher-energy fine structure.  This level of
+agreement is consistent with the role of Si as a standard benchmark
+for periodic velocity-gauge RT-TDDFT
+implementations.\cite{Hekele-2021}
 
+Finally, \ch{CrI3} provides the most demanding member of the general
+benchmark set: a spin-polarized periodic calculation including DFT+U
+for the Cr $3d$ states.  The available RMG input is collinear
+spin-polarized and includes a $U=3.0$ eV correction for the Cr $3d$
+states.  The comparison in Fig.~\ref{fig:benchmarks} shows that RMG
+captures the main spectral structures obtained in the independent
+calculation for this magnetic material.  We interpret this benchmark
+as a test of the spin-polarized periodic RT-TDDFT workflow, not as a
+complete treatment of spin-orbit-coupled or excitonic
+magneto-optical physics in \ch{CrI3}, which requires physics beyond
+the present collinear PBE+U-level
+workflow.\cite{Wu-CrI3-excitons-2019}
 
-\myblue{[Discussion points:
-- Agreement between RMG and Octopus for both longitudinal and
-  transverse components
-- K-point convergence: how many k-points needed for converged spectrum?
-- Physical interpretation of the spectral features
-- If Berry phase comparison is available: show agreement between
-  current-integration and BP polarization as internal consistency check
-  (Fruit 1 from CONTEXT.md)
-- If ground-state current convergence is shown: include as panel or
-  note in text (Fruit 2 from CONTEXT.md)]}
-
-
-%--------------------------------------------------------------------
-\subsection{Two-Dimensional Periodic System: Hexagonal Boron Nitride}
-\label{sec:hbn}
-%--------------------------------------------------------------------
-
-Hexagonal boron nitride (hBN) is a wide-gap insulating two-dimensional
-material with $D_{6h}$ symmetry.
-Its optical response is highly anisotropic: the in-plane conductivity
-$\sigma_{xx}(\omega) = \sigma_{yy}(\omega)$ differs markedly from the
-out-of-plane component $\sigma_{zz}(\omega)$, the latter being
-negligible for photon energies below the interlayer excitations.
-This system tests the implementation of two-dimensional periodic
-boundary conditions and the symmetry enforcement of the conductivity
-tensor in \texttt{RMG}.
-
-\myblue{[Computational details:
-- Monolayer geometry: lattice constant \myblue{[a]} \AA,
-  vacuum layer \myblue{[d]} \AA\ to prevent inter-layer interactions
-- K-point sampling: \myblue{[N\_k $\times$ N\_k $\times$ 1]} Monkhorst-Pack
-- Grid spacing: \myblue{[value]} a$_0$
-- XC functional: \myblue{[PBE]}
-- Pseudopotential: \myblue{[type]}
-- Time step and total simulation time: \myblue{[values]}]}
-
-%\begin{figure}[ht!]
-%  \includegraphics[width=\columnwidth]{Figs/out-hBN.pdf}
-%  \caption{\footnotesize
-%    \myblue{[Caption for hBN optical conductivity figure.
-%    Should describe: in-plane $\sigma_{xx}(\omega)$ from RMG and
-%    Octopus; out-of-plane component if shown; indicate the onset
-%    of absorption near the band gap.
-%    Highlight that $\sigma_{xx}=\sigma_{yy}$ (symmetry correctly
-%    reproduced) and $\sigma_{zz}\approx 0$.]}
-%  }
-%  \label{fig:hbn}
-%\end{figure}
-
-\myblue{[Discussion points:
-- Agreement between RMG and Octopus for in-plane conductivity
-- Symmetry: show that $\sigma_{xx}=\sigma_{yy}$ (Fruit 3 from CONTEXT.md)
-- Physical features: onset at band gap, first excitonic peak if visible
-- Comparison with available experimental or LR-TDDFT data if relevant]}
-
-
-%--------------------------------------------------------------------
-\subsection{Three-Dimensional Periodic System: Silicon}
-\label{sec:si}
-%--------------------------------------------------------------------
-
-Silicon in the diamond cubic structure ($F d\bar{3}m$, space group 227)
-is the canonical benchmark for periodic electronic structure
-calculations.
-Its indirect band gap and well-characterized optical spectrum provide
-a rigorous test of the full three-dimensional periodic RT-TDDFT
-implementation.
-The cubic symmetry requires $\sigma_{xx}(\omega) = \sigma_{yy}(\omega)
-= \sigma_{zz}(\omega)$, providing an immediate symmetry validation.
-
-\myblue{[Computational details:
-- Unit cell: conventional 8-atom cell, lattice constant \myblue{[a]} \AA
-- K-point sampling: \myblue{[N\_k $\times$ N\_k $\times$ N\_k]} Monkhorst-Pack
-- Grid spacing: \myblue{[value]} a$_0$
-- XC functional: \myblue{[PBE]}
-- Pseudopotential: \myblue{[type, NCPP]}
-- Number of occupied + virtual states: \myblue{[N\_occ + N\_virt]}
-- Time step $\Delta t$: \myblue{[value]} a.u.
-- Total simulation time: \myblue{[value]} a.u. (\myblue{[value]} fs)
-- Broadening $\gamma$: \myblue{[value]} eV]}
-
-%\begin{figure}[ht!]
-%  \includegraphics[width=\columnwidth]{Figs/out-Si.pdf}
-%  \caption{\footnotesize
-%    \myblue{[Caption for Si optical conductivity figure.
-%    Should describe: $\sigma_{xx}(\omega)$ (= $\sigma_{yy}$ = $\sigma_{zz}$
-%    by cubic symmetry) from RMG compared with Octopus;
-%    indicate band gap region; optionally compare with experiment.
-%    If energy conservation panel included: describe it.]}
-%  }
-%  \label{fig:si}
-%\end{figure}
-
-\myblue{[Discussion points:
-- Agreement between RMG and Octopus: peak positions, lineshapes
-- Symmetry: $\sigma_{xx}=\sigma_{yy}=\sigma_{zz}$ (Fruit 3)
-- Energy conservation test for periodic case (Fruit 5 from CONTEXT.md):
-  run longer simulation and show no drift, analogous to paper 1 Fig.~3c
-- Berry phase comparison if included (Fruit 1)
-- Physical features: onset near direct gap, main optical peak structure]}
-
-
-%--------------------------------------------------------------------
-\subsection{Spin-Polarized System: \ch{CrI3}}
-\label{sec:cri3}
-%--------------------------------------------------------------------
-
-Chromium triiodide (\ch{CrI3}) is a layered van der Waals magnetic
-insulator with a honeycomb lattice of \ch{Cr^{3+}} ions, each carrying
-a local moment of approximately $3\,\mu_B$.
-In its ferromagnetic ground state, the spin-up and spin-down electronic
-structures differ, leading to distinct optical spectra for the two
-spin channels.
-This system provides a direct test of the spin-collinear RT-TDDFT
-extension: the two spin channels should propagate independently but
-with a common Hartree potential, yielding spin-resolved optical
-conductivities that can be compared with \texttt{Octopus} and with
-available experimental data.
-
-\myblue{[Computational details:
-- Unit cell: \myblue{[describe geometry and magnetic ordering]}
-- K-point sampling: \myblue{[N\_k $\times$ N\_k $\times$ N\_k]}
-- XC functional: \myblue{[PBE or PBE+U; specify U if used]}
-- Pseudopotential: \myblue{[type, NCPP]}
-- Initial spin configuration: ferromagnetic, moments on Cr sites
-- Time step and total simulation time: \myblue{[values]}
-- Broadening: \myblue{[value]} eV]}
-
-%\begin{figure}[ht!]
-%  \includegraphics[width=\columnwidth]{Figs/out-CrI3.pdf}
-%  \caption{\footnotesize
-%    \myblue{[Caption for \ch{CrI3} optical conductivity figure.
-%    Should describe: spin-up and spin-down optical conductivities
-%    from RMG compared with Octopus; indicate the relevant spectral
-%    features (charge-transfer peaks, d-d transitions);
-%    note that spin channels are labeled consistently.]}
-%  }
-%  \label{fig:cri3}
-%\end{figure}
-
-\myblue{[Discussion points:
-- Agreement between RMG and Octopus for both spin channels
-- Physical interpretation: which spectral features are spin-up vs spin-down?
-  Charge-transfer excitations, Cr d-d transitions
-- Spin current $\mathbf{J}_{\mathrm{spin}} = \mathbf{J}^\uparrow
-  - \mathbf{J}^\downarrow$ if computed (Fruit 4 from CONTEXT.md)
-- Comparison with available experimental optical data if relevant
-- Note: ECD/MCD spectra not computed in this work (magnetic perturbation
-  formalism reserved for future publication)]}
-
+Taken together, these four benchmarks show that the RMG implementation
+reproduces the principal spectral features of an independent RT-TDDFT
+code across one-dimensional, two-dimensional, three-dimensional, and
+spin-polarized periodic systems.  The following NV$^{-}$-center
+calculations provide an additional physics-specific validation layer by
+testing defect orbital character, polarization selection rules,
+spin-channel selectivity, active-space convergence, and supercell-size
+effects in large diamond supercells.
