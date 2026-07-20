@@ -1,0 +1,284 @@
+%--------------------------------------------------------------------
+\subsection{Density-Matrix Time Propagation}
+\label{sec:density-matrix-propagation}
+%--------------------------------------------------------------------
+
+The time propagation used in this work follows the density-matrix
+RT-TDDFT formulation developed for the finite-system implementation in
+our previous work,\cite{jakowski-rmg-tddft-2025} with the extension that
+the propagated matrices are now resolved by crystal momentum and
+collinear spin channel.  For each $\mathbf k$ and spin $\sigma$, the
+propagation is carried out in a finite subspace
+$\mathcal A_{\mathbf k}^{\sigma}$ spanned by ground-state Kohn--Sham
+Bloch orbitals,
+\begin{equation}
+  \Psi_{a\mathbf k}^{\sigma}(\mathbf r)
+  =
+  e^{\imath\mathbf k\cdot\mathbf r}
+  u_{a\mathbf k}^{\sigma}(\mathbf r),
+  \qquad
+  a\in\mathcal A_{\mathbf k}^{\sigma}.
+  \label{eq:tddft_active_bloch_basis}
+\end{equation}
+The one-particle density matrix in this basis is
+\begin{equation}
+  P_{ab,\mathbf k}^{\sigma}(t)
+  =
+  \left\langle
+    u_{a\mathbf k}^{\sigma}
+    \left|
+    \hat\rho^{\sigma}(t)
+    \right|
+    u_{b\mathbf k}^{\sigma}
+  \right\rangle_{\rm cell}.
+  \label{eq:density_matrix_definition_kspin}
+\end{equation}
+The initial condition is the ground-state occupation matrix,
+\begin{equation}
+  P_{ab,\mathbf k}^{\sigma}(0)
+  =
+  f_{a\mathbf k}^{\sigma}\delta_{ab},
+  \label{eq:initial_density_matrix_kspin}
+\end{equation}
+where $f_{a\mathbf k}^{\sigma}$ is the ground-state occupation of state
+$a$ at $\mathbf k$ in spin channel $\sigma$.
+
+The density matrix obeys the Liouville-von Neumann equation
+\begin{equation}
+  \imath\hbar
+  \frac{d\mathbf P_{\mathbf k}^{\sigma}(t)}{dt}
+  =
+  \left[
+    \mathbf H_{\mathbf k}^{\sigma}(t),
+    \mathbf P_{\mathbf k}^{\sigma}(t)
+  \right],
+  \label{eq:lvn_kspin}
+\end{equation}
+where
+\begin{equation}
+  H_{ab,\mathbf k}^{\sigma}(t)
+  =
+  \left\langle
+    u_{a\mathbf k}^{\sigma}
+    \left|
+    \hat H_{\mathbf k}^{V,\sigma}(t)
+    \right|
+    u_{b\mathbf k}^{\sigma}
+  \right\rangle_{\rm cell}
+  \label{eq:hamiltonian_matrix_kspin}
+\end{equation}
+is the matrix representation of the velocity-gauge Kohn--Sham
+Hamiltonian of Eq.~\eqref{eq:velocity_gauge_hamiltonian_k}.  At
+nonzero $\mathbf k$, both $\mathbf H_{\mathbf k}^{\sigma}$ and
+$\mathbf P_{\mathbf k}^{\sigma}$ are generally complex Hermitian
+matrices.
+
+Formally, Eq.~\eqref{eq:lvn_kspin} is solved by a unitary
+time-evolution operator,
+\begin{equation}
+  \mathbf P_{\mathbf k}^{\sigma}(t+\Delta t)
+  =
+  \mathcal U_{\mathbf k}^{\sigma}(t+\Delta t,t)
+  \mathbf P_{\mathbf k}^{\sigma}(t)
+  \mathcal U_{\mathbf k}^{\sigma\dagger}(t+\Delta t,t),
+  \label{eq:density_unitary_update}
+\end{equation}
+with
+\begin{equation}
+  \mathcal U_{\mathbf k}^{\sigma}(t+\Delta t,t)
+  =
+  \exp\!\left[
+    \Omega_{\mathbf k}^{\sigma}(t+\Delta t,t)
+  \right].
+  \label{eq:magnus_propagator_definition}
+\end{equation}
+The Magnus generator\cite{Magnus-1954} is written as
+\begin{equation}
+  \Omega_{\mathbf k}^{\sigma}
+  =
+  \Omega_{1,\mathbf k}^{\sigma}
+  +
+  \Omega_{2,\mathbf k}^{\sigma}
+  + \cdots,
+  \label{eq:magnus_series_kspin}
+\end{equation}
+where
+\begin{equation}
+  \Omega_{1,\mathbf k}^{\sigma}
+  =
+  -
+  \frac{\imath}{\hbar}
+  \int_t^{t+\Delta t}
+  \mathbf H_{\mathbf k}^{\sigma}(\tau)\,d\tau,
+  \label{eq:magnus_first_term_kspin}
+\end{equation}
+and
+\begin{equation}
+  \Omega_{2,\mathbf k}^{\sigma}
+  =
+  -
+  \frac{1}{2\hbar^2}
+  \int_t^{t+\Delta t}d\tau_1
+  \int_t^{\tau_1}d\tau_2
+  \left[
+    \mathbf H_{\mathbf k}^{\sigma}(\tau_1),
+    \mathbf H_{\mathbf k}^{\sigma}(\tau_2)
+  \right].
+  \label{eq:magnus_second_term_kspin}
+\end{equation}
+In the present method, the Magnus expansion is truncated after its
+first term, and the time integral of the Hamiltonian is evaluated using
+an endpoint-averaged, midpoint-equivalent approximation,
+\begin{equation}
+  \Omega_{\mathbf k}^{\sigma}(t+\Delta t,t)
+  \simeq
+  -
+  \frac{\imath\Delta t}{2\hbar}
+  \left[
+    \mathbf H_{\mathbf k}^{\sigma}(t)
+    +
+    \mathbf H_{\mathbf k}^{\sigma}(t+\Delta t)
+  \right].
+  \label{eq:midpoint_magnus_kspin}
+\end{equation}
+This approximation has the time symmetry associated with midpoint or
+trapezoidal integration of the first Magnus term.  The detailed
+construction of $\mathbf H_{\mathbf k}^{\sigma}(t+\Delta t)$ in the
+self-consistent propagation loop is described in Sec.~\ref{sec:implementation}.
+
+Because $\mathbf H_{\mathbf k}^{\sigma}$ is Hermitian, the generator
+$\Omega_{\mathbf k}^{\sigma}$ is anti-Hermitian and
+$\mathcal U_{\mathbf k}^{\sigma}$ is unitary.  The action of the
+unitary transformation on the density matrix can therefore be written as
+a Baker--Campbell--Hausdorff nested-commutator series,
+\begin{align}
+  \mathbf P_{\mathbf k}^{\sigma}(t+\Delta t)
+  &=
+  e^{\Omega_{\mathbf k}^{\sigma}}
+  \mathbf P_{\mathbf k}^{\sigma}(t)
+  e^{-\Omega_{\mathbf k}^{\sigma}}
+  \nonumber\\
+  &=
+  \mathbf P_{\mathbf k}^{\sigma}(t)
+  +
+  \left[
+    \Omega_{\mathbf k}^{\sigma},
+    \mathbf P_{\mathbf k}^{\sigma}(t)
+  \right]
+  +
+  \frac{1}{2!}
+  \left[
+    \Omega_{\mathbf k}^{\sigma},
+    \left[
+      \Omega_{\mathbf k}^{\sigma},
+      \mathbf P_{\mathbf k}^{\sigma}(t)
+    \right]
+  \right]
+  + \cdots .
+  \label{eq:bch_density_matrix_kspin}
+\end{align}
+Equivalently, defining
+$\mathbf C_{0,\mathbf k}^{\sigma}=\mathbf P_{\mathbf k}^{\sigma}(t)$
+and
+\begin{equation}
+  \mathbf C_{n,\mathbf k}^{\sigma}
+  =
+  \frac{1}{n}
+  \left[
+    \Omega_{\mathbf k}^{\sigma},
+    \mathbf C_{n-1,\mathbf k}^{\sigma}
+  \right],
+  \label{eq:bch_recursive_terms}
+\end{equation}
+one obtains
+\begin{equation}
+  \mathbf P_{\mathbf k}^{\sigma}(t+\Delta t)
+  =
+  \sum_{n=0}^{\infty}
+  \mathbf C_{n,\mathbf k}^{\sigma}.
+  \label{eq:bch_recursive_sum}
+\end{equation}
+This form applies equally to real $\Gamma$-point matrices and to the
+complex Hermitian matrices that arise for general $\mathbf k$ points.
+Exact unitary propagation conserves the trace, Hermiticity, and
+eigenvalues of each density matrix; therefore the single-particle
+occupations are preserved by the continuous evolution.  In practical
+calculations these properties are preserved up to the numerical
+truncation and self-consistency errors of the propagation.
+
+The propagated density matrices determine the real-space spin densities.
+When the propagated subspace is supplemented by frozen occupied states,
+the real-space spin density can be written as
+\begin{align}
+  \rho^{\sigma}(\mathbf r,t)
+  &=
+  \sum_{\mathbf k}
+  w_{\mathbf k}
+  \sum_{a,b\in\mathcal A_{\mathbf k}^{\sigma}}
+  u_{a\mathbf k}^{\sigma}(\mathbf r)
+  P_{ab,\mathbf k}^{\sigma}(t)
+  u_{b\mathbf k}^{\sigma *}(\mathbf r)
+  \nonumber\\
+  &\quad
+  +
+  \sum_{\mathbf k}
+  w_{\mathbf k}
+  \sum_{f\in\mathcal F_{\mathbf k}^{\sigma}}
+  f_{f\mathbf k}^{\sigma}
+  \left|
+    u_{f\mathbf k}^{\sigma}(\mathbf r)
+  \right|^2 .
+  \label{eq:spin_density_reconstruction}
+\end{align}
+Here $\mathcal F_{\mathbf k}^{\sigma}$ denotes states that are not
+included in the propagated active subspace and remain fixed at their
+ground-state occupations.  Equivalently, the same density can be written
+as a ground-state density plus the active-space density change,
+\begin{equation}
+  \rho^{\sigma}(\mathbf r,t)
+  =
+  \rho_{\rm gs}^{\sigma}(\mathbf r)
+  +
+  \sum_{\mathbf k}
+  w_{\mathbf k}
+  \sum_{a,b\in\mathcal A_{\mathbf k}^{\sigma}}
+  u_{a\mathbf k}^{\sigma}(\mathbf r)
+  \Delta P_{ab,\mathbf k}^{\sigma}(t)
+  u_{b\mathbf k}^{\sigma *}(\mathbf r),
+  \label{eq:density_reconstruction_delta_p}
+\end{equation}
+where
+$\Delta\mathbf P_{\mathbf k}^{\sigma}(t)
+=\mathbf P_{\mathbf k}^{\sigma}(t)-\mathbf P_{\mathbf k}^{\sigma}(0)$.
+This form is especially useful for connecting the formal density
+reconstruction to an active-space implementation with frozen states.
+
+The propagation is self-consistent because the Hamiltonian is a
+functional of the evolving density.  The update cycle can be summarized as
+\begin{equation}
+  \left\{
+    \mathbf P_{\mathbf k}^{\sigma}(t)
+  \right\}
+  \rightarrow
+  \left\{
+    \rho^{\sigma}(\mathbf r,t)
+  \right\}
+  \rightarrow
+  \hat V_{\rm H}[\rho](t),
+  \hat V_{\rm xc}^{\sigma}[\rho^\uparrow,\rho^\downarrow](t)
+  \rightarrow
+  \left\{
+    \mathbf H_{\mathbf k}^{\sigma}(t)
+  \right\}
+  \rightarrow
+  \left\{
+    \mathbf P_{\mathbf k}^{\sigma}(t+\Delta t)
+  \right\}.
+  \label{eq:self_consistent_density_matrix_cycle}
+\end{equation}
+The two collinear spin channels are propagated as separate density
+matrices, but they are not independent: both contribute to the total
+density entering the Hartree potential, and the exchange-correlation
+potential in each spin channel depends on $\rho^\uparrow$ and
+$\rho^\downarrow$.  The spin structure is discussed in more detail in
+Sec.~\ref{sec:collinear-spin-extension}.
