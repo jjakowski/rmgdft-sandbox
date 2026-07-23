@@ -3,7 +3,8 @@
 %% General validation benchmarks for periodic and spin-polarized RT-TDDFT
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\section{Validation of Periodic and Spin-Polarized RT-TDDFT}
+%\section{Validation of Periodic and Spin-Polarized RT-TDDFT}
+\section{Validation and Benchmarking} 
 \label{sec:results}
 
 We first validate the periodic and spin-polarized RT-TDDFT
@@ -23,14 +24,18 @@ and the comparison emphasizes peak positions, dominant spectral
 structures, overall spectral envelopes, and polarization or spin
 dependence where applicable.
 
-\begin{figure}[ht!]
+\begin{figure*}[ht!]
   \centering
   \begin{tabular}{@{}cc@{}}
-    \includegraphics[width=0.48\columnwidth]{Figs/out-h2.pdf} &
-    \includegraphics[width=0.48\columnwidth]{Figs/out-hBN.pdf} \\
+    %\includegraphics[width=0.48\columnwidth]{Figs/out-h2.pdf} &
+    %\includegraphics[width=0.48\columnwidth]{Figs/out-hBN.pdf} \\
+    \includegraphics[width=0.48\linewidth]{Figs/out-h2.pdf} &
+    \includegraphics[width=0.48\linewidth]{Figs/out-hBN.pdf} \\
     (a) & (b) \\
-    \includegraphics[width=0.48\columnwidth]{Figs/out-Si.pdf} &
-    \includegraphics[width=0.48\columnwidth]{Figs/out-CrI3.pdf} \\
+    %\includegraphics[width=0.48\columnwidth]{Figs/out-Si.pdf} &
+    %\includegraphics[width=0.48\columnwidth]{Figs/out-CrI3.pdf} \\
+    \includegraphics[width=0.48\linewidth]{Figs/out-Si.pdf} &
+    \includegraphics[width=0.48\linewidth]{Figs/out-CrI3.pdf} \\
     (c) & (d)
   \end{tabular}
   % CHECK WITH LIANGBO: confirm Octopus provenance and comparable PBE-level settings for all four benchmark reference curves.
@@ -45,7 +50,7 @@ dependence where applicable.
     intensity.
   }
   \label{fig:benchmarks}
-\end{figure}
+\end{figure*}
 
 The one-dimensional hydrogen-dimer system provides the simplest
 periodic reference.  The model consists of hydrogen dimers repeated
