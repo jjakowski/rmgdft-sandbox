@@ -7,6 +7,34 @@
 \section{Validation and Benchmarking} 
 \label{sec:results}
 
+
+
+
+\subsection{Length- and Velocity-Gauge Consistency: Benzene}
+
+.. benzene discussion and figure
+
+BENZENE FIGURE
+
+%\caption{
+Comparison of length- and velocity-gauge RT-TDDFT response for benzene
+within RMG.  The length-gauge result is obtained from the imaginary part
+of the Fourier-transformed induced dipole,
+$-\mathrm{Im}\,\Delta\mu(\omega)$.  For the present velocity-gauge
+impulsive perturbation, scaling the imaginary part of the
+Fourier-transformed current by a single factor of $1/\omega$ does not
+reproduce the frequency dependence of the length-gauge response,
+whereas scaling by $1/\omega^{2}$ gives close agreement over the
+relevant excitation-energy range.  Constant normalization factors are
+applied for comparison of spectral shapes.  A small low-frequency
+numerical background was removed prior to the $1/\omega^{2}$ scaling
+to prevent amplification of the residual near-zero-frequency response.
+The agreement is consistent with the two distinct frequency factors
+derived in Sec.~\ref{sec:rmg_vg_frequency_response}.
+%}
+%--------------------------------------------------------
+\subsection{Periodic Cross-Code Benchmarks}
+
 We first validate the periodic and spin-polarized RT-TDDFT
 implementation in \texttt{RMG} by comparing current-derived optical
 spectra with independent real-time calculations performed with

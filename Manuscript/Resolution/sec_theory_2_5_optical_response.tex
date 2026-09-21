@@ -2,9 +2,91 @@
 \subsection{Optical Response and Postprocessing}
 \label{sec:optical-response}
 %--------------------------------------------------------------------
+For finite systems, the optical response is conveniently formulated in
+terms of the induced dipole moment.  In the linear-response regime,
 
-The velocity-gauge formulation developed above is not restricted to an
-impulsive perturbation.  For a prescribed spatially homogeneous vector
+\begin{equation}
+\Delta \mu_{\alpha}(t)
+=
+\sum_{\beta}
+\int_{-\infty}^{t}
+\alpha_{\alpha\beta}(t-t')
+E_{\beta}(t')\,dt',
+\label{eq:dipole_linear_response}
+\end{equation}
+
+where
+$\Delta\mu_{\alpha}(t)=\mu_{\alpha}(t)-\mu_{\alpha}(0)$
+and $\alpha_{\alpha\beta}$ is the molecular polarizability response
+function.  In the frequency domain,
+
+\begin{equation}
+\Delta\mu_{\alpha}(\omega)
+=
+\sum_{\beta}
+\alpha_{\alpha\beta}(\omega)
+E_{\beta}(\omega).
+\label{eq:dipole_response_frequency}
+\end{equation}
+
+For an impulsive electric-field perturbation,
+
+\begin{equation}
+E_{\beta}(t)=E_{0,\beta}\delta(t),
+\label{eq:finite_delta_kick}
+\end{equation}
+
+the Fourier transform of the applied field is frequency independent,
+$E_{\beta}(\omega)=E_{0,\beta}$, and therefore
+
+\begin{equation}
+\alpha_{\alpha\beta}(\omega)
+=
+\frac{\Delta\mu_{\alpha}^{(\beta)}(\omega)}
+     {E_{0,\beta}}.
+\label{eq:polarizability_from_dipole}
+\end{equation}
+
+This is the finite-system length-gauge formulation employed in our
+previous RMG RT-TDDFT implementation.~\cite{...}
+Under periodic boundary conditions, however, the ordinary position
+operator and the corresponding macroscopic dipole moment are not
+suitable bulk observables.  The analogous response is instead expressed
+in terms of the macroscopic polarization $\mathbf{P}(t)$ and its time
+derivative, the macroscopic current density,
+
+\begin{equation}
+\Delta J_{\alpha}(t)
+=
+\frac{d\,\Delta P_{\alpha}(t)}{dt}.
+\label{eq:current_polarization_relation}
+\end{equation}
+
+With the Fourier-transform convention introduced below, this relation
+becomes
+
+\begin{equation}
+\Delta J_{\alpha}(\omega)
+=
+i\omega\,\Delta P_{\alpha}(\omega).
+\label{eq:current_polarization_frequency}
+\end{equation}
+
+Thus, dipole- or polarization-based and current-based formulations
+contain the same linear-response information, but their frequency-domain
+responses differ by an explicit factor of $i\omega$.  This relation
+provides the connection between the finite-system length-gauge
+formulation of our previous work and the periodic current-based
+velocity-gauge formulation developed here.
+
+%---------
+
+Having established the relation between polarization- and
+current-based response functions, we note that the velocity-gauge
+formulation developed above is not restricted to an impulsive
+perturbation.
+%The velocity-gauge formulation developed above is not restricted to an impulsive perturbation.  
+For a prescribed spatially homogeneous vector
 potential $\mathbf A(t)$, the formal Hamiltonian retains the external
 field for all times at which the chosen electromagnetic perturbation
 requires it,

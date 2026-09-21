@@ -37,6 +37,23 @@ density.
 propagation time, broadening gamma, XC functional, pseudopotential
 library used for all systems.]}
 
+\begin{figure}[ht!]
+	\begin{tabular}{ll}
+   \includegraphics[width=0.5\columnwidth]{Figs/out-h2.pdf} & 
+   \includegraphics[width=0.5\columnwidth]{Figs/out-hBN.pdf} \\ 
+   a) & b) \\
+   \includegraphics[width=0.5\columnwidth]{Figs/out-Si.pdf} &
+   \includegraphics[width=0.5\columnwidth]{Figs/out-CrI3.pdf} \\
+   c) & d)
+	\end{tabular}
+  \caption{\footnotesize
+	\myblue{ Optical conductivity of (a) 1-D Hydrogen, (b) 2-D hexagonal Boron Nitride (c) 3-D  Silicon,
+	(d) spin polarized CrI3 from from RMG compared with Octopus
+	}
+  }
+  \label{fig:h2}
+\end{figure}
+
 %--------------------------------------------------------------------
 \subsection{One-Dimensional Periodic System: Hydrogen Chain}
 \label{sec:h2}
@@ -61,18 +78,6 @@ geometry, where the longitudinal ($z$-direction) and transverse
 - Total simulation time: \myblue{[value]} a.u.
 - Broadening $\gamma$: \myblue{[value]} eV]}
 
-\begin{figure}[ht!]
-  \includegraphics[width=\columnwidth]{Figs/out-h2.pdf}
-  \caption{\footnotesize
-    \myblue{[Caption for H$_2$ chain optical conductivity figure.
-    Should describe: (a) longitudinal $\sigma_{zz}(\omega)$ and
-    transverse $\sigma_{xx}(\omega)$ components from RMG compared
-    with Octopus; (b) convergence with k-point density if shown;
-    labels for RMG and Octopus curves.
-    Note anisotropy of 1D system as key feature to highlight.]}
-  }
-  \label{fig:h2}
-\end{figure}
 
 \myblue{[Discussion points:
 - Agreement between RMG and Octopus for both longitudinal and
@@ -110,18 +115,18 @@ tensor in \texttt{RMG}.
 - Pseudopotential: \myblue{[type]}
 - Time step and total simulation time: \myblue{[values]}]}
 
-\begin{figure}[ht!]
-  \includegraphics[width=\columnwidth]{Figs/out-hBN.pdf}
-  \caption{\footnotesize
-    \myblue{[Caption for hBN optical conductivity figure.
-    Should describe: in-plane $\sigma_{xx}(\omega)$ from RMG and
-    Octopus; out-of-plane component if shown; indicate the onset
-    of absorption near the band gap.
-    Highlight that $\sigma_{xx}=\sigma_{yy}$ (symmetry correctly
-    reproduced) and $\sigma_{zz}\approx 0$.]}
-  }
-  \label{fig:hbn}
-\end{figure}
+%\begin{figure}[ht!]
+%  \includegraphics[width=\columnwidth]{Figs/out-hBN.pdf}
+%  \caption{\footnotesize
+%    \myblue{[Caption for hBN optical conductivity figure.
+%    Should describe: in-plane $\sigma_{xx}(\omega)$ from RMG and
+%    Octopus; out-of-plane component if shown; indicate the onset
+%    of absorption near the band gap.
+%    Highlight that $\sigma_{xx}=\sigma_{yy}$ (symmetry correctly
+%    reproduced) and $\sigma_{zz}\approx 0$.]}
+%  }
+%  \label{fig:hbn}
+%\end{figure}
 
 \myblue{[Discussion points:
 - Agreement between RMG and Octopus for in-plane conductivity
@@ -155,17 +160,17 @@ The cubic symmetry requires $\sigma_{xx}(\omega) = \sigma_{yy}(\omega)
 - Total simulation time: \myblue{[value]} a.u. (\myblue{[value]} fs)
 - Broadening $\gamma$: \myblue{[value]} eV]}
 
-\begin{figure}[ht!]
-  \includegraphics[width=\columnwidth]{Figs/out-Si.pdf}
-  \caption{\footnotesize
-    \myblue{[Caption for Si optical conductivity figure.
-    Should describe: $\sigma_{xx}(\omega)$ (= $\sigma_{yy}$ = $\sigma_{zz}$
-    by cubic symmetry) from RMG compared with Octopus;
-    indicate band gap region; optionally compare with experiment.
-    If energy conservation panel included: describe it.]}
-  }
-  \label{fig:si}
-\end{figure}
+%\begin{figure}[ht!]
+%  \includegraphics[width=\columnwidth]{Figs/out-Si.pdf}
+%  \caption{\footnotesize
+%    \myblue{[Caption for Si optical conductivity figure.
+%    Should describe: $\sigma_{xx}(\omega)$ (= $\sigma_{yy}$ = $\sigma_{zz}$
+%    by cubic symmetry) from RMG compared with Octopus;
+%    indicate band gap region; optionally compare with experiment.
+%    If energy conservation panel included: describe it.]}
+%  }
+%  \label{fig:si}
+%\end{figure}
 
 \myblue{[Discussion points:
 - Agreement between RMG and Octopus: peak positions, lineshapes
@@ -202,17 +207,17 @@ available experimental data.
 - Time step and total simulation time: \myblue{[values]}
 - Broadening: \myblue{[value]} eV]}
 
-\begin{figure}[ht!]
-  \includegraphics[width=\columnwidth]{Figs/out-CrI3.pdf}
-  \caption{\footnotesize
-    \myblue{[Caption for \ch{CrI3} optical conductivity figure.
-    Should describe: spin-up and spin-down optical conductivities
-    from RMG compared with Octopus; indicate the relevant spectral
-    features (charge-transfer peaks, d-d transitions);
-    note that spin channels are labeled consistently.]}
-  }
-  \label{fig:cri3}
-\end{figure}
+%\begin{figure}[ht!]
+%  \includegraphics[width=\columnwidth]{Figs/out-CrI3.pdf}
+%  \caption{\footnotesize
+%    \myblue{[Caption for \ch{CrI3} optical conductivity figure.
+%    Should describe: spin-up and spin-down optical conductivities
+%    from RMG compared with Octopus; indicate the relevant spectral
+%    features (charge-transfer peaks, d-d transitions);
+%    note that spin channels are labeled consistently.]}
+%  }
+%  \label{fig:cri3}
+%\end{figure}
 
 \myblue{[Discussion points:
 - Agreement between RMG and Octopus for both spin channels
@@ -224,108 +229,3 @@ available experimental data.
 - Note: ECD/MCD spectra not computed in this work (magnetic perturbation
   formalism reserved for future publication)]}
 
-
-%--------------------------------------------------------------------
-\subsection{Large-Scale Demonstration: NV Center in Diamond}
-\label{sec:nv}
-%--------------------------------------------------------------------
-
-As a final  demonstration, 
-we apply the periodic spin-polarized RT-TDDFT implementation to
- to the negatively charged nitrogen-vacancy center (NV(-)) in diamond.\cite{NV-Doherty-2013,NV-Gali-2008,NV-Gali-2019} 
-This system tests several capabilities simultaneously: spin-polarized real-time propagation, 
-optical response of a localized defect in a three-dimensional periodic host, 
-convergence toward the dilute-defect limit, as well as  computaitonal  scaling to  thousands of atoms 
-
-
-
-The negatively charged nitrogen-vacancy (NV(-)) center in diamond 
-consists of a substitutional nitrogen atom adjacent to a carbon vacancy, with one additional trapped electron.
-The ground state of NV(-) center is an optically addresable  spin-triplet  embedded within a band gap 
-between valence and comdunction bands of a diamond.\cite{NV-Gali-2008,NV-Gali-2019,NV-Louie-2012}
-Becasue of its optical adreasbility and long coherence times at room temperature the NV(-) center is 
-an attractive system for for several emerging quantum technologies, including single -photon emitter,
-nanoscale magnetometry, quantum sensing, quantum information 
-processing.\cite{NV-coherence-Balasubramanian-2009,NV-sensing-Degen-2017,NV-sensing-Maze-2008,NV-sensing-Schirhagl-2014,NV-spe-Aharonovich-2016,NV-QComp-Bradley-2019}
-
-%[PLACEHOLDER cite: Degen 2017 RMP; Maze 2008 Nature], quantum sensing of temperature, electric fields, and strain [PLACEHOLDER cite: Schirhagl 2014 ARPC], single-photon sources for quantum communication [PLACEHOLDER cite: Aharonovich 2016 Nat.\ Photon.], and small-scale quantum information processing demonstrations
-
-
-The purpose of our  demonstration is not to provide a complete many-body description of the NV$^-$ photophysics, 
-which involves vibronic effects, singlet-triplet manifolds, and charge-state physics, 
-but to demonstrate  large-scale spin-polarized real-time simulations of 
-optical response for  increasing supercell size.
-
-
-
-
-The NV center---a substitutional nitrogen atom adjacent to a carbon
-vacancy---is one of the most studied point defects in solid-state
-physics, of primary importance for quantum sensing and quantum
-information applications due to its long spin coherence time at
-room temperature.\cite{nv-center-review}
-
-In a standard periodic DFT or RT-TDDFT calculation, the NV center is
-represented by a single defect in a periodically repeated supercell.
-The physical properties of the \emph{isolated} defect are recovered
-only when the supercell is large enough that the interaction between
-the defect and its periodic images is negligible.
-Identifying this convergence threshold is both a practical necessity
-and a physically meaningful result: it establishes the minimum defect
-concentration at which the isolated-defect limit is reached.
-
-We investigate this convergence by performing RT-TDDFT calculations
-on diamond supercells containing a single NV center, systematically
-increasing the cell size from \myblue{[N$_{\min}$] to [\myblue{N$_{\max}$}}]
-atoms.
-\myblue{[Specific supercell sizes to be determined. Suggested sequence
-(subject to computational feasibility on Frontier):
-64, 216, 512, 1000, [larger if possible]
-These correspond to defect concentrations of approximately
-\myblue{[values]} cm$^{-3}$.]}
-
-\myblue{[Computational details:
-- Host: diamond cubic, lattice constant \myblue{[a]} \AA
-- Defect: single NV$^-$ center (negatively charged)
-- Spin state: triplet ground state ($S=1$), ferromagnetic alignment
-- K-point sampling: Gamma point only for large supercells
-  (\myblue{[note if Gamma+additional k-points used for small cells]})
-- XC functional: \myblue{[PBE]}
-- Pseudopotential: \myblue{[NCPP type]}
-- Number of states: \myblue{[N\_occ + N\_virt per spin]}
-- Time step and total simulation time: \myblue{[values]}
-- Computational platform: Frontier at ORNL
-- Nodes used: \myblue{[values per system size]}]}
-
-\begin{figure}[ht!]
-  \myblue{[Figure placeholder: NV center convergence figure.
-  Suggested panels:
-  (a) Optical conductivity $\sigma(\omega)$ for each supercell size,
-      showing convergence with increasing cell size
-  (b) Convergence metric vs supercell size (e.g., peak position or
-      integrated spectral weight) showing saturation
-  (c) Optionally: timing data showing scaling with system size
-  Label defect-related spectral features (zero-phonon line region,
-  broad phonon sideband).]}
-  \caption{\footnotesize
-    \myblue{[Caption for NV center convergence figure.
-    Describe the system, the supercell sizes shown, the key spectral
-    features, and the convergence behavior. Identify the minimum
-    supercell size for which the isolated-defect optical spectrum is
-    recovered within \myblue{[tolerance]}.]}
-  }
-  \label{fig:nv}
-\end{figure}
-
-\myblue{[Discussion points:
-- At what supercell size does the spectrum converge?
-  What is the corresponding defect concentration threshold?
-- What is the physical origin of the convergence: direct defect-defect
-  orbital overlap, or longer-range electrostatic interaction?
-- How does the spin-up and spin-down optical response differ?
-  Does the convergence behavior differ between spin channels?
-- Timing data: how does the computational cost scale with cell size?
-  At what size does the TDDFT step dominate over the SCF step?
-  (Compare with paper 1 Table 1 format for Ag nanorods.)
-- This demonstration establishes the unique position of RMG for
-  studying realistic defect concentrations in extended systems.]}
