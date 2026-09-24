@@ -63,6 +63,7 @@
 \phone{+1 865 574 6174}
 
 \author{Wenchang Lu}
+\email{wlu2@ncsu.edu}
 \affiliation{Department of Physics, North Carolina State University,
   Raleigh, NC 27695-8202, USA}
 
@@ -87,9 +88,11 @@
 %% Working title — to be finalized. Several candidates listed.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \title{\large
+From Crystals to Quantum Defects: Scalable Real-Time TDDFT
+for Periodic and Spin-Polarized Materials%
 %%----- Candidate 1:
-Real-Time Time-Dependent Density Functional Theory for Periodic and
-Spin-Polarized Systems with the Real-Space Multigrids (RMG)%
+%Real-Time Time-Dependent Density Functional Theory for Periodic and
+%Spin-Polarized Systems with the Real-Space Multigrids (RMG)%
 %%
 %%----- Candidate 2:
 %% Optical Response of Periodic and Magnetic Systems from Scalable
@@ -100,8 +103,7 @@ Spin-Polarized Systems with the Real-Space Multigrids (RMG)%
 %% Spin Polarization, and Large-Scale Applications with RMG%
 %-- short version:
 \footnote{Notice of Copyright: This manuscript has been authored by UT-Battelle, LLC, under contract DE-AC05-00OR22725 with the US Department of Energy (DOE). The publisher acknowledges the US government license to provide public access under the DOE Public Access Plan (http://energy.gov/downloads/doe-public-access-plan)
-(http://energy.gov/downloads/doe-public-access-plan).}}
-
+} }
 %--long version:
 %\footnote{NOTICE OF COPYRIGHT: This manuscript has been authored by UT-Battelle, LLC under Contract No.\ DE-AC05-00OR22725 with the U.S.\ Department of Energy. The United States Government retains and the publisher, by accepting the article for publication, acknowledges that the United States Government retains a non-exclusive, paid-up, irrevocable, worldwide license to publish or reproduce the published form of this manuscript, or allow others to do so, for United States Government purposes. The Department of Energy will provide public access to these results of federally sponsored research in accordance with the DOE Public Access Plan
 %(http://energy.gov/downloads/doe-public-access-plan).}}
@@ -123,11 +125,25 @@ Spin-Polarized Systems with the Real-Space Multigrids (RMG)%
 %% Abstract — to be written last, after all sections are complete
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \begin{abstract}
-\myblue{[Abstract: to be written last, after all sections are complete.
-Approximately 200 words. Should mirror paper 1 abstract structure:
-(1) what we present, (2) what problem it solves, (3) key methodological
-contribution, (4) validation/benchmarking, (5) scalability demonstration
-and outlook.]}
+We present an implementation  and application of periodic real-time 
+time-dependent density functional theory
+(RT-TDDFT) in the real-space multigrid code \texttt{RMG} to
+collinear spin-polarized systems. 
+The implementation combines real-space domain decomposition with
+$\mathbf{k}$-point, spin-channel, and distributed-matrix parallelism,
+enabling RT-TDDFT calculations for large periodic supercells. We validate the
+method  a one-dimensional periodic hydrogen-dimer model, monolayer hBN, bulk Si,
+and spin-polarized \ch{CrI3}.  As a large-scale scientific demonstration,
+we investigate negatively charged nitrogen-vacancy centers (NV$^-$) in
+a 4096-site diamond framework containing 4095 atoms 
+demonstrating the applicability of the approach to dilute defects in large periodic supercells
+and establishes a foundation for future extensions toward finite-momentum
+probes and more general electron-ion and spin dynamics.
+The  NV$^{-}$ center  calculations reproduce the  polarization selection
+behavior and minority-spin character of the defect-associated optical
+response, reveal its dependence on the propagated active space and defect
+concentration, and show how local spin selectivity maps onto global collinear
+spin channels for different magnetic configurations.
 \end{abstract}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -155,6 +171,8 @@ and outlook.]}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Simulations 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Numerical Results}
+\label{sec:benchmarks}
 \input{sec_benchmarks}
 
 \input{sec_benchmarks-nv-center}
@@ -238,7 +256,8 @@ appendix; or can be removed if not needed.]}
 %% Bibliography
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \balance
-\bibliography{../source/references,./references-pap2}
+%\bibliography{../source/references,./references-pap2,./references_to_verify}
+\bibliography{./references-pap2,./references_to_verify}
 \balance
 
 \end{document}
