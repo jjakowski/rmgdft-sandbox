@@ -97,20 +97,24 @@ This scalability is particularly valuable for periodic
 spin-polarized calculations, where sampling multiple k points
 and propagating separate spin channels introduce additional
 computational cost.
-To establish the accuracy of the present implementation,
-we validate its results against \texttt{Octopus} for
+We validate the periodic and spin-polarized implementation	
+against \texttt{Octopus} for
 one-dimensional H$_2$ chains, two-dimensional hexagonal BN,
-and three-dimensional Si, together with spin-polarized
-calculations for \ch{CrI3}.
-We then demonstrate its capacity to treat large periodic systems
-through spin-polarized RT-TDDFT calculations of nitrogen-vacancy
-(NV) centers in diamond, a prototypical point defect system of
+three-dimensional Si,
+and spin-polarized \ch{CrI3}, comparing
+principal spectral features and relative optical response.
+As a large-scale scientific application, we investigate negatively
+charged nitrogen-vacancy (NV$^-$) centers in diamond,
+a prototypical point defect system of
 substantial interest for quantum sensing and quantum information
 applications.\cite{NV-Doherty-2013} 
-Using supercells containing up to 4096 lattice sites
-(4095 atoms and one vacancy), we investigate the dependence
-of the defect optical response on supercell size and assess
-the influence of interactions between periodic images.
+These calculations examine polarization selection rules,
+spin-channel selectivity, and active-space dependence, followed
+by a study of defect concentration and collinear magnetic
+configurations in a common 4096-site diamond framework.
+The largest single-defect calculation contains 4095 atoms and
+one vacancy, demonstrating the capacity of the method to
+investigate dilute defects in large periodic supercells.
 
 
 The remainder of this paper is organized as follows.
@@ -118,13 +122,19 @@ Section~\ref{sec:methodology} presents the theoretical framework for
 periodic spin-collinear RT-TDDFT, beginning with the interaction
 of matter with electromagnetic fields,  the transformation
 from length to velocity gauge, the current operator with nonlocal
-pseudopotential contributions, density matrix propagation, and
-the extraction of optical conductivity.
-Section~\ref{sec:implementation} describes the implementation
-in \texttt{RMG}, its principal approximations, and their physical
-justification.
-Section~\ref{sec:benchmarks} presents the validation benchmarks
-and the large-supercell NV-center demonstration.
-The paper concludes with a Summary and Outlook.
+pseudopotential contributions, active-space  density matrix propagation,
+the collinear spin extension, and
+the extraction of optical response functions. 
+Section~\ref{sec:implementation}
+describes the numerical implementation in
+\texttt{RMG}, including the applied perturbation, current
+evaluation, propagation, parallel organization, and spectral
+processing.
+Section~\ref{sec:benchmarks} presents the validation benchmarks.
+Section~\ref{sec:nv-centers} presents the NV$^-$-center application, including
+optical selection rules, active-space dependence, defect
+concentration effects, and comparisons of collinear magnetic
+configurations.
+Section~\ref{sec:summary} concludes with a Summary and Outlook.
 
 
