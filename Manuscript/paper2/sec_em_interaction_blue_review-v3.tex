@@ -1,0 +1,495 @@
+% CONSERVATIVE REVIEW DRAFT -- replaces the EM-interaction subsection only.
+% Replace from \subsection{Interaction of Matter with Electromagnetic Radiation}
+% through its table, stopping before the VELOCITY GAUGE placeholder.
+% The parent theory introduction and the velocity-gauge subsection are not included.
+% New/replacement wording and corrected mathematical terms use \myblue{...}.
+% Retained prose/equations remain black; typographical cleanup is not marked.
+% Requires the existing \myblue and \vb macros, and amsmath.
+%
+% REVIEW NOTES
+% - Original paragraph sequence retained: TDKS -> plane wave -> fields ->
+%   Coulomb gauge -> gauge freedom -> length gauge -> kick -> observables ->
+%   finite-q probes -> applications/table.
+% - Five-column implementation-oriented table includes a fifth magnetic/spin-probe row.
+% - Scalar-potential probes remain electromagnetic and have gauge freedom.
+% - q_e=-e in Gaussian units; atomic units begin in the implementation.
+% - Removed a repeated finite-system dipole sentence and the incorrect
+%   IXS/magnon assignments in the transverse-vector-potential table row.
+% - Detailed velocity-gauge transformation and RMG kick normalization are deferred.
+% - Updated application/reference placements: ARPES and demagnetization in VG;
+%   nonresonant IXS in the scalar row; magnons in a separate paragraph.
+% - NEW citation keys below: copy these entries into the master .bib.
+%   Existing magnon/demagnetization keys are retained from the original source.
+%
+% @article{IsmailBeigi-2001-EM,
+%   author  = {Ismail-Beigi, Sohrab and Chang, Eric K. and Louie, Steven G.},
+%   title   = {Coupling of Nonlocal Potentials to Electromagnetic Fields},
+%   journal = {Physical Review Letters},
+%   year    = {2001},
+%   volume  = {87},
+%   pages   = {087402},
+%   doi     = {10.1103/PhysRevLett.87.087402}
+% }
+%
+% @article{Bonafe-Rubio-2025,
+%   author = {Bonaf{\'e}, Franco P. and Albar, Esra Ilke and Ohlmann, Sebastian T. and Kosheleva, Valeriia P. and Bustamante, Carlos M. and Troisi, Francesco and Rubio, Angel and Appel, Heiko},
+%   title = {Full minimal coupling {Maxwell-TDDFT}: An ab initio framework for light-matter interaction beyond the dipole approximation},
+%   journal = {Physical Review B}, year = {2025}, volume = {111},
+%   pages = {085114}, doi = {10.1103/PhysRevB.111.085114}
+% }
+% @article{Rubio-angular-2017,
+%   author = {De Giovannini, Umberto and H{\"u}bener, Hannes and Rubio, Angel},
+%   title = {A First-Principles Time-Dependent Density Functional Theory Framework for Spin and Time-Resolved Angular-Resolved Photoelectron Spectroscopy in Periodic Systems},
+%   journal = {Journal of Chemical Theory and Computation}, year = {2017},
+%   doi = {10.1021/acs.jctc.6b00897}
+% }
+% @article{Dixit-2014-IXS,
+%   author = {Dixit, Gopal and Slowik, Jan Malte and Santra, Robin},
+%   title = {Theory of time-resolved nonresonant x-ray scattering for imaging ultrafast coherent electron motion},
+%   journal = {Physical Review A}, year = {2014}, volume = {89},
+%   pages = {043409}, doi = {10.1103/PhysRevA.89.043409}
+% }
+%
+% MERGE NOTES
+% - Ensure the following subsection defines \label{sec:velocity_gauge}.
+% - The theory-level introduction should agree with the updated notation.tex:
+%   Gaussian units with explicit constants; implementation in atomic units.
+% - The B column distinguishes electromagnetic fields from the auxiliary spin field.
+% - If this table is placed in a two-column layout, use table*.
+
+%\subsection{Interaction of Matter with Electromagnetic Radiation}
+\subsection{External Perturbations in RT-TDDFT: Gauges, Probes, and Spectroscopies}
+\label{sec:em-interaction}
+
+The starting point for the present formulation is the time-dependent
+Kohn--Sham equation for single-particle orbitals $\Psi_j(\vb r,t)$ in the
+presence of external electromagnetic fields which, within the
+minimal coupling framework, takes the form
+\begin{equation}
+ \imath\hbar\frac{\partial}{\partial t}\Psi_j(\vb r,t)
+ =\left[
+ \frac{1}{2m_e}
+ \left(\vb{\hat p}-\frac{q_e}{c}\vb A_{\mathrm{ext}}(\vb r,t)\right)^2
+ +q_e\Phi_{\mathrm{ext}}(\vb r,t)
+ +\hat V_{\mathrm{KS}}[\rho](t)
+ \right]\Psi_j(\vb r,t).
+ \label{eq:em-tdks}
+\end{equation}
+Here $\vb A_{\mathrm{ext}}$ and $\Phi_{\mathrm{ext}}$ are vector and scalar
+potentials representing the external electromagnetic (EM) field,
+$\vb{\hat p}=-\imath\hbar\nabla$ is the canonical momentum operator,
+ $q_e=-e$, with $e>0$, is the electron charge, and $\rho$ denotes electron number density.
+We use Gaussian electromagnetic units, retaining $\hbar$, $m_e$, $e$,
+and $c$ explicitly. 
+The Kohn--Sham potential, $\hat V_{\mathrm{KS}}[\rho](t)$, contains the
+ionic potential, Hartree potential, and exchange-correlation potential:
+\begin{equation}
+ \hat V_{\mathrm{KS}}
+ =\hat V_{\mathrm{ion}}+\hat V_{\mathrm H}[\rho](\vb r,t)
+ +\hat V_{\mathrm{xc}}[\rho](\vb r,t).
+\end{equation}
+In the present implementation based on norm-conserving
+pseudopotentials, $\hat V_{\mathrm{ion}}$ contains local and
+nonlocal parts. Gauge transformation of the Hamiltonian may introduce additional  terms 
+that  must be accounted  for in both, Hamiltonian and  the current density 
+operator.\cite{pickard-mauri-2001,Mattiat-Luber-2022,IsmailBeigi-2001-EM}
+The working model uses a scalar adiabatic exchange-correlation
+potential. Explicit exchange-correlation vector potentials and spin coupling
+to an applied magnetic field are not included. 
+The choice of the specific form of $\vb A_{\mathrm{ext}}$ and
+$\Phi_{\mathrm{ext}}$ depends on the problem and is subject to gauge
+freedom.\cite{gauge-theory}
+
+
+For a monochromatic plane-wave component of the external EM field,
+the vector potential may be represented as
+\begin{equation}
+ \vb A_{\mathrm{ext}}(\vb r,t)
+ =\vb A_0 e^{\imath(\vb q\cdot\vb r-\omega t)}+\mathrm{c.c.},
+ \label{eq:plane_wave_vector_potential}
+\end{equation}
+where c.c. denotes complex conjugation ensuring that $\vb A_{\mathrm{ext}}(\vb r,t)$ is real valued,
+$\omega$ is the angular frequency, the wave vector $\vb q$
+describes the propagation direction with the corresponding  wavelength
+$\lambda=2\pi/|\vb q|$, and $\vb A_0=[A_x^0,A_y^0,A_z^0]$
+is a complex vector  amplitude.
+The electric and magnetic fields are
+expressed in terms of the vector and scalar potentials as
+\begin{align}
+ \vb E(\vb r,t)
+ &=-\nabla\Phi_{\mathrm{ext}}(\vb r,t)
+   -\frac{1}{c}\frac{\partial\vb A_{\mathrm{ext}}(\vb r,t)}{\partial t},
+ %\label{eq:em_fields_from_potentials}\\
+ \label{eq:em_E_from_A+Phi}\\
+ \vb B(\vb r,t)&=\nabla\times\vb A_{\mathrm{ext}}(\vb r,t).
+ \label{eq:em_B_from_A}
+\end{align}
+
+For each nonzero Fourier wave vector $\vb q$, which specifies
+the direction of spatial variation of the perturbation,
+a vector-field amplitude $\vb A_0$ can be decomposed into a \emph{transverse}
+(divergence-free) component perpendicular to $\vb q$ and a
+\emph{longitudinal} (curl-free) component parallel to $\vb q$.
+
+Choosing  the Coulomb gauge,
+\begin{equation}
+  \nabla\cdot\vb A_{\mathrm{ext}}(\vb r,t)=0,
+  \label{eq:coulomb_gauge_condition}
+\end{equation}
+ensures that, 
+for each nonzero Fourier wave vector $\vb q$,
+the vector potential $\vb A_{\mathrm{ext}}(\vb r,t)$ 
+is purely transverse  and  carries only the transverse
+component of the electric field $\vb E_{\perp}(\vb r,t)$
+through the second (time-derivative) term,
+$-(1/c)\partial_t\vb A_{\mathrm{ext}}$,
+in Eq.~\eqref{eq:em_E_from_A+Phi}, as well as it carries  the magnetic field
+$\vb B(\vb r,t)$ through
+$\nabla\times\vb A_{\mathrm{ext}}$
+(Eq.~\eqref{eq:em_B_from_A}).
+% 
+For a plane wave, this becomes apparent upon applying the Coulomb
+gauge Eq.~\eqref{eq:coulomb_gauge_condition} to
+Eq.~\eqref{eq:plane_wave_vector_potential}, which yields
+the transversality condition
+\begin{equation}
+ \vb q\cdot\vb A_0=0,
+ \label{eq:transversality_condition}
+\end{equation}
+requiring that the polarization of the radiation field is perpendicular
+to its propagation direction $\vb q$, for all $\vb q\neq 0$.
+%
+%Similarly, for $\vb q\neq 0$ the contribution to electric field, $\vb E(\vb r, t)$, due
+%to the scalar potential (1st term,  $-\nabla\Phi_{\mathrm{ext}}$, in Eq.~\eqref{eq:em_E_from_A+Phi})
+%is  exclusively longitudinal in nature  $\vb E(\vb r, t)= \vb E_{\parallel}(\vb r,t)$. 
+%This can be seen by noticing that the  Fourier transform vector of $\nabla\Phi_{\mathrm{ext}}$ with respect to $\vb r$
+%is parallel to $\vb q$ for every  $\vb q$:  
+%$ \mathcal F [ \nabla\Phi_{\mathrm{ext}}] = \imath  \vb q \tilde  \Phi_{\mathrm{ext}}(\vb q, t)$, where the Fourier transform relation 
+%$ \mathcal F [ \nabla  f(\vb r) ]  \to  \imath  \vb q  \tilde f(\vb q) $ was used.
+%Also, the transverse projection $(1 -\hat {\vb  q} \hat {\vb  q} ) \cdot \imath \vb q \tilde \Phi_{\mathrm{ext}}$ vanishes identically.
+%
+
+Similarly, for $\vb q\ne0$ the contribution to
+the electric field $\vb E(\vb r,t)$ due to the scalar
+potential (first term, $-\nabla\Phi_{\mathrm{ext}}$,
+in Eq.~\eqref{eq:em_E_from_A+Phi}) is exclusively longitudinal
+in nature
+%\myblue{; in the Coulomb gauge, this contribution equals $\vb E_{\parallel}(\vb r,t)$}.
+This can be seen by noticing that the Fourier transform
+of $-\nabla\Phi_{\mathrm{ext}}$ with respect to $\vb r$
+is parallel to $\vb q$ for every nonzero $\vb q$:
+\[
+  \mathcal F_{\vb r}[-\nabla\Phi_{\mathrm{ext}}]
+  =-i\vb q\,\widetilde{\Phi}_{\mathrm{ext}}(\vb q,t),
+\]
+where the Fourier transform relation
+$\mathcal F[\nabla f(\vb r)]=i\vb q\,\widetilde f(\vb q)$
+was used.
+Also, the transverse projection
+$(\mathbf I-\hat{\vb q}\hat{\vb q})\cdot
+[-i\vb q\,\widetilde{\Phi}_{\mathrm{ext}}]$
+vanishes identically, where
+$\hat{\vb q}=\vb q/|\vb q|$ and $\mathbf I$ is the identity tensor.
+
+
+That is, for $\vb q\neq 0$, the scalar potential  $\Phi_{\mathrm{ext}}$ contributes only  to $\vb E_\parallel$ in any gauge, 
+while $\vb A_{\mathrm{ext}}$ contributes  only to $\vb E_\perp$  as a result of the Coulomb gauge.
+For the spatially uniform component ($\vb q=0$), $\hat{\vb q}$ is undefined, and
+there is no wave-vector direction relative to which a field
+can be classified as longitudinal or transverse;
+accordingly, Eq.~\eqref{eq:coulomb_gauge_condition} places no constraint on the uniform
+component of $\vb A_{\mathrm{ext}}$, since
+$\imath\vb q\cdot\tilde{\vb A}_{\mathrm{ext}}=0$ holds trivially at $\vb q=0$.
+%This residual freedom  for $\vb q= 0$  within the Coulomb gauge relates the length and
+%velocity gauges used in RT-TDDFT, introduced below.}
+For $\vb q= 0$, the residual freedom within the Coulomb gauge allows for the  freedom between \emph{length} and \emph{velocity}
+gauges used rt-TDDFT.
+
+
+In general, the electromagnetic potentials ($\vb A$ and $\Phi$) and
+the KS potential all appear simultaneously. However, gauge freedom
+allows the electromagnetic potentials to be transformed to a
+representation suitable for a given problem, using
+an arbitrarily chosen  scalar function $\chi(\vb r,t)$
+and the gauge transformation rules
+\begin{align}
+ \vb A&\to\vb A+\nabla\chi(\vb r,t),\\
+ \Phi&\to\Phi-\frac{1}{c}
+ \frac{\partial\chi(\vb r,t)}{\partial t},
+ \label{eq:gauge-rules}
+\end{align}
+which  guarantee that the fields $\vb E$ and $\vb B$ are unchanged.
+A specific choice of $\chi$ relevant to periodic systems, and corresponding orbital and hamiltonian transfromation  are  discussed
+in Sec.~\ref{sec:velocity_gauge}.
+
+In finite-system optical applications, a common choice for
+RT-TDDFT is the \emph{length gauge} within the electric-dipole
+approximation. This approximation applies in the long-wavelength
+limit, $|\vb q|L\ll1$, where the radiation wavelength
+$\lambda=2\pi/|\vb q|$ is much larger than the characteristic
+size $L$ of the system. The applied electric field $\vb E(t)$
+is then treated as spatially uniform over the system and represented  by $\vb A=0$ 
+ and the dipolar scalar potential
+\begin{equation}
+  \Phi(\vb r,t)=-\vb E(t)\cdot\vb r,
+  \label{eq:EM_dipolar}
+\end{equation}
+as can be  verified by  application of Eqs.~\eqref{eq:em_E_from_A+Phi}  and   \eqref{eq:em_B_from_A}. %  from $\vb E=-\nabla\Phi$.
+For periodic systems, however, the scalar-potential form in  Eq.~\eqref{eq:EM_dipolar}
+ is not compatible with periodic boundary conditions, resulting in 
+ a sawtooth potential with a discontinuity at the cell boundary. This motivates  
+the use of  \emph{velocity-gauge} formulation, in which
+the $ \Phi(\vb r,t)=0$  and the  external field $\vb E(t)$ enters through a spatially uniform  vector potential
+$\vb A(t)$ via  time-derivative term of Eq.~\eqref{eq:em_E_from_A+Phi}.
+
+While the plane-wave form Eq.~\eqref{eq:plane_wave_vector_potential}
+describes a monochromatic perturbation, in practice
+the homogeneous electric field can be assigned a general
+temporal profile.
+A particularly useful choice is the Dirac delta kick, 
+ $\vb E(t)=\hat{\vb e} \mathcal E_0\delta(t)$, where
+$\hat{\vb e}$ is the polarization direction and $\mathcal E_0$ is  a scalar  perturbation strength.
+Since the delta function has a flat spectral content, 
+it delivers a broadband impulsive perturbation of magnitude $\mathcal E_0$ at $t=0$, 
+The frequency-dependent absorption spectrum is then obtained from
+the Fourier transform of the induced time-dependent observable
+monitored during the propagation (i.e dipole moment or density current).
+A temporal profile assigned to the vector potential, $\vb A(t)$, does not
+produce the same profile in the electric field, $\vb E(t)$, because the latter
+contains a time derivative of the former. 
+This distinction is important for the RMG perturbation discussed
+below. 
+
+
+For finite systems, the relevant observable is the time-dependent
+electronic dipole moment
+$\vb d(t)=q_e\int\vb r\,\rho(\vb r,t)\,d^3r$,
+from which the polarizability and absorption cross section are obtained
+by Fourier analysis of the induced dipole.\cite{yabana-bertsch-1996,jakowski-rmg-tddft-2025}
+%----
+For periodic systems, however, the position operator, $\vb {\hat r} =\vb r$,
+is not compatible with periodic boundary conditions and  the relevant observable is
+the induced macroscopic charge-current density
+$\vb J(t)$, obtained by averaging the microscopic current density
+$\vb j(\vb r,t)$ over the simulation cell.\cite{Luber-2023-position-operator,Resta-polarization-1994,KingSmith-Vanderbilt-polarization-1993}
+
+
+In summary, it is useful at this point to \myblue{distinguish
+the homogeneous (spatially uniform, $\vb q=0$) optical perturbations 
+discussed above from probes with finite momentum transfer}.
+\myblue{In the homogeneous velocity-gauge representation},
+the external field enters through the vector potential in the
+kinetic energy via the minimal coupling
+$\vb{\hat p}\to\vb{\hat p}-(q_e/c)\vb A$,
+\myblue{together with the consistent coupling of nonlocal operators}.
+The choice of gauge (length or velocity) determines how
+this coupling is represented in the Hamiltonian,
+\myblue{while the homogeneous-field approximation determines
+the spatial character of the perturbation}.
+Typical applications include optical absorption spectra
+and laser-driven electron dynamics.
+\myblue{Applications using a homogeneous vector potential also include
+laser-induced demagnetization when spin--orbit coupling and noncollinear
+spin dynamics are included,}\cite{Gross-2015-demagnetization}
+\myblue{and time- and angle-resolved photoemission (ARPES).
+The latter additionally requires extraction of the outgoing photoelectron
+flux to obtain momentum-resolved photoelectron spectra.}\cite{Rubio-angular-2017} 
+
+\myblue{A finite-momentum longitudinal electric probe can instead
+be represented by a scalar potential} of the form
+\begin{equation}
+ \Phi_{\mathrm{ext}}(\vb r,t)
+ =\Phi_0 e^{\imath(\vb q\cdot\vb r-\omega t)}
+ +\mathrm{c.c.},
+ \label{eq:scalar_probe}
+\end{equation}
+\myblue{with $\vb A=0$. The perturbing potential energy
+$q_e\Phi_{\mathrm{ext}}$ is added directly to the Hamiltonian}.
+The electric field generated by such a potential,
+\myblue{$\vb E=-\nabla\Phi_{\mathrm{ext}}
+=-\imath\vb q\Phi_0 e^{\imath(\vb q\cdot\vb r-\omega t)}
++\mathrm{c.c.}$},
+is purely longitudinal (parallel to $\vb q$)
+and carries no magnetic field.
+This type of perturbation probes the density--density
+response function $\myblue{\chi_{nn}}(\vb q,\omega)$
+and is a natural tool for studying collective excitations
+at finite momentum transfer, such as plasmon dispersion
+and charge-density oscillations.
+\myblue{The subscript distinguishes the density response from
+the gauge function $\chi(\vb r,t)$.
+Density-response and dielectric-response processing connects
+such calculations to EELS loss spectra.}\cite{Weissker-2006,Weissker-2010,JCTC-2020-ebeam,Rubio-2002-eels}
+
+\myblue{When this perturbation is imposed directly in a periodic
+supercell with lattice vectors $\vb L_i$, periodicity requires
+$\vb q\cdot\vb L_i=2\pi n_i$, where $n_i$ are integers.
+For a cell of length $8a$ along one direction, the allowed components
+are $q_m=2\pi m/(8a)$, giving a spacing of $1/8$ in units of
+the primitive reciprocal vector $2\pi/a$.
+Larger supercells permit smaller nonzero momentum transfers.
+The $q=0$ scalar plane wave is spatially constant and creates
+no electric field; the homogeneous optical limit requires the
+separate treatment described above.}
+
+\myblue{A finite-$\vb q$ transverse perturbation can be represented
+by Eq.~\eqref{eq:plane_wave_vector_potential} with
+$\Phi_{\mathrm{ext}}=0$ and $\vb q\cdot\vb A_0=0$.
+For this field,}
+\begin{equation}
+ \myblue{
+ \vb E=\frac{\imath\omega}{c}\vb A_0
+ e^{\imath(\vb q\cdot\vb r-\omega t)}+\mathrm{c.c.},
+ \qquad
+ \vb B=\imath\vb q\times\vb A_0
+ e^{\imath(\vb q\cdot\vb r-\omega t)}+\mathrm{c.c.}.}
+ \label{eq:em-transverse-fields}
+\end{equation}
+Although both \myblue{finite-momentum probes} involve the same
+spatial factor $e^{\imath\vb q\cdot\vb r}$, they are physically
+and computationally distinct:
+\myblue{the scalar representation above produces a longitudinal
+electric field with no magnetic field, whereas the transverse
+vector representation produces a transverse electric field and
+an associated magnetic field.
+Both admit electromagnetic gauge transformations.
+Thus the distinction between the physical probes is not the
+presence or absence of gauge freedom.}
+
+Many important spectroscopies and collective excitations involve
+finite momentum transfer and lie beyond the dipolar approximation.
+These include plasmon dispersion \myblue{as reflected in}
+$\varepsilon(\vb q,\omega)$, electron energy-loss spectroscopy
+(EELS), where the beam transfers finite $\vb q$ to the sample,
+and \myblue{nonresonant} inelastic X-ray scattering (IXS).
+\myblue{Nonresonant IXS probes density correlations, so the density
+response computed using a finite-$\vb q$ scalar probe is relevant to its
+interpretation. Here $\vb q$ is the momentum-transfer wave vector, the
+difference between the incident and scattered photon wave vectors;
+the scalar probe does not represent the incident X-ray field itself.}\cite{Dixit-2014-IXS}
+\myblue{Spatially varying vector potentials instead provide access to
+optical response and light--matter coupling beyond the electric-dipole
+approximation, as demonstrated in full minimal coupling Maxwell--TDDFT.
+That framework treats more general fields than the single transverse
+plane-wave component shown in the table.}\cite{Bonafe-Rubio-2025}
+
+\myblue{Magnon spectra and real-time magnon dynamics are obtained using
+spin-dependent magnetic perturbations, such as magnetic kicks or
+spatially patterned fields that tilt the magnetization, followed by
+analysis of the evolving spin magnetization.}\cite{Rubio-2020-magnons,Gross-2020-rt-magnons}
+\myblue{These perturbations couple to the spin magnetic moment and
+require a dynamical treatment of the spin direction. In this context,
+``transverse'' refers to the equilibrium magnetization direction,
+whereas in the electromagnetic table it refers to the wave vector
+$\vb q$. A finite magnon wave vector does not imply excitation by a
+finite-wave-vector electromagnetic plane wave.}
+\myblue{At equilibrium, the magnetic dynamic structure factor is related
+to the dissipative magnetic susceptibility through the
+fluctuation--dissipation relation. Comparison with magnetic INS
+additionally requires the appropriate neutron-scattering polarization
+factors.}
+Table~\ref{tab:gauge_cases} summarizes \myblue{representative electromagnetic
+and spin-dependent perturbations} used in TDDFT and their typical applications.
+\myblue{The first two rows describe the homogeneous optical
+representations relevant here; the finite-$\vb q$ and magnetic/spin-probe
+rows provide context for future extensions of the implementation.}
+
+\begin{table}[ht!]
+\centering
+\footnotesize
+\caption{ Representative electromagnetic and spin-dependent
+perturbations used in linear-response and real-time TDDFT.
+The potentials describe the applied perturbation, with electron
+potential energy $q_e\Phi$. In the finite-$\vb q$ rows,
+$\theta=\vb q\cdot\vb r-\omega t$; c.c.\ denotes the complex
+conjugate. The $B$ column distinguishes the electromagnetic
+field $\vb B=\nabla\times\vb A$ from the independently applied
+spin field in the last row, whose orbital coupling is omitted.
+%-----CUT-----	\myblue{Representative electromagnetic and spin-dependent
+%perturbations used in TDDFT}, applicable to both linear-response and
+%real-time formulations.
+%\myblue{The potentials refer to the applied perturbation;
+%$\Phi$ enters the electron Hamiltonian as $q_e\Phi$.
+%In the finite-$\vb q$ rows, $\theta =\vb q\cdot\vb r-\omega t$,
+%and complex-conjugate terms are included to give real potentials.
+%The $B$ column indicates the magnetic field associated with the
+%electromagnetic potentials; the auxiliary spin field in the last row
+%is identified separately.
+%In Coulomb gauge at nonzero $\vb q$, the scalar potential
+%represents the longitudinal electric field, while the transverse
+%vector potential represents the transverse electric field and
+%magnetic field.}
+%\myblue{In the magnetic/spin-probe row,
+%$\delta\vb B_s$ is an auxiliary field coupled to the spin
+%magnetic-moment operator $\hat{\boldsymbol{\mu}}_s$.
+%Orbital electromagnetic coupling is omitted in this probe;
+%$\delta\vb B_s$ is therefore prescribed independently of
+%$\Phi_{\mathrm{ext}}$ and $\vb A_{\mathrm{ext}}$.}
+	}
+\label{tab:gauge_cases}
+\smallskip
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{tabular}{@{}
+	p{0.145\linewidth}
+	p{0.190\linewidth}
+	p{0.185\linewidth}
+	p{0.120\linewidth}
+	p{0.275\linewidth}
+	@{}}
+\hline
+Case & \myblue{Potentials / coupling} & Field character & $B$ field & Typical applications\\
+\hline
+\raggedright Length gauge, dipole
+& \raggedright $\Phi=-\vb r\cdot\vb E(t)$,\newline $\vb A=0$
+& \raggedright homogeneous electric field
+& no
+& \raggedright optical absorption of finite systems, photochemistry
+\cite{yabana-bertsch-1996,jakowski-rmg-tddft-2025}\tabularnewline[0.6em]
+\raggedright Velocity gauge\myblue{, homogeneous}
+& \raggedright $\Phi=0$,\newline $\vb A=\vb A(t)$\newline
+\myblue{(uniform in space)}
+& \raggedright homogeneous \myblue{electric} field;\newline
+\myblue{$\vb E=-(1/c)\dot{\vb A}$}
+& no
+& \raggedright optical response of solids and periodic systems under PBC
+\cite{Bertsch2000,Mattiat-Luber-2022,Hanasaki2023};
+\myblue{laser-induced demagnetization (with spin--orbit coupling)\cite{Gross-2015-demagnetization};
+	time- and angle-resolved photoemission (ARPES)\cite{Rubio-angular-2017}}\tabularnewline[0.6em]
+\raggedright Finite-$\vb q$ scalar probe
+& \raggedright \myblue{$\Phi=\Phi_0e^{\imath \theta}+\mathrm{c.c.}$},\newline $\vb A=0$
+& \raggedright longitudinal,\newline $\vb E\parallel\vb q$
+& no
+& \raggedright density response, loss function, EELS, plasmon dispersion,
+\myblue{nonresonant IXS}\myblue{\cite{Weissker-2006,Weissker-2010,JCTC-2020-ebeam,Rubio-2002-eels}}\tabularnewline[0.6em]
+\raggedright Finite-$\vb q$ \myblue{transverse} EM wave
+& \raggedright \myblue{$\Phi=0$},\newline
+\myblue{$\vb A=A_0\boldsymbol{\epsilon}e^{\imath \theta } +\mathrm{c.c.,} $}\newline
+%\myblue{$\phantom{\vb A={}}+\mathrm{c.c.}$},\newline
+$\vb q\cdot\boldsymbol{\epsilon}=0$
+& \raggedright transverse EM radiation;\newline
+\myblue{$\vb E\perp\vb q$}
+& yes
+& \raggedright \myblue{optical response and light--matter coupling beyond
+the electric-dipole approximation\cite{Bonafe-Rubio-2025}}\tabularnewline
+%---
+\raggedright \myblue{Magnetic/spin probe}
+& \raggedright
+\myblue{$\Phi_{\mathrm{ext}}=0$, $\vb A_{\mathrm{ext}}=0$;
+\newline
+%$\delta\hat H=$\newline
+%$-\hat{\boldsymbol{\mu}}_s\cdot\delta\vb B_s(\vb r,t)$} 
+	$\delta\hat H=-\hat{\boldsymbol{\mu}}_s\cdot\delta\vb B_s(\vb r,t)$ }
+& \raggedright
+\myblue{spin-dependent; uniform or spatially varying}
+& \raggedright
+\myblue{auxiliary spin field}
+& \raggedright
+\myblue{spin susceptibility, spin precession,
+magnon spectra and dynamics; magnetic inelastic neutron
+scattering (INS)\cite{Rubio-2020-magnons,Gross-2020-rt-magnons}}
+\tabularnewline
+%---
+\hline
+\end{tabular}
+\end{table}
