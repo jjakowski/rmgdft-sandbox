@@ -1,51 +1,489 @@
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\subsection{ Gauge  transformations}
+%\subsection{ Gauge  transformations}
+%\label{sec:velocity_gauge}
+%
+%In this section we discuss traansformation og Time-Dependent Kohn-Sham  equation  under differet gauge representation within Coulomb gauge condtion.
+%
+%For finite systems, the relevant observable is the
+%time-dependent dipole moment $\vb d(t) = \int \vb r\,
+%\rho(\vb r,t)\, d\vb r$, from which the polarizability
+%and absorption cross section follow by Fourier transform.
+%For periodic systems, however, the scalar-potential form
+%$\Phi = -\vb E(t)\cdot\vb r$ is not compatible with
+%periodic boundary conditions, because the position
+%operator $\vb r$ is discontinuous at the cell boundary.
+%This motivates the use of the velocity-gauge (VG) formulation.
+%In the velocity gauge, the position operator no longer
+%appears in the Hamiltonian and all terms are compatible
+%with periodic boundary conditions.
+%Correspondingly, the physical observable used to extract
+%the optical response is the time-dependent current density
+%$\vb j(\vb r,t)$ rather than the dipole moment, since
+%the current is well defined under periodic boundary
+%conditions whereas $\vb d(t)$ is not.
+
+
+% ======================================================================
+%  Gauge Transformation from Length to Velocity Gauge
+%  Follows sec_em_interaction_blue_review-v3.tex and uses its labels:
+%    sec:em-interaction, eq:em-tdks, eq:em_E_from_A+Phi, eq:em_B_from_A,
+%    eq:gauge-rules-A (NEW: add to the A-line of the gauge-rules align),
+%    eq:gauge-rules, eq:EM_dipolar.
+%  Defines \label{sec:velocity_gauge}, as required by that file.
+%  Remaining TODO: label of the current-operator section (sec:current).
+% ======================================================================
+
+\subsection{Gauge Transformation from Length to Velocity Gauge}
 \label{sec:velocity_gauge}
 
-In this section we discuss traansformation og Time-Dependent Kohn-Sham  equation  under differet gauge representation within Coulomb gauge condtion.
-The srtarting point are  general Eqs. [ A'->A+ '  ; Phi'->Phi +]   and  the requirement that physically measurable quantities such  mechanical momentum, velocities
- and  physicall measurable  operator observable remain unchanged 
-The  invarance of E and B is directly guaranted by   [XXX] 
-
-
-For finite systems, the relevant observable is the
-time-dependent dipole moment $\vb d(t) = \int \vb r\,
-\rho(\vb r,t)\, d\vb r$, from which the polarizability
-and absorption cross section follow by Fourier transform.
-For periodic systems, however, the scalar-potential form
-$\Phi = -\vb E(t)\cdot\vb r$ is not compatible with
-periodic boundary conditions, because the position
-operator $\vb r$ is discontinuous at the cell boundary.
-This motivates the use of the velocity-gauge formulation,
-in which the external field enters through a spatially
-uniform vector potential $\vb A(t)$ and the scalar
-potential is set to zero.
-
-The time-dependent Kohn--Sham equation then takes the form
+Within the electric-dipole (long-wavelength) approximation
+a spatially uniform external  electric field $\vb{E}_\mathrm{ext}(t)$ can be represented by two
+gauge-equivalent pairs of potentials. In the length gauge (LG) the field enters
+through the linear in position dipolar scalar potential of Eq.~\eqref{eq:EM_dipolar}
 \begin{equation}
-  \imath \pdv{}{t} \Psi_j(\vb r,t) = \left[
-    \frac{1}{2m}\left(\vb{\hat p}
-    - \frac{q_e}{c}\vb A(t)\right)^2
-    + \hat V_{\mathrm{KS}}[\rho](t)
-  \right] \Psi_j(\vb r,t),
-  \label{eq:tdks_velocity_gauge}
+\vb{A}_L(\vb{r},t) = 0,  \qquad
+	\Phi_L(\vb{r},t) = -\,\vb{E}_\mathrm{ext}(t)\cdot\vb{r}
+	  \label{eq:LG_potentials}
 \end{equation}
-where the two gauges are related by the Göppert-Mayer
-transformation, discussed in detail in
-Sec.~\ref{sec:velocity_gauge}.
-In the velocity gauge, the position operator no longer
-appears in the Hamiltonian and all terms are compatible
-with periodic boundary conditions.
-Correspondingly, the physical observable used to extract
-the optical response is the time-dependent current density
-$\vb j(\vb r,t)$ rather than the dipole moment, since
-the current is well defined under periodic boundary
-conditions whereas $\vb d(t)$ is not.
+whereas in the velocity gauge (VG) it enters through a spatially uniform,
+time-dependent vector potential,
+\begin{equation}
+  \vb{A}_V(\vb{r},t) = \vb{A}(t), \qquad
+  \Phi_V(\vb{r},t) = 0, \qquad
+  \label{eq:VG_potentials}
+\end{equation}
+where the relation between vector potential   $\vb{A}(t)$  and  external electric field $\vb{E}_\mathrm{ext}(t)$  
+is given by
+\begin{equation}
+  \vb{E}_\mathrm{ext}(t) = -\frac{1}{c}\frac{d\vb{A}(t)}{dt}.
+\end{equation}
+Inserting either pair, Eqs.~\eqref{eq:LG_potentials} or \eqref{eq:VG_potentials},
+into Eqs.~\eqref{eq:em_E_from_A+Phi} and \eqref{eq:em_B_from_A}
+gives the same uniform $\vb{E}=\vb{E}_\mathrm{ext}(t)$ and $\vb{B}=0$. The LG form is natural
+for finite systems, but $\Phi_L$ is not lattice periodic, whereas the VG
+Hamiltonian contains only the uniform $\vb{A}(t)$ and is compatible with
+Born--von K\'arm\'an boundary conditions. 
+%In LG,  the   optical response is usually  extracted  from   the time dependent  dipole moment  $\vb d(t)$.
+In VG,  the   optical response is extracted  from   the 
+  time-dependent current density
+$\vb j(\vb r,t)$ which is, contrary to  the dipole moment  $\vb d(t)$ used in LG, 
+ well defined under periodic boundary conditions.
+The two representations are connected
+by the G\"oppert-Mayer gauge transformation.\cite{GoeppertMayer-1931,Mattiat-Luber-2022}
+Below we directly obtain gauge function for transformation from LG to VG and discuss the transformation of
+time-dependent Kohn--Sham (TDKS) equations, corresponding operators, and pseudopotentials.
+
+
+
+\paragraph{Gauge function.}
+The gauge function for LG to VG transformation can be obtained directly from the potential transformation rules,
+Eqs.~\eqref{eq:gauge-rules-A} and \eqref{eq:gauge-rules}, and a requirement that the transformed scalar potential $\Phi_V$  vanishes
+\begin{equation}
+  \Phi_V = \Phi_L - \frac{1}{c}\frac{\partial\chi}{\partial t} = 0
+ % \quad\Longrightarrow\quad
+ % \frac{\partial\chi(\vb{r},t)}{\partial t} = -c\,\vb{r}\cdot\vb{E}(t).
+  \label{eq:chi_condition}
+\end{equation}
+Inserting $\Phi_L$  from  Eq.~\eqref{eq:EM_dipolar} into the last expression and solving  for  
+$\chi(\vb r,t)$  gives 
+\begin{equation}
+  \chi(\vb{r},t) = \vb{r}\cdot\vb{A}(t) + \chi_0(\vb{r}),
+  \qquad
+	\vb{A}(t) = -c\int_{t_0}^{t}\vb{E}_\mathrm{ext}(t')\,dt',
+  \label{eq:chi_solution}
+\end{equation}
+%where $\chi_0(\vb r)$ is an arbitrary time-independent function. Choosing
+%$\chi_0 = 0$ gives $\vb A' = \vb A(t)$, i.e., the VG potentials of
+%Eq.~\eqref{eq:VG_potentials} with $\vb A(t_0) = 0$. Since
+%$\chi = \vb r\cdot\vb A(t)$ is linear in $\vb r$, $\nabla^2\chi = 0$ and both
+%gauges satisfy the Coulomb condition, $\nabla\cdot\vb A = 0$; and since
+%$\nabla\times\nabla\chi = 0$, $\vb B = \nabla\times\vb A$ is unchanged and
+%vanishes in both gauges. We note that static gauge transformations are also
+%useful in practice, for example to remove the spurious gauge-origin dependence
+%of finite-basis calculations of magnetic susceptibilities and NMR
+%shieldings.\cite{Ditchfield-1974,Keith-Bader-1993,pickard-mauri-2001}
+%
+where $\chi_0(\vb{r})$ is an arbitrary time-independent function. The
+transformed vector potential is
+$\vb{A}' = \vb{A}_L + \nabla\chi = \vb{A}(t) + \nabla\chi_0$, and the
+choice $\chi_0 = 0$ yields exactly the VG potentials of
+Eq.~\eqref{eq:VG_potentials}, with $\vb{A}(t_0)=0$. 
+%Since $\nabla^2\chi = 0$ and $\nabla\times\nabla\chi = 0$, both representations satisfy
+%the Coulomb-gauge condition and neither carries a magnetic field.
+With $\chi_0 = 0$, the gauge function  $\chi(\vb r,t)$ in Eq.~\eqref{eq:chi_solution} is  linear in $\vb r$, so $\nabla^2\chi = 0$ and both
+representations satisfy the Coulomb-gauge condition, $\nabla\cdot\vb A = 0$.
+Since $\nabla\times\nabla\chi = 0$, the gauge transformation leaves
+$\vb B = \nabla\times\vb A$ unchanged, and the magnetic field vanishes in both
+gauges.
+We note that static gauge transformations, where $\chi_0(\vb r)\neq 0$,  are also useful in practice, for
+example to remove the spurious gauge-origin dependence of finite-basis
+calculations of magnetic susceptibilities and NMR
+shieldings.\cite{Ditchfield-1974,Keith-Bader-1993,pickard-mauri-2001}
+
+The spatial uniformity of $\vb{A}(t)$ is a direct consequence of the
+\emph{linear} position dependence of $\Phi_L$. The same procedure can be applied
+formally to any scalar potential, $\chi = c\int_{t_0}^{t}\Phi(\vb{r},t')\,dt'$,
+but if $\Phi$ contains higher-order polynomial terms in $\vb{r}$ (for example
+a quadrupolar field), $\vb{A}'=\nabla\chi$ is itself position dependent. That is,
+the position operator is removed from the scalar potential only to reappear in the
+vector potential, and no lattice-periodic representation is obtained.
+
+
+
+
+
+%\paragraph{Length- to velocity-gauge TDKS Hamiltonian.}
+
+\paragraph{Gauge invariance of observables.}
+%
+%The gauge function of Eq.~\eqref{eq:chi_solution} determines how the vector and scalar potentials
+%change, but not yet how the Kohn--Sham orbitals and the operators acting on them
+%must change, so that the TDKS equations describe the same physics in the new
+%gauge. We derive these rules for a general $\chi(\vb r,t)$ from a single
+%requirement: a gauge transformation must not alter any physically measurable
+%quantity. If $\hat O$ represents such a quantity and $\hat O'$ is its
+%representation in the transformed gauge, then for every Kohn--Sham orbital
+%
+%
+The gauge function of Eq.~\eqref{eq:chi_solution} determines how the vector and scalar potentials
+change, but not how the Kohn--Sham orbitals and the operators transform.
+Here we disscuss these rules deriving them for a general $\chi(\vb r,t)$ from 
+a requirement that a gauge transformation must not alter any physically measurable
+quantity. 
+%If $\hat O$ represents such a quantity and $\hat O'$ is its
+%representation in the transformed gauge, then for every Kohn--Sham orbital
+%It is required  that transformation must not alter any physically measurable quantity. 
+In particular  if operator $\hat O$ represents such a quantity and $\hat O'$ is its representation 
+in the transformed gauge, then for every Kohn–Sham orbital
+\begin{equation}
+%  \hat O'=\hat U_\chi\hat O\hat U_\chi^\dagger,
+%  \qquad
+  \langle\Psi'_j|\hat O'|\Psi'_j\rangle
+  =
+  \langle\Psi_j|\hat O|\Psi_j\rangle.
+  \label{eq:observable_invariance}
+\end{equation}
+%\myblue{This requirement fixes, in turn, the transformation of the orbitals, the phase
+%constant, and the TDKS Hamiltonian.}
+Taking, for example, the density operator $\hat { n}(\vb r_0) = \delta(\vb{\hat r}-\vb r_0)$ ,
+which has the same form in every gauge, Eq.~\eqref{eq:observable_invariance} 
+%where, for example, $\hat O$ operator is a density operator $\hat n(\vb r_0) = \delta(\vb{\hat r}-\vb r_0)$.
+%Equation~\eqref{eq:observable_invariance} therefore
+requires $|\Psi_j'(\vb r,t)|^2 = |\Psi_j(\vb r,t)|^2$ at every point, which is
+possible only if the orbitals differ by a local phase,
+\begin{equation}
+  \Psi_j'(\vb r,t) = e^{\imath\theta(\vb r,t)}\,\Psi_j(\vb r,t).
+  \label{eq:local_phase}
+\end{equation}
+The gauge transformation is a one-particle operation that does not depend on
+which states are occupied, so the same phase applies to every orbital. The
+phase must vanish when $\chi = 0$. % and must depend locally on $\chi$. 
+Moreover, two successive transformations with $\chi_1$ and $\chi_2$ are equivalent to a
+single transformation with $\chi_1+\chi_2$, so the phases must add. These
+conditions require $\theta$ to be linear in $\chi$:
+\begin{equation}
+  \Psi_j' = \hat U_\chi\,\Psi_j, \qquad
+  \hat U_\chi(t) = \exp\!\big[\imath\beta\,\chi(\vb r,t)\big],
+  \label{eq:U_beta}
+\end{equation}
+with a real constant $\beta$ still to be determined. Because $\chi$ is real,
+$\hat U_\chi$ is unitary, $\hat U_\chi^\dagger\hat U_\chi = \hat I$.
+Equation~\eqref{eq:observable_invariance} is then satisfied for arbitrary
+states if observables transform as
+\begin{equation}
+  \hat O' = \hat U_\chi\,\hat O\,\hat U_\chi^\dagger .
+  \label{eq:observable_rule}
+\end{equation}
+
+%%%%%%%%%%%%%%%%%%%%
+
+\paragraph{Canonical and kinetic momentum.}
+Here we show that the constant $\beta$ in Eq.~\eqref{eq:U_beta} is fixed by the
+momentum. The canonical momentum $\vb{\hat p} = -\imath\hbar\nabla$ is
+conjugate to position, $[\hat r_\alpha,\hat p_\beta] = \imath\hbar\,\delta_{\alpha\beta}$,
+and keeps this form in every gauge. Its expectation value, however, changes
+under the orbital transformation of Eq.~\eqref{eq:U_beta}. That is 
+$\hat U_\chi^\dagger\,\vb{\hat p}\,\hat U_\chi = \vb{\hat p} + \hbar\beta\nabla\chi$,
+and
+\begin{equation}
+  \langle\Psi_j'|\vb{\hat p}|\Psi_j'\rangle
+  = \langle\Psi_j|\vb{\hat p}|\Psi_j\rangle
+  + \hbar\beta\,\langle\Psi_j|\nabla\chi|\Psi_j\rangle .
+  \label{eq:p_shift}
+\end{equation}
+As shown below  $\beta\neq 0$, so  the canonical momentum is gauge dependent and
+is not an observable.
+
+The kinetic (mechanical) momentum,
+\begin{equation}
+  \hat{\boldsymbol{\pi}} = \vb{\hat p} - \frac{q_e}{c}\,\vb A ,
+  \label{eq:kinetic_momentum}
+\end{equation}
+is related to the velocity of the electron, which is a physical observable. For
+a Hamiltonian containing only local potentials, the Heisenberg velocity
+operator is
+\begin{equation}
+  \vb{\hat v} = \frac{\imath}{\hbar}\,[\hat H,\vb{\hat r}]
+             = \frac{\hat{\boldsymbol{\pi}}}{m_e} ;
+  \label{eq:velocity_operator}
+\end{equation}
+the nonlocal pseudopotential adds a commutator contribution, discussed in
+Sec.~\ref{sec:current}. Because the velocity, and hence the current, is
+measurable, $\hat{\boldsymbol{\pi}}$ must satisfy
+Eq.~\eqref{eq:observable_invariance}, with
+$\hat{\boldsymbol{\pi}}' = \vb{\hat p} - (q_e/c)\vb A'$ in the transformed gauge.
+Using $\vb A' = \vb A + \nabla\chi$ and Eq.~\eqref{eq:p_shift}, we obtain
+\begin{equation}
+  \langle\Psi_j'|\hat{\boldsymbol{\pi}}'|\Psi_j'\rangle
+  = \langle\Psi_j|\hat{\boldsymbol{\pi}}|\Psi_j\rangle
+  + \Big(\hbar\beta - \frac{q_e}{c}\Big)\langle\Psi_j|\nabla\chi|\Psi_j\rangle .
+  \label{eq:pi_expectation}
+\end{equation}
+Since $\chi$ is arbitrary, Eq.~\eqref{eq:observable_invariance}
+requires that the term in parentheses vanishes, which yields
+$\beta = q_e/(\hbar c)$ and
+\begin{equation}
+  \hat U_\chi(t) = \exp\!\Big[\frac{\imath q_e}{\hbar c}\,\chi(\vb r,t)\Big] .
+  \label{eq:U_final}
+\end{equation}
+With this value of $\beta$, the canonical and kinetic momentum operators
+transform as
+\begin{equation}
+  \hat U_\chi\,\vb{\hat p}\,\hat U_\chi^\dagger = \vb{\hat p} - \frac{q_e}{c}\nabla\chi,
+  \qquad
+  \hat U_\chi\,\hat{\boldsymbol{\pi}}[\vb A]\,\hat U_\chi^\dagger
+  = \hat{\boldsymbol{\pi}}[\vb A'] .
+  \label{eq:momentum_transform}
+\end{equation}
+The shift of canonical momentum in Eq.~\eqref{eq:p_shift} 
+reflects the fact that the vector potential contained in
+%thus becomes $(q_e/c)\langle\nabla\chi\rangle$,
+%reflecting the vector potential contained in
+$\vb{\hat p} = \hat{\boldsymbol{\pi}} + (q_e/c)\vb A$  is defined only up
+to $\nabla\chi$. The kinetic momentum, in contrast, transforms covariantly, 
+keeping its form with the transformed potential, consistent with
+Eq.~\eqref{eq:observable_rule}.
 
 
 
 
 
 
+%%%%%%%%%%%%%%%%%%%
+\paragraph{Time-dependent Kohn--Sham equation.}
+Starting from the time-dependent Kohn--Sham equation,
+\begin{equation}
+  \imath\hbar\,\partial_t\Psi_j = \hat H(t)\,\Psi_j ,
+  \label{eq:tdks_general}
+\end{equation}
+we apply the product rule to the transformed orbital:
+\begin{equation}
+\begin{split}
+  \imath\hbar\,\partial_t\Psi_j'
+  &= \imath\hbar\,(\partial_t\hat U_\chi)\,\Psi_j
+   + \hat U_\chi\,\imath\hbar\,\partial_t\Psi_j \\
+  &= \Big[\imath\hbar\,(\partial_t\hat U_\chi)\hat U_\chi^\dagger
+   + \hat U_\chi\hat H\hat U_\chi^\dagger\Big]\Psi_j' .
+\end{split}
+\label{eq:tdks_product_rule}
+\end{equation}
+%Evaluating the time derivative of $\hat U_\chi$, Eq.~\eqref{eq:U_final},  gives
+%$  \imath\hbar\,(\partial_t\hat U_\chi)\hat U_\chi^\dagger
+%  = -\frac{q_e}{c}\,\partial_t\chi$.
+Thus the transformed orbitals obey $\imath\hbar\,\partial_t\Psi_j' = \hat H'\Psi_j'$, with
+\begin{equation}
+\begin{split}
+\hat H' = \hat U_\chi\hat H\hat U_\chi^\dagger
+        + \imath\hbar\,(\partial_t\hat U_\chi)\hat U_\chi^\dagger  \\
+        = \hat U_\chi\hat H\hat U_\chi^\dagger - \frac{q_e}{c}\,\partial_t\chi .
+\end{split}
+	\label{eq:H_transformed}
+\end{equation}
+
+Because $\hat U_\chi$ depends on time, the Hamiltonian does not transform
+according to the observable rule, Eq.~\eqref{eq:observable_rule}. For
+$\partial_t\chi\neq 0$, the expectation value of $\hat H$ is gauge dependent:
+$\langle\Psi_j'|\hat H'|\Psi_j'\rangle = \langle\Psi_j|\hat H|\Psi_j\rangle
+- (q_e/c)\langle\Psi_j|\partial_t\chi|\Psi_j\rangle$.
+%\myblue{and only the mechanical
+%energy, $\hat\varepsilon = \hat{\boldsymbol{\pi}}^2/2m_e + \hat V_{\mathrm{KS}}$,
+%transforms covariantly and is a gauge-invariant observable.
+%}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%`
+\paragraph{Hamiltonian transformation.}
+The individual terms of $\hat H$ transform as follows. The external scalar
+potential and the local Kohn--Sham potentials (namely the local ionic, Hartree,
+and exchange--correlation terms)  are multiplicative operators, so they commute
+with $\hat U_\chi$. Moreover, the Hartree and exchange--correlation potentials
+depend only on the density, which is gauge invariant by
+Eq.~\eqref{eq:observable_invariance}, so they are the same functionals in both
+gauges. Combined with the time-derivative term of Eq.~\eqref{eq:H_transformed},
+the scalar-potential contribution becomes
+$q_e\Phi - (q_e/c)\,\partial_t\chi = q_e\Phi'$, in agreement with
+Eq.~\eqref{eq:gauge-rules}. The kinetic term transforms through the covariance
+of the kinetic momentum, Eq.~\eqref{eq:momentum_transform}:
+\begin{equation}
+  \hat U_\chi\,\hat{\boldsymbol{\pi}}^2\,\hat U_\chi^\dagger
+  = \big(\hat U_\chi\hat{\boldsymbol{\pi}}\,\hat U_\chi^\dagger\big)
+    \big(\hat U_\chi\hat{\boldsymbol{\pi}}\,\hat U_\chi^\dagger\big)
+  = \hat{\boldsymbol{\pi}}'^{\,2},
+  \qquad
+  \hat{\boldsymbol{\pi}}' = \vb{\hat p} - \frac{q_e}{c}\vb A' .
+  \nonumber
+\end{equation}
+
+The transformed Hamiltonian therefore has the same form as the original one,
+with $\vb A$ and $\Phi$ replaced by $\vb A'$ and $\Phi'$:
+\begin{equation}
+  \hat H' = \frac{1}{2m_e}\Big[\vb{\hat p} - \frac{q_e}{c}\vb A'\Big]^2
+          + q_e\Phi' + V_{\mathrm{loc}}[\rho]
+          + \hat U_\chi\hat V_{\mathrm{NL}}\hat U_\chi^\dagger, 
+  \label{eq:H_general_transformed}
+\end{equation}
+i.e., the TDKS equation is form invariant.
+The only exception is the nonlocal pseudopotential. It does not commute with
+$\hat U_\chi$ and must be transformed explicitly; the rules for multiplicative,
+differential, and nonlocal operators are summarized in
+Appendix~\ref{app:gauge_rules}, Table~\ref{tab:gauge_operator_classes}.
+%Appendix~\ref{sec:gauge_rules}, Table~\ref{tab:gauge_operator_classes}.
+
+%Form invariance does not contradict the gauge dependence of $\langle\hat H\rangle$
+%found above: $\hat H'$ has the same form as $\hat H$, but contains the
+%transformed scalar potential $\Phi'\neq\Phi$. Only the mechanical energy,
+%$\hat\varepsilon = \hat{\boldsymbol{\pi}}^2/2m_e + \hat V_{\mathrm{KS}}$, which
+%excludes the external scalar-potential term, transforms covariantly and is
+%gauge invariant.
+%
+%
+%Because of the $\partial_t\chi$ term in Eq.~\eqref{eq:H_transformed}, the
+%expectation value of $\hat H$ itself is gauge dependent,
+%$\langle\Psi_j'|\hat H'|\Psi_j'\rangle = \langle\Psi_j|\hat H|\Psi_j\rangle
+%- (q_e/c)\langle\Psi_j|\partial_t\chi|\Psi_j\rangle$. Only the mechanical
+%energy, $\hat\varepsilon = \hat{\boldsymbol{\pi}}^2/2m_e + \hat V_{\mathrm{KS}}$,
+%which excludes the external scalar-potential term, transforms covariantly and
+%is gauge invariant.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\paragraph{Nonlocal pseudopotential.}
+Unlike the local potentials, the nonlocal pseudopotential is an integral operator,
+$\hat V_{\mathrm{NL}}\Psi(\vb r) = \int V_{\mathrm{NL}}(\vb r,\vb r')\,\Psi(\vb r')\,d^3r'$
+%$(\hat V_{\mathrm{NL}}\Psi)(\vb r) = \int V_{\mathrm{NL}}(\vb r,\vb r')\,\Psi(\vb r')\,d^3r'$,
+whose kernel connects different points. 
+The two gauge phases in $\hat U_\chi\hat V_{\mathrm{NL}}\hat U_\chi^\dagger$ are
+therefore evaluated at different arguments and do not cancel.
+For a  general  gauge function  the transformed  pseudopotential becomes
+\begin{equation}
+  V_{\mathrm{NL}}(\vb r,\vb r';t)
+	= \exp\!\left[\frac{\imath q_e}{\hbar c}\, \big(\chi(\vb r) -\chi(\vb r') \big)\right]
+    V_{\mathrm{NL}}(\vb r,\vb r') .
+  \label{eq:VNL_general}
+\end{equation}
+In VG, with $\chi = \vb r\cdot\vb A(t)$, the transformed  non-local pseudpotential becomes
+\begin{equation}
+  V^{V}_{\mathrm{NL}}(\vb r,\vb r';t)
+  = \exp\!\left[\frac{\imath q_e}{\hbar c}\,\vb A(t)\cdot(\vb r-\vb r')\right]
+    V_{\mathrm{NL}}(\vb r,\vb r') .
+  \label{eq:VNL_kernel}
+\end{equation}
+which  to first order in $\vb A$ is
+\begin{equation}
+  \hat V^{V}_{\mathrm{NL}}(t)
+  = \hat V_{\mathrm{NL}}
+  + \frac{\imath q_e}{\hbar c}\,\vb A(t)\cdot[\vb{\hat r},\hat V_{\mathrm{NL}}]
+  + \mathcal{O}(A^2).
+  \label{eq:VNL_linear}
+\end{equation}
+Because in VG the phase depends only on $\vb r-\vb r'$, the transformed operator
+remains invariant under simultaneous lattice translation of both arguments and
+retains the periodicity of the crystal.
+\myblue{ [WENCHANG or JERRY, check this]
+For the separable Kleinman--Bylander form,
+$\hat V_{\mathrm{NL}} = \sum_{I,lm}|\beta_{I,lm}\rangle D_{I,lm}\langle\beta_{I,lm}|$,
+Eq.~\eqref{eq:VNL_kernel} amounts to multiplying each projector by a gauge phase,
+$\beta_{I,lm}(\vb r) \to e^{\imath q_e\vb A(t)\cdot\vb r/\hbar c}\,\beta_{I,lm}(\vb r)$. }
+%This transformation is required for gauge consistency: transforming the kinetic
+%term while leaving $\hat V_{\mathrm{NL}}$ unchanged breaks gauge
+%invariance.\cite{IsmailBeigi-2001-EM,pickard-mauri-2001,Mattiat-Luber-2022}
+The commutator term $[\vb{\hat r},\hat V_{\mathrm{NL}}] $  in Eq.~\eqref{eq:VNL_linear} also  enters the
+nonlocal contribution to the velocity and current operators (see discussion  for Eq.~\eqref{eq:velocity_operator}
+and Sec.~\ref{sec:current}). 
+%Its treatment in the RMG perturbation is described in Sec.~\ref{sec:impl_perturbation}.
+
+%%%%%%%%%%%%%%%%%
+\paragraph{Velocity-gauge Hamiltonian and density matrix.}
+Inserting the VG potentials, Eq.~\eqref{eq:VG_potentials}, and the transformed
+nonlocal pseudopotential, Eq.~\eqref{eq:VNL_kernel}, into
+Eq.~\eqref{eq:H_general_transformed} gives the TDKS Hamiltonian in the velocity
+gauge,
+\begin{equation}
+  \hat H_V(t) = \frac{1}{2m_e}\Big[\vb{\hat p} - \frac{q_e}{c}\vb A(t)\Big]^2
+              + V_{\mathrm{loc}}[\rho](\vb r,t) + \hat V^{V}_{\mathrm{NL}}(t) .
+  \label{eq:H_VG}
+\end{equation}
+The dipolar term of the LG Hamiltonian, $q_e\Phi_L = -q_e\vb E_{\mathrm{ext}}(t)\cdot\vb r$,
+is absent because $\chi$ was chosen to make $\Phi' = 0$, Eq.~\eqref{eq:chi_condition}:
+the time-derivative term of Eq.~\eqref{eq:H_transformed},
+$-(q_e/c)\,\partial_t\chi = q_e\vb E_{\mathrm{ext}}(t)\cdot\vb r$, cancels it
+exactly. For an electron, $q_e = -e$, and the kinetic momentum is
+$\vb{\hat p} + e\vb A(t)/c$.
+
+ The one-particle density matrix,
+$\hat P = \sum_j f_j|\Psi_j\rangle\langle\Psi_j|$, transforms as
+$\hat P' = \hat U_\chi\hat P\,\hat U_\chi^\dagger$; its kernel acquires the
+two-point phase of Eq.~\eqref{eq:VNL_general}, so only its diagonal, the
+density $\rho(\vb r) = P(\vb r,\vb r)$, is gauge invariant, while traces with
+consistently transformed observables are unchanged. The Liouville--von Neumann
+equation retains its form,
+$\imath\hbar\,\partial_t\hat P' = [\hat H',\hat P']$, with $\hat H'$ of
+Eq.~\eqref{eq:H_transformed}. In practice, no such transformation is required:
+because $\vb A(t_0) = 0$ implies $\chi(t_0) = 0$ and $\hat U_\chi(t_0) = 1$, the
+field-free ground state and its density matrix are identical in both gauges. A
+calculation that starts from the ground state and introduces the field only
+through $\vb A(t)$ is therefore carried out in the velocity gauge from the
+outset, and the ground-state density matrix serves directly as its initial
+condition.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\paragraph{Periodic representation CHECK THIS.}
+Since every term in Eq.~\eqref{eq:H_VG} is lattice periodic, the VG orbitals
+can be written in Bloch form,
+$\Psi_{n\vb k}(\vb r,t) = e^{\imath\vb k\cdot\vb r}u_{n\vb k}(\vb r,t)$, and the
+cell-periodic functions obey
+\begin{equation}
+	  \imath\hbar\,\partial_t u_{n\vb k}
+	    = \left\{\frac{1}{2m_e}\Big[-\imath\hbar\nabla + \hbar\vb k
+	          - \frac{q_e}{c}\vb A(t)\Big]^2
+		      + V_{\mathrm{loc}}[\rho] + \hat V^{V}_{\mathrm{NL},\vb k}(t)\right\}u_{n\vb k},
+		        \label{eq:VG_bloch}
+\end{equation}
+with
+$\hat V^{V}_{\mathrm{NL},\vb k}
+ = e^{-\imath\vb k\cdot\vb r}\,\hat V^{V}_{\mathrm{NL}}\,e^{\imath\vb k\cdot\vb r}$.
+ Both the kinetic and the nonlocal terms depend on $\vb k$ and $\vb A(t)$ only
+ through the shifted wave vector
+ \begin{equation}
+	   \vb k(t) = \vb k - \frac{q_e}{\hbar c}\,\vb A(t),
+	     \qquad
+	       \hat H^{V}_{\vb k}(t) = \hat H_{\vb k(t)}[\rho],
+	         \label{eq:shifted_k}
+ \end{equation}
+ where $\hat H_{\vb k}$ is the field-free Bloch Hamiltonian. For the nonlocal
+ term this follows from $e^{-\imath\vb k\cdot\vb r}\hat U_\chi
+ = e^{-\imath\vb k(t)\cdot\vb r}$, so that
+ $\hat V^{V}_{\mathrm{NL},\vb k} = \hat V_{\mathrm{NL},\vb k(t)}$. The homogeneous
+ field thus rigidly shifts the crystal momentum of every Bloch state; for
+ electrons, $\vb k(t) = \vb k + e\vb A(t)/(\hbar c)$. This permits propagation
+ at fixed $\vb k$, with the nonlocal projectors evaluated at the shifted wave
+ vector. Because the gauge phase is not lattice periodic,
+ $\hat U_\chi(\vb r+\vb R,t)
+  = e^{\imath q_e\vb A(t)\cdot\vb R/(\hbar c)}\,\hat U_\chi(\vb r,t)$,
+  the transformation cannot be carried out within a periodic cell. It is used
+  only to derive the VG Hamiltonian, after which the propagation is carried out
+  entirely in the Bloch representation of Eq.~\eqref{eq:VG_bloch}.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

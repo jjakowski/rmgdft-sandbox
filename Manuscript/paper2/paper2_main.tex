@@ -61,15 +61,17 @@
   Oak Ridge National Laboratory, Oak Ridge, TN 37831, USA}
 \email{jakowskij@ornl.gov}
 \phone{+1 865 574 6174}
+\altaffiliation{These authors contributed equally to this work}
 
 \author{Wenchang Lu}
-\email{wlu2@ncsu.edu}
 \affiliation{Department of Physics, North Carolina State University,
   Raleigh, NC 27695-8202, USA}
+\altaffiliation{These authors contributed equally to this work}
 
 \author{Liangbo Liang}
 \affiliation{Center For Nanophase Materials Sciences,
   Oak Ridge National Laboratory, Oak Ridge, TN 37831, USA}
+\altaffiliation{These authors contributed equally to this work}
 
 \author{Emil Briggs}
 \affiliation{Department of Physics, North Carolina State University,
@@ -158,6 +160,33 @@ spin channels for different magnetic configurations.
 \section{Methodology}    %------------------------------------------
 \label{sec:methodology}
 
+This section presents the theory of periodic RT-TDDFT for a homogeneous optical
+perturbation. Section~2.1 introduces the electromagnetic
+potentials, the minimal-coupling Hamiltonian, and the gauge choices relevant to
+different probes. Section~2.2  derives the transformation
+from the length to the velocity gauge, including the treatment of the nonlocal
+pseudopotential and the periodic Bloch representation.
+Sections~2.3  and~2.4 describe the density-matrix
+propagation and its collinear spin extension, and
+Sections~2.5  and~2.6  define the current
+operator and the extraction of optical response functions.
+
+The literature on velocity-gauge RT-TDDFT spans solid-state physics, quantum
+chemistry, and optical-response theory. These communities use different
+conventions for the sign of the electron charge, the minimal-coupling
+substitution, and the current operator, and intermediate steps are often
+omitted. We therefore derive the working equations within a single, consistent
+set of conventions, keeping intermediate steps and charge signs explicit, so
+that this section can also serve as a reference for implementation. Throughout
+Sec.~\ref{sec:methodology} we use Gaussian units with $\hbar$, $m_e$, $c$, and
+the electron charge $q_e = -e$ kept explicit. Atomic units
+($\hbar = m_e = e = 1$) are adopted in Sec.~\ref{sec:implementation} for the
+equations as implemented in RMG, where $c$ remains explicit.
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \input{sec_em_interaction_blue_review-v3}
 %\input{sec_em_interaction_blue_review}
 %\input{sec_theory_EM-jj}
@@ -236,6 +265,10 @@ TG-DMR110037.
 %% Appendices
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \appendix
+\section{Gauge transformation rules}
+\label{app:gauge-rules}
+\input{appendix_gauge-rules}
+
 
 \section{Gauge Transformation of the Nonlocal Pseudopotential Term}
 \label{app:gauge_nlpp}
