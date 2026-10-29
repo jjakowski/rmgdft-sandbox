@@ -1,0 +1,137 @@
+%--------------------------------------------------------------------
+\subsection{Collinear Spin Extension}
+\label{sec:collinear-spin-extension}
+%--------------------------------------------------------------------
+
+The spin-polarized extension used in the present work is collinear.
+A fixed spin quantization axis is chosen, and the spin index
+$\sigma\in\{\uparrow,\downarrow\}$ labels two spin channels.  For each
+$\mathbf k$ point, the one-particle density matrix and Hamiltonian have
+a block-diagonal spin structure,
+\begin{equation}
+  \mathbf P_{\mathbf k}(t)
+  =
+  \begin{pmatrix}
+    \mathbf P_{\mathbf k}^{\uparrow}(t) & 0 \\
+    0 & \mathbf P_{\mathbf k}^{\downarrow}(t)
+  \end{pmatrix},
+  \qquad
+  \mathbf H_{\mathbf k}(t)
+  =
+  \begin{pmatrix}
+    \mathbf H_{\mathbf k}^{\uparrow}(t) & 0 \\
+    0 & \mathbf H_{\mathbf k}^{\downarrow}(t)
+  \end{pmatrix}.
+  \label{eq:collinear_spin_block_structure}
+\end{equation}
+Thus there are no off-diagonal spinor blocks in the present formulation.
+The two spin channels are propagated as separate density matrices, each
+obeying the Liouville-von Neumann equation introduced in
+Sec.~\ref{sec:density-matrix-propagation},
+\begin{equation}
+  \imath\hbar
+  \frac{d\mathbf P_{\mathbf k}^{\sigma}(t)}{dt}
+  =
+  \left[
+    \mathbf H_{\mathbf k}^{\sigma}(t),
+    \mathbf P_{\mathbf k}^{\sigma}(t)
+  \right].
+  \label{eq:lvn_collinear_spin}
+\end{equation}
+
+The spin-resolved electron densities are reconstructed from
+$\mathbf P_{\mathbf k}^{\sigma}(t)$ as described in
+Sec.~\ref{sec:density-matrix-propagation}.  The total electron density is
+\begin{equation}
+  \rho(\mathbf r,t)
+  =
+  \rho^{\uparrow}(\mathbf r,t)
+  +
+  \rho^{\downarrow}(\mathbf r,t).
+  \label{eq:total_density_spin}
+\end{equation}
+
+In the collinear Kohn--Sham Hamiltonian, the local effective potential
+for spin channel $\sigma$ can be written schematically as
+\begin{equation}
+  \hat V_{\rm loc}^{\sigma}
+  [\rho^\uparrow,\rho^\downarrow](t)
+  =
+  \hat V_{\rm ion}^{\rm loc}
+  +
+  \hat V_{\rm H}[\rho](t)
+  +
+  \hat V_{\rm xc}^{\sigma}
+  [\rho^\uparrow,\rho^\downarrow](t).
+  \label{eq:vloc_collinear_spin}
+\end{equation}
+The Hartree potential depends on the total electron density
+$\rho=\rho^\uparrow+\rho^\downarrow$, while the exchange-correlation
+potential is spin-channel dependent and is a functional of both spin
+densities.  In the absence of spin-orbit coupling, the nonlocal
+pseudopotential terms considered here are diagonal in the collinear spin
+basis and are treated as described in
+Secs.~\ref{sec:periodic-velocity-gauge} and~\ref{sec:current-nlpp}.
+
+Equation~\eqref{eq:lvn_collinear_spin} therefore represents separate
+propagation within each spin channel, but the channels are not
+physically independent.  They are coupled self-consistently through the
+density-dependent potentials:
+\begin{equation}
+  \left\{
+    \mathbf P_{\mathbf k}^{\uparrow},
+    \mathbf P_{\mathbf k}^{\downarrow}
+  \right\}
+  \rightarrow
+  \left\{
+    \rho^\uparrow,
+    \rho^\downarrow
+  \right\}
+  \rightarrow
+  \hat V_{\rm H}[\rho^\uparrow+\rho^\downarrow],
+  \hat V_{\rm xc}^{\sigma}[\rho^\uparrow,\rho^\downarrow]
+  \rightarrow
+  \left\{
+    \mathbf H_{\mathbf k}^{\uparrow},
+    \mathbf H_{\mathbf k}^{\downarrow}
+  \right\}.
+  \label{eq:collinear_spin_coupling_cycle}
+\end{equation}
+
+The same spin decomposition applies to the macroscopic charge current.
+For each spin channel,
+\begin{equation}
+  J_\alpha^{\sigma}(t)
+  =
+  \frac{1}{V_{\rm cell}}
+  \sum_{\mathbf k}
+  w_{\mathbf k}\,
+  {\rm Tr}\!
+  \left[
+    \mathbf P_{\mathbf k}^{\sigma}(t)
+    \hat I_{\mathbf k,\alpha}^{\sigma}(t)
+  \right],
+  \label{eq:spin_resolved_current}
+\end{equation}
+where the charge-current operator is the spin-diagonal operator defined
+in Sec.~\ref{sec:current-nlpp}.  The total macroscopic charge-current
+density is the sum over the two collinear spin channels,
+\begin{equation}
+  J_\alpha(t)
+  =
+  \sum_{\sigma=\uparrow,\downarrow}
+  J_\alpha^{\sigma}(t).
+  \label{eq:total_current_spin_sum}
+\end{equation}
+The individual $J_\alpha^{\sigma}(t)$ may also be analyzed separately
+to obtain spin-resolved optical response within the fixed collinear
+basis.
+
+The present formulation does not include off-diagonal spin coherences,
+transverse spin dynamics, general two-component spinors, noncollinear
+magnetization dynamics, or spin-orbit-induced spin mixing.  Such
+extensions require a spinor Hamiltonian with off-diagonal spin blocks
+and lie outside the collinear spin-polarized RT-TDDFT framework used in
+this manuscript.  This spin-resolved collinear formulation provides the
+theoretical basis for analyzing the spin-up and spin-down optical
+channels of the NV$^{-}$ center discussed below.
