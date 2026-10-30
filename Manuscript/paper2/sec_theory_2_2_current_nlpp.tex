@@ -1,0 +1,288 @@
+%--------------------------------------------------------------------
+\subsection{Current Operator and Nonlocal Pseudopotentials}
+\label{sec:current-nlpp}
+%--------------------------------------------------------------------
+
+For a periodic system in the homogeneous-field limit, the optical
+response is naturally formulated in terms of the macroscopic
+charge-current density.  We define
+\begin{equation}
+  J_\alpha(t)
+  =
+  \frac{1}{V_{\rm cell}}
+  \sum_{\mathbf k,\sigma}
+  w_{\mathbf k}\,
+  {\rm Tr}\!
+  \left[
+    \mathbf P_{\mathbf k}^{\sigma}(t)
+    \hat I_{\mathbf k,\alpha}^{\sigma}(t)
+  \right],
+  \label{eq:macroscopic_current_density}
+\end{equation}
+where $V_{\rm cell}$ is the volume of the periodic simulation cell,
+which may be a primitive cell or a supercell, $w_{\mathbf k}$ are the
+normalized Brillouin-zone weights satisfying
+$\sum_{\mathbf k}w_{\mathbf k}=1$, $\mathbf P_{\mathbf k}^{\sigma}$ is
+the single-particle density matrix for spin channel $\sigma$, and
+\begin{equation}
+  \hat I_\alpha(t)=q_e\hat v_\alpha(t)
+  \label{eq:charge_current_operator_definition}
+\end{equation}
+is the charge-current operator.  The trace in
+Eq.~\eqref{eq:macroscopic_current_density} is taken over the propagated
+single-particle subspace at fixed $\mathbf k$ and spin.
+
+The velocity operator is most cleanly defined before introducing the
+cell-periodic Bloch representation.  For the velocity-gauge Hamiltonian
+of Eq.~\eqref{eq:velocity_gauge_hamiltonian},
+\begin{equation}
+  \hat v_\alpha(t)
+  =
+  \frac{\imath}{\hbar}
+  \left[
+    \hat H_V(t),\hat r_\alpha
+  \right].
+  \label{eq:velocity_commutator_definition}
+\end{equation}
+Since the local potential commutes with the position operator, the
+Hamiltonian containing a local potential and a nonlocal pseudopotential
+gives
+\begin{equation}
+  \hat v_\alpha(t)
+  =
+  \frac{1}{m_e}
+  \left[
+    \hat p_\alpha
+    -
+    \frac{q_e}{c}A_\alpha(t)
+  \right]
+  +
+  \frac{\imath}{\hbar}
+  \left[
+    \hat V_{\rm NL}^{V}(t),\hat r_\alpha
+  \right].
+  \label{eq:velocity_operator_full}
+\end{equation}
+Equivalently,
+\begin{equation}
+  \frac{\imath}{\hbar}
+  \left[
+    \hat V_{\rm NL}^{V}(t),\hat r_\alpha
+  \right]
+  =
+  \frac{1}{\imath\hbar}
+  \left[
+    \hat r_\alpha,\hat V_{\rm NL}^{V}(t)
+  \right],
+  \label{eq:nlpp_velocity_commutator_equivalence}
+\end{equation}
+which fixes the sign convention for the nonlocal contribution.  Thus the
+formal charge-current operator is
+\begin{equation}
+  \hat I_\alpha(t)
+  =
+  q_e
+  \left\{
+  \frac{1}{m_e}
+  \left[
+    \hat p_\alpha
+    -
+    \frac{q_e}{c}A_\alpha(t)
+  \right]
+  +
+  \frac{\imath}{\hbar}
+  \left[
+    \hat V_{\rm NL}^{V}(t),\hat r_\alpha
+  \right]
+  \right\}.
+  \label{eq:formal_charge_current_operator}
+\end{equation}
+The explicit $A_\alpha(t)$ dependence of the kinetic term gives the
+usual diamagnetic contribution,
+\begin{equation}
+  \hat I_{\alpha}^{\rm dia}(t)
+  =
+  -
+  \frac{q_e^2}{m_e c}
+  A_\alpha(t)\hat 1,
+  \label{eq:diamagnetic_current_operator}
+\end{equation}
+while the nonlocal term is also $A$ dependent through the
+gauge-transformed nonlocal pseudopotential.
+
+The same nonlocal commutator appears when the velocity-gauge Hamiltonian
+is expanded to first order in the homogeneous vector potential.  Using
+Eq.~\eqref{eq:gauge_transformed_nlpp},
+\begin{equation}
+  \hat V_{\rm NL}^{V}(t)
+  =
+  \hat U(t)\hat V_{\rm NL}\hat U^\dagger(t),
+  \qquad
+  \hat U(t)
+  =
+  \exp\!\left[
+    \frac{\imath q_e}{\hbar c}
+    \mathbf r\cdot\mathbf A(t)
+  \right],
+  \label{eq:nlpp_gauge_transform_repeated}
+\end{equation}
+one obtains
+\begin{equation}
+  \hat V_{\rm NL}^{V}(t)
+  =
+  \hat V_{\rm NL}
+  +
+  \frac{\imath q_e}{\hbar c}
+  \sum_\alpha
+  A_\alpha(t)
+  \left[
+    \hat r_\alpha,\hat V_{\rm NL}
+  \right]
+  +
+  {\cal O}(A^2).
+  \label{eq:nlpp_gauge_transform_linear}
+\end{equation}
+The first-order nonlocal perturbation is therefore
+\begin{equation}
+  \delta\hat V_{\rm NL}^{(1)}(t)
+  =
+  -
+  \frac{1}{c}
+  \sum_\alpha
+  A_\alpha(t)\,
+  \hat I_{\alpha,{\rm NL}}^{(0)},
+  \qquad
+  \hat I_{\alpha,{\rm NL}}^{(0)}
+  =
+  \frac{q_e}{\imath\hbar}
+  \left[
+    \hat r_\alpha,\hat V_{\rm NL}
+  \right].
+  \label{eq:nlpp_linear_perturbation_current}
+\end{equation}
+Combining this term with the kinetic part of the minimal-coupling
+Hamiltonian gives the linear velocity-gauge perturbation
+\begin{equation}
+  \delta\hat H^{(1)}(t)
+  =
+  -
+  \frac{1}{c}
+  \sum_\alpha
+  A_\alpha(t)\,
+  \hat I_{\alpha}^{(0)},
+  \label{eq:linear_velocity_gauge_perturbation}
+\end{equation}
+where
+\begin{equation}
+  \hat I_{\alpha}^{(0)}
+  =
+  q_e
+  \left[
+    \frac{\hat p_\alpha}{m_e}
+    +
+    \frac{\imath}{\hbar}
+    \left[
+      \hat V_{\rm NL},\hat r_\alpha
+    \right]
+  \right]
+  =
+  \frac{q_e}{m_e}\hat p_\alpha
+  +
+  \frac{q_e}{\imath\hbar}
+  \left[
+    \hat r_\alpha,\hat V_{\rm NL}
+  \right].
+  \label{eq:zero_field_charge_current_operator}
+\end{equation}
+Equations~\eqref{eq:formal_charge_current_operator}--\eqref{eq:zero_field_charge_current_operator}
+show that the nonlocal-pseudopotential commutator is not only a
+correction to the measured current; it is also the nonlocal part of the
+linear velocity-gauge perturbation required for gauge consistency when
+nonlocal pseudopotentials are present.\cite{Luber-rt-tddft}  More
+generally, a nonlocal one-particle operator present in the Hamiltonian
+contributes to the velocity through the corresponding commutator with the
+position operator.
+
+For a separable norm-conserving pseudopotential,\cite{KleinmanBylander}
+\begin{equation}
+  \hat V_{\rm NL}
+  =
+  \sum_{I,lm}
+  |\beta_{I,lm}\rangle
+  D_{I,lm}
+  \langle\beta_{I,lm}|,
+  \label{eq:separable_nlpp}
+\end{equation}
+the coordinate-space matrix element of the commutator can be written as
+\begin{equation}
+  \langle\mathbf r|
+  \left[
+    \hat r_\alpha,\hat V_{\rm NL}
+  \right]
+  |\mathbf r'\rangle
+  =
+  (r_\alpha-r'_\alpha)
+  V_{\rm NL}(\mathbf r,\mathbf r').
+  \label{eq:nlpp_commutator_coordinate}
+\end{equation}
+Equation~\eqref{eq:nlpp_commutator_coordinate} makes explicit that this
+term vanishes for a strictly local potential but is finite for a
+nonlocal pseudopotential.
+
+The corresponding cell-periodic Bloch representation is obtained only
+after the full-space current operator has been defined.  For
+$\Psi_{n\mathbf k}=e^{\imath\mathbf k\cdot\mathbf r}
+u_{n\mathbf k}$, the canonical momentum becomes
+$-\imath\hbar\nabla+\hbar\mathbf k$ as in
+Eq.~\eqref{eq:bloch_momentum_operator}.  The nonlocal operator at fixed
+$\mathbf k$ is
+\begin{equation}
+  \hat V_{{\rm NL},\mathbf k}
+  =
+  e^{-\imath\mathbf k\cdot\mathbf r}
+  \hat V_{\rm NL}
+  e^{\imath\mathbf k\cdot\mathbf r}.
+  \label{eq:nlpp_bloch_transform}
+\end{equation}
+At zero external vector potential, the charge-current matrix in a
+cell-periodic basis is therefore
+\begin{align}
+  I_{ab,\mathbf k,\alpha}^{(0),\sigma}
+  &=
+  \frac{q_e}{m_e}
+  \left\langle
+    u_{a\mathbf k}^{\sigma}
+    \left|
+    -\imath\hbar\nabla_\alpha+\hbar k_\alpha
+    \right|
+    u_{b\mathbf k}^{\sigma}
+  \right\rangle_{\rm cell}
+  \nonumber\\
+  &\quad
+  +
+  \frac{q_e}{\imath\hbar}
+  \left\langle
+    u_{a\mathbf k}^{\sigma}
+    \left|
+    \left[
+      \hat r_\alpha,\hat V_{{\rm NL},\mathbf k}^{\sigma}
+    \right]
+    \right|
+    u_{b\mathbf k}^{\sigma}
+  \right\rangle_{\rm cell}.
+  \label{eq:bloch_current_matrix}
+\end{align}
+The first term contains both the gradient and Bloch
+$\hbar k_\alpha$ contributions, while the second term is the
+nonlocal-pseudopotential contribution.  In the presence of a finite
+homogeneous vector potential, Eq.~\eqref{eq:formal_charge_current_operator}
+gives the corresponding $A$-dependent current operator, including the
+diamagnetic kinetic term and the gauge-transformed nonlocal operator.
+
+Equations~\eqref{eq:macroscopic_current_density} and
+\eqref{eq:bloch_current_matrix} define the formal current observable used
+in the periodic RT-TDDFT theory.  The implementation-specific
+construction of the current matrices, the particular impulsive
+realization of the velocity-gauge perturbation, and the conversion of raw
+current traces to optical response functions are described separately in
+Secs.~\ref{sec:implementation} and~\ref{sec:optical-response}.
