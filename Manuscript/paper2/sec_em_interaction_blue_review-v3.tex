@@ -173,21 +173,21 @@ Similarly, for $\vb q\ne0$ the contribution to
 the electric field $\vb E(\vb r,t)$ due to the scalar
 potential (first term, $-\nabla\Phi_{\mathrm{ext}}$,
 in Eq.~\eqref{eq:em_E_from_A+Phi}) is exclusively longitudinal
-in nature
+in nature.
 %\myblue{; in the Coulomb gauge, this contribution equals $\vb E_{\parallel}(\vb r,t)$}.
 This can be seen by noticing that the Fourier transform
 of $-\nabla\Phi_{\mathrm{ext}}$ with respect to $\vb r$
 is parallel to $\vb q$ for every nonzero $\vb q$:
 \[
   \mathcal F_{\vb r}[-\nabla\Phi_{\mathrm{ext}}]
-  =-i\vb q\,\widetilde{\Phi}_{\mathrm{ext}}(\vb q,t),
+  =-\imath\vb q\,\widetilde{\Phi}_{\mathrm{ext}}(\vb q,t),
 \]
 where the Fourier transform relation
-$\mathcal F[\nabla f(\vb r)]=i\vb q\,\widetilde f(\vb q)$
+$\mathcal F[\nabla f(\vb r)]=\imath\vb q\,\widetilde f(\vb q)$
 was used.
 Also, the transverse projection
 $(\mathbf I-\hat{\vb q}\hat{\vb q})\cdot
-[-i\vb q\,\widetilde{\Phi}_{\mathrm{ext}}]$
+[-\imath \vb q\,\widetilde{\Phi}_{\mathrm{ext}}]$
 vanishes identically, where
 $\hat{\vb q}=\vb q/|\vb q|$ and $\mathbf I$ is the identity tensor.
 
@@ -203,7 +203,7 @@ $\imath\vb q\cdot\tilde{\vb A}_{\mathrm{ext}}=0$ holds trivially at $\vb q=0$.
 %This residual freedom  for $\vb q= 0$  within the Coulomb gauge relates the length and
 %velocity gauges used in RT-TDDFT, introduced below.}
 For $\vb q= 0$, the residual freedom within the Coulomb gauge allows for the  freedom between \emph{length} and \emph{velocity}
-gauges used rt-TDDFT.
+gauges used in rt-TDDFT.
 
 
 In general, the electromagnetic potentials ($\vb A$ and $\Phi$) and
@@ -220,7 +220,7 @@ and the gauge transformation rules
 	\label{eq:gauge-rules}
 \end{align}
 which  guarantee that the fields $\vb E$ and $\vb B$ are unchanged.
-A specific choice of $\chi$ relevant to periodic systems, and corresponding orbital and hamiltonian transfromation  are  discussed
+A specific choice of $\chi$ relevant to periodic systems, and the corresponding orbital and hamiltonian transfromation  are  discussed
 in Sec.~\ref{sec:velocity_gauge}.
 
 In finite-system optical applications, a common choice for
@@ -238,9 +238,9 @@ is then treated as spatially uniform over the system and represented  by $\vb A=
 as can be  verified by  application of Eqs.~\eqref{eq:em_E_from_A+Phi}  and   \eqref{eq:em_B_from_A}. %  from $\vb E=-\nabla\Phi$.
 For periodic systems, however, the scalar-potential form in  Eq.~\eqref{eq:EM_dipolar}
  is not compatible with periodic boundary conditions, resulting in 
- a sawtooth potential with a discontinuity at the cell boundary. This motivates  
-the use of  \emph{velocity-gauge} formulation, in which
-the $ \Phi(\vb r,t)=0$  and the  external field $\vb E(t)$ enters through a spatially uniform  vector potential
+ a sawtooth potential with a discontinuity at the cell boundary.\cite{Luber-2023-position-operator}
+ This motivates  the use of  \emph{velocity-gauge} formulation, in which
+ $ \Phi(\vb r,t)=0$  and the  external field $\vb E(t)$ enters through a spatially uniform  vector potential
 $\vb A(t)$ via  time-derivative term of Eq.~\eqref{eq:em_E_from_A+Phi}.
 
 While the plane-wave form Eq.~\eqref{eq:plane_wave_vector_potential}
@@ -251,10 +251,10 @@ A particularly useful choice is the Dirac delta kick,
  $\vb E(t)=\hat{\vb e} \mathcal E_0\delta(t)$, where
 $\hat{\vb e}$ is the polarization direction and $\mathcal E_0$ is  a scalar  perturbation strength.
 Since the delta function has a flat spectral content, 
-it delivers a broadband impulsive perturbation of magnitude $\mathcal E_0$ at $t=0$, 
+it delivers a broadband impulsive perturbation of magnitude $\mathcal E_0$ at $t=0$. 
 The frequency-dependent absorption spectrum is then obtained from
 the Fourier transform of the induced time-dependent observable
-monitored during the propagation (i.e dipole moment or density current).
+monitored during the propagation (i.e., dipole moment or density current).
 A temporal profile assigned to the vector potential, $\vb A(t)$, does not
 produce the same profile in the electric field, $\vb E(t)$, because the latter
 contains a time derivative of the former. 
